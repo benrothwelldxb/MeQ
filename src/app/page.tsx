@@ -1,101 +1,84 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useFormState, useFormStatus } from "react-dom";
+import { loginStudent } from "./actions/auth";
+import { useState } from "react";
+
+function SubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <button
+      type="submit"
+      disabled={disabled || pending}
+      className="mt-6 w-full py-4 px-6 rounded-xl text-lg font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] min-h-touch"
+    >
+      {pending ? "Checking..." : "Start"}
+    </button>
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function LoginPage() {
+  const [state, formAction] = useFormState(loginStudent, null);
+  const [code, setCode] = useState("");
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+      .toUpperCase()
+      .replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, "")
+      .slice(0, 8);
+    setCode(value);
+  };
+
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-meq-cloud p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-meq-sky text-white text-3xl font-extrabold mb-4">
+            MeQ
+          </div>
+          <h1 className="text-3xl font-bold text-meq-slate mb-2">
+            Welcome to MeQ
+          </h1>
+          <p className="text-lg text-gray-500">
+            Type your special code to begin!
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        <form action={formAction}>
+          <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-8">
+            <label
+              htmlFor="code"
+              className="block text-sm font-semibold text-meq-slate mb-3"
+            >
+              Your Login Code
+            </label>
+            <input
+              id="code"
+              name="code"
+              type="text"
+              value={code}
+              onChange={handleCodeChange}
+              placeholder="e.g. ABCD2345"
+              autoComplete="off"
+              autoFocus
+              className="w-full text-center text-2xl font-mono tracking-[0.3em] px-4 py-4 rounded-xl border-2 border-meq-mist focus:border-meq-sky focus:outline-none transition-colors bg-meq-cloud placeholder:text-gray-300 placeholder:tracking-[0.2em]"
+              maxLength={8}
+            />
+
+            {state?.error && (
+              <p className="mt-3 text-sm text-meq-coral text-center">
+                {state.error}
+              </p>
+            )}
+
+            <SubmitButton disabled={code.length !== 8} />
+          </div>
+        </form>
+
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Ask your teacher if you need help finding your code.
+        </p>
+      </div>
+    </main>
   );
 }

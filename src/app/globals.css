@@ -3,21 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #F7F8FA;
+  --foreground: #3D4F5F;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* iPad optimizations */
+button, a, [role="button"] {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input {
+  font-size: 18px; /* Prevent iOS zoom on focus */
+}
+
+/* Disable double-tap zoom on interactive areas */
+.quiz-area {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @layer utilities {

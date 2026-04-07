@@ -1,0 +1,112 @@
+import { prisma } from "@/lib/db";
+import Link from "next/link";
+import DeleteStudentButton from "./DeleteStudentButton";
+
+export default async function StudentsPage() {
+  const students = await prisma.student.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      assessments: {
+        select: { status: true },
+        take: 1,
+        orderBy: { startedAt: "desc" },
+      },
+    },
+  });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
+          <p className="text-gray-500 mt-1">{students.length} students</p>
+        </div>
+        <Link
+          href="/admin/students/upload"
+          className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
+        >
+          Upload CSV
+        </Link>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Year / Class
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Login Code
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {students.map((student) => {
+                const assessment = student.assessments[0];
+                const status = assessment?.status ?? "not_started";
+                return (
+                  <tr key={student.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">
+                        {student.firstName} {student.lastName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {student.yearGroup}
+                      {student.className && ` / ${student.className}`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="px-2 py-1 rounded bg-gray-100 text-sm font-mono text-gray-700">
+                        {student.loginCode}
+                      </code>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          status === "completed"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : status === "in_progress"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {status === "completed"
+                          ? "Completed"
+                          : status === "in_progress"
+                          ? "In Progress"
+                          : "Not Started"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DeleteStudentButton studentId={student.id} studentName={`${student.firstName} ${student.lastName}`} />
+                    </td>
+                  </tr>
+                );
+              })}
+              {students.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    No students yet.{" "}
+                    <Link href="/admin/students/upload" className="text-meq-sky hover:underline">
+                      Upload a CSV
+                    </Link>{" "}
+                    to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Student {
+  id          String       @id @default(cuid())
+  loginCode   String       @unique
+  firstName   String
+  lastName    String
+  displayName String?
+  yearGroup   String
+  className   String?
+  createdAt   DateTime     @default(now())
+  assessments Assessment[]
+}
+
+model Question {
+  id             String  @id @default(cuid())
+  orderIndex     Int     @unique
+  prompt         String
+  domain         String
+  type           String
+  questionFormat String
+  answerOptions  String
+  scoreMap       String
+  weight         Float   @default(1.0)
+  isValidation   Boolean @default(false)
+  isTrap         Boolean @default(false)
+  validationPair Int?
+}
+
+model Assessment {
+  id                    String    @id @default(cuid())
+  studentId             String
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status                String    @default("in_progress")
+  answers               String    @default("{}")
+  totalScore            Float?
+  overallLevel          String?
+  knowMeScore           Float?
+  manageMeScore         Float?
+  understandOthersScore Float?
+  workWithOthersScore   Float?
+  chooseWellScore       Float?
+  knowMeLevel           String?
+  manageMeLevel         String?
+  understandOthersLevel String?
+  workWithOthersLevel   String?
+  chooseWellLevel       String?
+  reliabilityScore      String?
+  rawResponseJson       String?
+  lastQuestionNum       Int       @default(0)
+  startedAt             DateTime  @default(now())
+  completedAt           DateTime?
+}
