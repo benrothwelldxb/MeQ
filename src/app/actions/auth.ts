@@ -40,7 +40,7 @@ export async function loginStudent(
     }
 
     assessment = await prisma.assessment.create({
-      data: { studentId: student.id },
+      data: { studentId: student.id, tier: student.tier },
     });
   }
 
@@ -48,6 +48,7 @@ export async function loginStudent(
   session.studentId = student.id;
   session.assessmentId = assessment.id;
   session.firstName = student.displayName || student.firstName;
+  session.tier = student.tier;
   await session.save();
 
   redirect("/quiz");

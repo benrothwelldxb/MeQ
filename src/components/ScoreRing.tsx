@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MAX_TOTAL_SCORE } from "@/lib/constants";
-
 export default function ScoreRing({
   score,
-  maxScore = MAX_TOTAL_SCORE,
+  maxScore = 130,
   size = 160,
   strokeWidth = 12,
 }: {

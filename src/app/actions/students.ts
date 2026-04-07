@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { generateLoginCode } from "@/lib/codes";
+import { getTierFromYearGroup } from "@/lib/constants";
 import { parse } from "csv-parse/sync";
 import { revalidatePath } from "next/cache";
 
@@ -49,6 +50,7 @@ export async function uploadStudentsCSV(formData: FormData) {
     yearGroup: string;
     className: string | null;
     loginCode: string;
+    tier: string;
   }> = [];
 
   const errors: string[] = [];
@@ -78,7 +80,8 @@ export async function uploadStudentsCSV(formData: FormData) {
     }
 
     existingCodes.add(loginCode);
-    students.push({ firstName, lastName, yearGroup, className, loginCode });
+    const tier = getTierFromYearGroup(yearGroup);
+    students.push({ firstName, lastName, yearGroup, className, loginCode, tier });
   }
 
   if (students.length === 0) {

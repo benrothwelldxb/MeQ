@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
-import { DOMAINS, DOMAIN_LABELS, MAX_TOTAL_SCORE, type Domain, type Level } from "@/lib/constants";
+import { DOMAINS, DOMAIN_LABELS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";
 import DomainCard from "@/components/DomainCard";
 import Link from "next/link";
@@ -17,7 +17,10 @@ export default async function AdminResultDetailPage({
 
   if (!assessment) return notFound();
 
+  const tier = (assessment.tier || "standard") as Tier;
+
   const questions = await prisma.question.findMany({
+    where: { tier },
     orderBy: { orderIndex: "asc" },
   });
 
@@ -70,7 +73,7 @@ export default async function AdminResultDetailPage({
             <p className="text-sm text-gray-500">MeQ Score</p>
             <p className="text-4xl font-extrabold text-gray-900">
               {assessment.totalScore ?? 0}
-              <span className="text-lg text-gray-400 font-normal"> / {MAX_TOTAL_SCORE}</span>
+              <span className="text-lg text-gray-400 font-normal"> / {MAX_TOTAL_SCORE[tier]}</span>
             </p>
           </div>
           <div>
@@ -104,6 +107,7 @@ export default async function AdminResultDetailPage({
             domain={domain}
             score={domainScores[domain]}
             level={domainLevels[domain]}
+            tier={tier}
           />
         ))}
       </div>

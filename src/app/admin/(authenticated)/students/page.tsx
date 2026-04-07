@@ -41,6 +41,9 @@ export default async function StudentsPage() {
                   Year / Class
                 </th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Tier
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Login Code
                 </th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -63,6 +66,15 @@ export default async function StudentsPage() {
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {student.yearGroup}
                       {student.className && ` / ${student.className}`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        student.tier === "junior"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {student.tier === "junior" ? "Junior" : "Standard"}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <code className="px-2 py-1 rounded bg-gray-100 text-sm font-mono text-gray-700">
@@ -94,7 +106,7 @@ export default async function StudentsPage() {
               })}
               {students.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     No students yet.{" "}
                     <Link href="/admin/students/upload" className="text-meq-sky hover:underline">
                       Upload a CSV

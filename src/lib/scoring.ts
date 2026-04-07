@@ -1,9 +1,12 @@
 import {
   DOMAINS,
   LEVEL_THRESHOLDS,
+  JUNIOR_LEVEL_THRESHOLDS,
   OVERALL_LEVEL_THRESHOLDS,
+  JUNIOR_OVERALL_LEVEL_THRESHOLDS,
   type Domain,
   type Level,
+  type Tier,
 } from "./constants";
 
 interface QuestionData {
@@ -18,15 +21,17 @@ interface QuestionData {
   scoreMap: string;
 }
 
-export function getLevel(score: number): Level {
-  for (const { level, min } of LEVEL_THRESHOLDS) {
+export function getLevel(score: number, tier: Tier = "standard"): Level {
+  const thresholds = tier === "junior" ? JUNIOR_LEVEL_THRESHOLDS : LEVEL_THRESHOLDS;
+  for (const { level, min } of thresholds) {
     if (score >= min) return level;
   }
   return "Emerging";
 }
 
-export function getOverallLevel(totalScore: number): Level {
-  for (const { level, min } of OVERALL_LEVEL_THRESHOLDS) {
+export function getOverallLevel(totalScore: number, tier: Tier = "standard"): Level {
+  const thresholds = tier === "junior" ? JUNIOR_OVERALL_LEVEL_THRESHOLDS : OVERALL_LEVEL_THRESHOLDS;
+  for (const { level, min } of thresholds) {
     if (totalScore >= min) return level;
   }
   return "Emerging";
@@ -34,7 +39,6 @@ export function getOverallLevel(totalScore: number): Level {
 
 /**
  * Calculate raw weighted sum per domain (core questions only).
- * Each answer is 1-4, multiplied by question weight.
  */
 export function calculateDomainScores(
   answers: Record<string, number>,
@@ -59,7 +63,6 @@ export function calculateDomainScores(
       weightedSum += mappedScore * q.weight;
     }
 
-    // Round to 1 decimal place for clarity
     scores[domain] = Math.round(weightedSum * 10) / 10;
   }
 
@@ -67,7 +70,7 @@ export function calculateDomainScores(
 }
 
 /**
- * Total MeQ score = sum of all 5 domain scores (raw weighted sum).
+ * Total MeQ score = sum of all 5 domain scores.
  */
 export function calculateTotalScore(
   domainScores: Record<Domain, number>
@@ -86,7 +89,6 @@ export function calculateReliability(
   let trapFlags = 0;
   let totalTraps = 0;
 
-  // Check validation pairs — contradictions across similar questions
   const validationQuestions = questions.filter(
     (q) => q.isValidation && q.validationPair
   );
@@ -101,28 +103,25 @@ export function calculateReliability(
     }
   }
 
-  // Check trap questions — "perfect" answers on extreme statements
   const trapQuestions = questions.filter((q) => q.isTrap);
   for (const tq of trapQuestions) {
     const answer = answers[String(tq.orderIndex)];
     if (answer === undefined) continue;
 
     totalTraps++;
-    // Agreeing strongly (4) with trap statements like
-    // "I am always calm no matter what" → flag
     if (answer === 4) {
       trapFlags++;
     }
   }
 
+  // Junior tier has no validation/trap questions — always High
+  if (totalPairs === 0 && totalTraps === 0) return "High";
+
   const pairRatio = totalPairs > 0 ? consistentPairs / totalPairs : 1;
   const trapRatio = totalTraps > 0 ? trapFlags / totalTraps : 0;
 
-  // High = consistent + no trap flags
   if (pairRatio >= 0.8 && trapRatio <= 0.2) return "High";
-  // Medium = minor inconsistency
   if (pairRatio >= 0.5 && trapRatio <= 0.4) return "Medium";
-  // Low = significant inconsistency
   return "Low";
 }
 

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { type Tier } from "@/lib/constants";
 import QuizClient from "./QuizClient";
 
 export default async function QuizPage() {
@@ -17,7 +18,11 @@ export default async function QuizPage() {
     redirect("/results");
   }
 
+  const tier = (assessment.tier || "standard") as Tier;
+
+  // Load only questions for this student's tier
   const questions = await prisma.question.findMany({
+    where: { tier },
     orderBy: { orderIndex: "asc" },
   });
 
@@ -30,6 +35,7 @@ export default async function QuizPage() {
     answerOptions: JSON.parse(q.answerOptions) as {
       label: string;
       value: number;
+      emoji?: string;
     }[],
   }));
 
@@ -39,6 +45,7 @@ export default async function QuizPage() {
       savedAnswers={answers}
       studentName={session.firstName}
       startQuestion={assessment.lastQuestionNum > 0 ? assessment.lastQuestionNum : 1}
+      tier={tier}
     />
   );
 }

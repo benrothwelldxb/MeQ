@@ -22,13 +22,15 @@ model Student {
   displayName String?
   yearGroup   String
   className   String?
+  tier        String       @default("standard") // junior | standard
   createdAt   DateTime     @default(now())
   assessments Assessment[]
 }
 
 model Question {
   id             String  @id @default(cuid())
-  orderIndex     Int     @unique
+  tier           String  @default("standard") // junior | standard
+  orderIndex     Int
   prompt         String
   domain         String
   type           String
@@ -39,12 +41,15 @@ model Question {
   isValidation   Boolean @default(false)
   isTrap         Boolean @default(false)
   validationPair Int?
+
+  @@unique([tier, orderIndex])
 }
 
 model Assessment {
   id                    String    @id @default(cuid())
   studentId             String
   student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tier                  String    @default("standard") // junior | standard
   status                String    @default("in_progress")
   answers               String    @default("{}")
   totalScore            Float?

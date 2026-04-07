@@ -5,6 +5,7 @@ export interface StudentSessionData {
   studentId: string;
   assessmentId: string;
   firstName: string;
+  tier: string;
 }
 
 export interface AdminSessionData {

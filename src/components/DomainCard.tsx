@@ -1,10 +1,12 @@
 import {
   DOMAIN_LABELS,
   DOMAIN_DESCRIPTIONS,
+  DOMAIN_DESCRIPTIONS_JUNIOR,
   DOMAIN_COLORS,
   MAX_DOMAIN_SCORE,
   type Domain,
   type Level,
+  type Tier,
 } from "@/lib/constants";
 import LevelChip from "./LevelChip";
 
@@ -12,13 +14,17 @@ export default function DomainCard({
   domain,
   score,
   level,
+  tier = "standard",
 }: {
   domain: Domain;
   score: number;
   level: Level;
+  tier?: Tier;
 }) {
   const colors = DOMAIN_COLORS[domain];
-  const percent = Math.round((score / MAX_DOMAIN_SCORE) * 100);
+  const maxScore = MAX_DOMAIN_SCORE[tier];
+  const percent = Math.round((score / maxScore) * 100);
+  const descriptions = tier === "junior" ? DOMAIN_DESCRIPTIONS_JUNIOR : DOMAIN_DESCRIPTIONS;
 
   return (
     <div
@@ -31,7 +37,7 @@ export default function DomainCard({
         <LevelChip level={level} size="sm" />
       </div>
       <p className="text-sm text-gray-600 mb-4">
-        {DOMAIN_DESCRIPTIONS[domain]}
+        {descriptions[domain]}
       </p>
       <div className="flex items-center gap-3">
         <div className="flex-1 h-2.5 bg-white/60 rounded-full overflow-hidden">
@@ -53,7 +59,7 @@ export default function DomainCard({
           />
         </div>
         <span className={`text-sm font-bold ${colors.text}`}>
-          {score} / {MAX_DOMAIN_SCORE}
+          {score} / {maxScore}
         </span>
       </div>
     </div>

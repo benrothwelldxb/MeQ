@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { type Tier } from "@/lib/constants";
 import {
   calculateDomainScores,
   calculateTotalScore,
@@ -45,7 +46,11 @@ export async function submitQuiz() {
   });
   if (!assessment || assessment.status !== "in_progress") return;
 
+  const tier = (assessment.tier || "standard") as Tier;
+
+  // Load only questions for this tier
   const questions = await prisma.question.findMany({
+    where: { tier },
     orderBy: { orderIndex: "asc" },
   });
 
@@ -60,17 +65,17 @@ export async function submitQuiz() {
       status: "completed",
       completedAt: new Date(),
       totalScore,
-      overallLevel: getOverallLevel(totalScore),
+      overallLevel: getOverallLevel(totalScore, tier),
       knowMeScore: domainScores.KnowMe,
       manageMeScore: domainScores.ManageMe,
       understandOthersScore: domainScores.UnderstandOthers,
       workWithOthersScore: domainScores.WorkWithOthers,
       chooseWellScore: domainScores.ChooseWell,
-      knowMeLevel: getLevel(domainScores.KnowMe),
-      manageMeLevel: getLevel(domainScores.ManageMe),
-      understandOthersLevel: getLevel(domainScores.UnderstandOthers),
-      workWithOthersLevel: getLevel(domainScores.WorkWithOthers),
-      chooseWellLevel: getLevel(domainScores.ChooseWell),
+      knowMeLevel: getLevel(domainScores.KnowMe, tier),
+      manageMeLevel: getLevel(domainScores.ManageMe, tier),
+      understandOthersLevel: getLevel(domainScores.UnderstandOthers, tier),
+      workWithOthersLevel: getLevel(domainScores.WorkWithOthers, tier),
+      chooseWellLevel: getLevel(domainScores.ChooseWell, tier),
       reliabilityScore: reliability,
       rawResponseJson: JSON.stringify(answers),
     },

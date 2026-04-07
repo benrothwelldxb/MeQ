@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import LevelChip from "@/components/LevelChip";
-import { MAX_TOTAL_SCORE, type Level } from "@/lib/constants";
+import { MAX_TOTAL_SCORE, type Level, type Tier } from "@/lib/constants";
 
 export default async function AdminResultsPage() {
   const assessments = await prisma.assessment.findMany({
@@ -59,7 +59,7 @@ export default async function AdminResultsPage() {
                     <span className="text-lg font-bold text-gray-900">
                       {a.totalScore ?? 0}
                     </span>
-                    <span className="text-xs text-gray-400 ml-1">/ {MAX_TOTAL_SCORE}</span>
+                    <span className="text-xs text-gray-400 ml-1">/ {MAX_TOTAL_SCORE[(a.tier || "standard") as Tier]}</span>
                   </td>
                   <td className="px-6 py-4">
                     {a.overallLevel && (
