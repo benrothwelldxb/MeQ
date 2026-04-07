@@ -27,6 +27,19 @@ export default function QuizClient({
   const [currentIndex, setCurrentIndex] = useState(
     Math.min(startQuestion - 1, questions.length - 1)
   );
+  // Track selected option index per question (avoids duplicate-value bug)
+  const [selectedIndices, setSelectedIndices] = useState<Record<string, number>>(() => {
+    // Reconstruct indices from saved answer values
+    const indices: Record<string, number> = {};
+    for (const q of questions) {
+      const savedVal = savedAnswers[String(q.orderIndex)];
+      if (savedVal !== undefined) {
+        const idx = q.answerOptions.findIndex((o) => o.value === savedVal);
+        if (idx !== -1) indices[String(q.orderIndex)] = idx;
+      }
+    }
+    return indices;
+  });
   const [answers, setAnswers] = useState<Record<string, number>>(savedAnswers);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -35,6 +48,7 @@ export default function QuizClient({
   const question = questions[currentIndex];
   const totalQuestions = questions.length;
   const currentAnswer = answers[String(question.orderIndex)];
+  const currentSelectedIndex = selectedIndices[String(question.orderIndex)];
   const answeredCount = Object.keys(answers).length;
 
   const doSave = useCallback(
@@ -46,8 +60,9 @@ export default function QuizClient({
     []
   );
 
-  const handleSelect = (value: number) => {
+  const handleSelect = (optionIndex: number, value: number) => {
     const questionNum = question.orderIndex;
+    setSelectedIndices((prev) => ({ ...prev, [String(questionNum)]: optionIndex }));
     setAnswers((prev) => ({ ...prev, [String(questionNum)]: value }));
 
     // Debounced save
@@ -122,8 +137,8 @@ export default function QuizClient({
               <OptionCard
                 key={`${question.orderIndex}-${i}`}
                 label={option.label}
-                selected={currentAnswer === option.value}
-                onSelect={() => handleSelect(option.value)}
+                selected={currentSelectedIndex === i}
+                onSelect={() => handleSelect(i, option.value)}
                 index={i}
               />
             ))}
