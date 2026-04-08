@@ -20,9 +20,10 @@ export const TOTAL_QUESTIONS: Record<Tier, number> = {
 // Map year groups to tiers
 export function getTierFromYearGroup(yearGroup: string): Tier {
   const normalized = yearGroup.toLowerCase().trim();
-  // Reception, Year 1, Year 2 → junior
+  // FS2/Reception, Year 1, Year 2 → junior
   if (
     normalized.includes("reception") ||
+    normalized.includes("fs2") ||
     normalized.includes("year 1") ||
     normalized.includes("year 2") ||
     normalized === "r" ||

@@ -2,13 +2,51 @@
 
 import { prisma } from "@/lib/db";
 import { generateLoginCode } from "@/lib/codes";
-import { getTierFromYearGroup } from "@/lib/constants";
+import { getTierFromYearGroup, LOGIN_CODE_CHARSET, LOGIN_CODE_LENGTH } from "@/lib/constants";
 import { getAdminSession } from "@/lib/session";
 import { parse } from "csv-parse/sync";
 import { revalidatePath } from "next/cache";
 
-export async function uploadStudentsCSV(formData: FormData) {
-  const session = await getAdminSession();
+// === Auto-matching logic for CSV column headers ===
+
+const FIELD_MATCHERS: Record<string, string[]> = {
+  first_name: ["first", "firstname", "first name", "given", "forename"],
+  last_name: ["last", "lastname", "last name", "surname", "family"],
+  year_group: ["year", "yeargroup", "year group", "grade"],
+  class_name: ["class", "form", "division", "class name", "classname"],
+  login_code: ["code", "login", "logincode", "login code"],
+  sen: ["sen", "send", "special", "additional"],
+  school_uuid: ["school_id", "school_uuid", "uuid"],
+};
+
+function autoMatchColumns(headers: string[]): Record<string, string> {
+  const mapping: Record<string, string> = {};
+  const used = new Set<string>();
+
+  for (const [field, keywords] of Object.entries(FIELD_MATCHERS)) {
+    const normalized = headers.map((h) => h.toLowerCase().trim());
+    // Exact match first
+    const exactIdx = normalized.findIndex((h) => h === field && !used.has(headers[normalized.indexOf(h)]));
+    if (exactIdx !== -1) {
+      mapping[field] = headers[exactIdx];
+      used.add(headers[exactIdx]);
+      continue;
+    }
+    // Keyword match
+    for (const keyword of keywords) {
+      const idx = normalized.findIndex((h, i) => h.includes(keyword) && !used.has(headers[i]));
+      if (idx !== -1) {
+        mapping[field] = headers[idx];
+        used.add(headers[idx]);
+        break;
+      }
+    }
+  }
+
+  return mapping;
+}
+
+export async function previewCSV(formData: FormData) {
   const file = formData.get("file") as File;
   if (!file || file.size === 0) {
     return { error: "Please select a CSV file." };
@@ -31,15 +69,57 @@ export async function uploadStudentsCSV(formData: FormData) {
     return { error: "CSV file is empty." };
   }
 
-  // Validate required fields
-  const requiredFields = ["first_name", "last_name", "year_group"];
   const headers = Object.keys(records[0]);
-  const missing = requiredFields.filter((f) => !headers.includes(f));
-  if (missing.length > 0) {
-    return { error: `Missing columns: ${missing.join(", ")}` };
+  const suggestedMapping = autoMatchColumns(headers);
+  const preview = records.slice(0, 3);
+
+  return {
+    headers,
+    suggestedMapping,
+    preview,
+    totalRows: records.length,
+    csvText: text,
+  };
+}
+
+function parseSenValue(val: string | undefined): boolean {
+  if (!val) return false;
+  const norm = val.trim().toLowerCase();
+  return ["yes", "true", "1", "y"].includes(norm);
+}
+
+export async function uploadStudentsCSV(
+  csvText: string,
+  columnMapping: Record<string, string>
+) {
+  const session = await getAdminSession();
+
+  let records: Array<Record<string, string>>;
+  try {
+    records = parse(csvText, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+  } catch {
+    return { error: "Could not parse CSV." };
   }
 
-  // Get existing codes to avoid duplicates
+  if (records.length === 0) {
+    return { error: "CSV file is empty." };
+  }
+
+  const firstNameCol = columnMapping.first_name;
+  const lastNameCol = columnMapping.last_name;
+  const yearGroupCol = columnMapping.year_group;
+  const classNameCol = columnMapping.class_name;
+  const loginCodeCol = columnMapping.login_code;
+  const senCol = columnMapping.sen;
+
+  if (!firstNameCol || !lastNameCol || !yearGroupCol) {
+    return { error: "Please map first name, last name, and year group columns." };
+  }
+
   const existingCodes = new Set(
     (await prisma.student.findMany({ select: { loginCode: true } })).map(
       (s) => s.loginCode
@@ -53,6 +133,7 @@ export async function uploadStudentsCSV(formData: FormData) {
     className: string | null;
     loginCode: string;
     tier: string;
+    sen: boolean;
     schoolId: string;
   }> = [];
 
@@ -60,11 +141,12 @@ export async function uploadStudentsCSV(formData: FormData) {
 
   for (let i = 0; i < records.length; i++) {
     const row = records[i];
-    const firstName = row.first_name?.trim();
-    const lastName = row.last_name?.trim();
-    const yearGroup = row.year_group?.trim();
-    const className = row.class_name?.trim() || null;
-    let loginCode = row.login_code?.trim().toUpperCase() || "";
+    const firstName = row[firstNameCol]?.trim();
+    const lastName = row[lastNameCol]?.trim();
+    const yearGroup = row[yearGroupCol]?.trim();
+    const className = classNameCol ? row[classNameCol]?.trim() || null : null;
+    let loginCode = loginCodeCol ? row[loginCodeCol]?.trim().toUpperCase() || "" : "";
+    const sen = parseSenValue(senCol ? row[senCol] : undefined);
 
     if (!firstName || !lastName || !yearGroup) {
       errors.push(`Row ${i + 2}: Missing required fields`);
@@ -84,14 +166,13 @@ export async function uploadStudentsCSV(formData: FormData) {
 
     existingCodes.add(loginCode);
     const tier = getTierFromYearGroup(yearGroup);
-    students.push({ firstName, lastName, yearGroup, className, loginCode, tier, schoolId: session.schoolId });
+    students.push({ firstName, lastName, yearGroup, className, loginCode, tier, sen, schoolId: session.schoolId });
   }
 
   if (students.length === 0) {
     return { error: `No valid students found. ${errors.join("; ")}` };
   }
 
-  // Bulk create
   await prisma.student.createMany({
     data: students,
   });
@@ -126,24 +207,22 @@ export async function addStudent(formData: FormData) {
   const yearGroupId = formData.get("yearGroupId") as string;
   const classGroupId = (formData.get("classGroupId") as string) || null;
   const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
+  const sen = formData.get("sen") === "on";
   let loginCode = (formData.get("loginCode") as string)?.trim().toUpperCase() || "";
 
   if (!firstName || !lastName || !yearGroupId) {
     return { error: "First name, last name, and year group are required." };
   }
 
-  // Look up year group for tier and name
   const yearGroup = await prisma.yearGroup.findUnique({ where: { id: yearGroupId } });
   if (!yearGroup) return { error: "Year group not found." };
 
-  // Look up class group name if provided
   let className: string | null = null;
   if (classGroupId) {
     const classGroup = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
     className = classGroup?.name || null;
   }
 
-  // Generate or validate login code
   if (!loginCode) {
     const existingCodes = new Set(
       (await prisma.student.findMany({ select: { loginCode: true } })).map((s) => s.loginCode)
@@ -152,6 +231,10 @@ export async function addStudent(formData: FormData) {
       loginCode = generateLoginCode();
     } while (existingCodes.has(loginCode));
   } else {
+    const codePattern = new RegExp(`^[${LOGIN_CODE_CHARSET}]{${LOGIN_CODE_LENGTH}}$`);
+    if (!codePattern.test(loginCode)) {
+      return { error: `Login code must be exactly ${LOGIN_CODE_LENGTH} characters using only: ${LOGIN_CODE_CHARSET}` };
+    }
     const existing = await prisma.student.findUnique({ where: { loginCode } });
     if (existing) return { error: `Login code ${loginCode} is already in use.` };
   }
@@ -165,6 +248,7 @@ export async function addStudent(formData: FormData) {
       yearGroupId,
       classGroupId,
       tier: yearGroup.tier,
+      sen,
       schoolUuid,
       loginCode,
       schoolId: session.schoolId,
@@ -184,6 +268,7 @@ export async function updateStudent(studentId: string, formData: FormData) {
   const classGroupId = (formData.get("classGroupId") as string) || null;
   const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
   const displayName = (formData.get("displayName") as string)?.trim() || null;
+  const sen = formData.get("sen") === "on";
 
   if (!firstName || !lastName || !yearGroupId) {
     return { error: "First name, last name, and year group are required." };
@@ -209,6 +294,7 @@ export async function updateStudent(studentId: string, formData: FormData) {
       yearGroupId,
       classGroupId,
       tier: yearGroup.tier,
+      sen,
       schoolUuid,
     },
   });

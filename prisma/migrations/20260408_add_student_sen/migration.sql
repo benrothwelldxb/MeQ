@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Student" ADD COLUMN "sen" BOOLEAN NOT NULL DEFAULT false;

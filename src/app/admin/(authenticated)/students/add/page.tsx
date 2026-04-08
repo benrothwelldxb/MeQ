@@ -99,17 +99,26 @@ export default function AddStudentPage() {
           </select>
         </div>
 
-        {classes.length > 0 && (
+        {selectedYG && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-            <select name="classGroupId" className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none">
-              <option value="">No class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            {classes.length > 0 ? (
+              <select name="classGroupId" className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none">
+                <option value="">No class</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs text-gray-400 py-2">No classes set up for this year group. <Link href="/admin/settings/year-groups" className="text-meq-sky hover:underline">Add classes</Link></p>
+            )}
           </div>
         )}
+
+        <div className="flex items-center gap-3">
+          <input type="checkbox" id="sen" name="sen" className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+          <label htmlFor="sen" className="text-sm font-medium text-gray-700">SEN (Special Educational Needs)</label>
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">School ID (optional)</label>
@@ -123,8 +132,13 @@ export default function AddStudentPage() {
           {showCustomCode && (
             <input
               name="loginCode"
-              placeholder="8-character code"
+              placeholder="e.g. ABCD2345"
               maxLength={8}
+              onChange={(e) => {
+                e.target.value = e.target.value
+                  .toUpperCase()
+                  .replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, "");
+              }}
               className="mt-2 w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none font-mono uppercase tracking-wider"
             />
           )}

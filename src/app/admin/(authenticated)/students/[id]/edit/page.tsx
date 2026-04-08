@@ -72,6 +72,11 @@ export default async function EditStudentPage({
           </select>
         </div>
 
+        <div className="flex items-center gap-3">
+          <input type="checkbox" id="sen" name="sen" defaultChecked={student.sen} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+          <label htmlFor="sen" className="text-sm font-medium text-gray-700">SEN (Special Educational Needs)</label>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">School ID</label>
           <input name="schoolUuid" defaultValue={student.schoolUuid || ""} className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />

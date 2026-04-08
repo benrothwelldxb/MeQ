@@ -67,8 +67,13 @@ export default async function StudentsPage() {
                 return (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">
-                        {student.firstName} {student.lastName}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {student.firstName} {student.lastName}
+                        </span>
+                        {student.sen && (
+                          <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">

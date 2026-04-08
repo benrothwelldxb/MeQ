@@ -2,21 +2,15 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
 import {
-  DOMAINS,
   DOMAIN_LABELS,
   STRENGTH_MESSAGES,
   JUNIOR_STRENGTH_MESSAGES,
   NEXT_STEPS,
   JUNIOR_NEXT_STEPS,
-  MAX_TOTAL_SCORE,
   type Domain,
-  type Level,
   type Tier,
 } from "@/lib/constants";
 import { getStrengths, getGrowthAreas } from "@/lib/scoring";
-import ScoreRing from "@/components/ScoreRing";
-import LevelChip from "@/components/LevelChip";
-import DomainCard from "@/components/DomainCard";
 import LogoutButton from "./LogoutButton";
 
 export default async function ResultsPage() {
@@ -45,14 +39,6 @@ export default async function ResultsPage() {
     ChooseWell: assessment.chooseWellScore ?? 0,
   };
 
-  const domainLevels: Record<Domain, Level> = {
-    KnowMe: (assessment.knowMeLevel as Level) ?? "Emerging",
-    ManageMe: (assessment.manageMeLevel as Level) ?? "Emerging",
-    UnderstandOthers: (assessment.understandOthersLevel as Level) ?? "Emerging",
-    WorkWithOthers: (assessment.workWithOthersLevel as Level) ?? "Emerging",
-    ChooseWell: (assessment.chooseWellLevel as Level) ?? "Emerging",
-  };
-
   const strengths = getStrengths(domainScores);
   const growthAreas = getGrowthAreas(domainScores);
   const strengthMessages = isJunior ? JUNIOR_STRENGTH_MESSAGES : STRENGTH_MESSAGES;
@@ -74,32 +60,6 @@ export default async function ResultsPage() {
               ? "Look at what you can do!"
               : "Here are your MeQ results. You should feel proud!"}
           </p>
-        </div>
-
-        {/* Overall Score */}
-        <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-8 text-center mb-6">
-          <ScoreRing
-            score={assessment.totalScore ?? 0}
-            maxScore={MAX_TOTAL_SCORE[tier]}
-          />
-          <div className="mt-4">
-            <LevelChip
-              level={(assessment.overallLevel as Level) ?? "Emerging"}
-            />
-          </div>
-        </div>
-
-        {/* Domain Scores */}
-        <div className="grid gap-4 mb-6">
-          {DOMAINS.map((domain) => (
-            <DomainCard
-              key={domain}
-              domain={domain}
-              score={domainScores[domain]}
-              level={domainLevels[domain]}
-              tier={tier}
-            />
-          ))}
         </div>
 
         {/* Strengths */}

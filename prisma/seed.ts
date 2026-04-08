@@ -282,7 +282,7 @@ async function main() {
 
   // Year groups for demo school
   const yearGroups = [
-    { name: "Reception", sortOrder: 0, tier: "junior" },
+    { name: "FS2", sortOrder: 0, tier: "junior" },
     { name: "Year 1", sortOrder: 1, tier: "junior" },
     { name: "Year 2", sortOrder: 2, tier: "junior" },
     { name: "Year 3", sortOrder: 3, tier: "standard" },

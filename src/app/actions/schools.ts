@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { hashSync } from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { sendAdminWelcomeEmail } from "@/lib/email";
 
 export async function createSchool(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
@@ -37,7 +38,7 @@ export async function createSchool(formData: FormData) {
 
   // Create default year groups for new school
   const defaultYearGroups = [
-    { name: "Reception", sortOrder: 0, tier: "junior" },
+    { name: "FS2", sortOrder: 0, tier: "junior" },
     { name: "Year 1", sortOrder: 1, tier: "junior" },
     { name: "Year 2", sortOrder: 2, tier: "junior" },
     { name: "Year 3", sortOrder: 3, tier: "standard" },
@@ -51,6 +52,8 @@ export async function createSchool(formData: FormData) {
       data: { ...yg, schoolId: school.id },
     });
   }
+
+  await sendAdminWelcomeEmail({ email: adminEmail, schoolName: name });
 
   revalidatePath("/super");
   return { success: true, schoolId: school.id };

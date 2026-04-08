@@ -83,7 +83,7 @@ export default function AddSchoolPage() {
         </button>
 
         <p className="text-xs text-gray-500">
-          Default year groups (Reception - Year 6) will be created automatically.
+          Default year groups (FS2 - Year 6) will be created automatically.
         </p>
       </form>
     </div>

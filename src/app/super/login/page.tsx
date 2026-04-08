@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { loginSuperAdmin } from "@/app/actions/super-auth";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 function SubmitButton() {
@@ -46,6 +47,9 @@ export default function SuperLoginPage() {
             </div>
             {state?.error && <p className="text-sm text-red-400 text-center">{state.error}</p>}
             <SubmitButton />
+            <p className="text-center">
+              <Link href="/super/forgot-password" className="text-xs text-gray-500 hover:text-gray-400">Forgot password?</Link>
+            </p>
           </div>
         </form>
       </div>

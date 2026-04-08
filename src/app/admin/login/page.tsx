@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { loginAdmin } from "@/app/actions/admin-auth";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 function SubmitButton() {
@@ -77,6 +78,9 @@ export default function AdminLoginPage() {
             )}
 
             <SubmitButton />
+            <p className="text-center">
+              <Link href="/admin/forgot-password" className="text-xs text-gray-400 hover:text-gray-600">Forgot password?</Link>
+            </p>
           </div>
         </form>
       </div>

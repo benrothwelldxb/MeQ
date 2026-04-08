@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashSync } from "bcryptjs";
 import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { sendTeacherWelcomeEmail } from "@/lib/email";
 
 export async function createTeacher(formData: FormData) {
   const session = await getAdminSession();
@@ -23,6 +24,8 @@ export async function createTeacher(formData: FormData) {
   const existing = await prisma.teacher.findUnique({ where: { email } });
   if (existing) return { error: "A teacher with this email already exists." };
 
+  const school = await prisma.school.findUnique({ where: { id: session.schoolId }, select: { name: true } });
+
   await prisma.teacher.create({
     data: {
       firstName,
@@ -34,6 +37,13 @@ export async function createTeacher(formData: FormData) {
         ? { connect: classGroupIds.map((id) => ({ id })) }
         : undefined,
     },
+  });
+
+  await sendTeacherWelcomeEmail({
+    email,
+    firstName,
+    password,
+    schoolName: school?.name ?? "your school",
   });
 
   revalidatePath("/admin/teachers");

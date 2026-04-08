@@ -105,6 +105,7 @@ model Student {
   classGroupId       String?
   classGroupRef      ClassGroup?         @relation(fields: [classGroupId], references: [id])
   tier               String              @default("standard")
+  sen                Boolean             @default(false)
   schoolUuid         String?
   schoolId           String
   school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -199,6 +200,18 @@ model TeacherAssessment {
   createdAt             DateTime  @default(now())
 
   @@unique([teacherId, studentId, term, academicYear])
+}
+
+// ============ PASSWORD RESET ============
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  email     String
+  userType  String    // "admin" | "teacher" | "super"
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 // ============ INTERVENTIONS ============
