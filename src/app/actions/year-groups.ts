@@ -19,8 +19,26 @@ export async function createYearGroup(formData: FormData) {
 }
 
 export async function deleteYearGroup(id: string) {
-  await prisma.yearGroup.delete({ where: { id } });
-  revalidatePath("/admin/settings");
+  try {
+    // Unlink students from this year group before deleting
+    await prisma.student.updateMany({
+      where: { yearGroupId: id },
+      data: { yearGroupId: null },
+    });
+    // Classes cascade-delete via schema, but unlink students from those classes too
+    const classes = await prisma.classGroup.findMany({ where: { yearGroupId: id } });
+    if (classes.length > 0) {
+      await prisma.student.updateMany({
+        where: { classGroupId: { in: classes.map((c) => c.id) } },
+        data: { classGroupId: null },
+      });
+    }
+    await prisma.yearGroup.delete({ where: { id } });
+    revalidatePath("/admin/settings");
+    return { success: true };
+  } catch {
+    return { error: "Could not delete year group." };
+  }
 }
 
 export async function getYearGroups() {

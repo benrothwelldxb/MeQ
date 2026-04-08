@@ -39,7 +39,8 @@ export default function YearGroupsPage() {
 
   const handleDeleteYearGroup = async (id: string) => {
     if (!confirm("Delete this year group and all its classes?")) return;
-    await deleteYearGroup(id);
+    const result = await deleteYearGroup(id);
+    if (result?.error) alert(result.error);
     loadData();
   };
 
