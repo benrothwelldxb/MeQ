@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
+import { TERM_LABELS } from "@/lib/school";
 import { notFound } from "next/navigation";
-import { DOMAINS, DOMAIN_LABELS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
+import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";
 import DomainCard from "@/components/DomainCard";
 import Link from "next/link";
@@ -114,6 +115,77 @@ export default async function AdminResultDetailPage({
           />
         ))}
       </div>
+
+      {/* Term Comparison */}
+      {await (async () => {
+        const allAssessments = await prisma.assessment.findMany({
+          where: { studentId: assessment.studentId, status: "completed" },
+          orderBy: [{ academicYear: "asc" }, { term: "asc" }],
+        });
+
+        if (allAssessments.length <= 1) return null;
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <h2 className="font-bold text-gray-900 mb-4">Progress Over Time</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Term</th>
+                    {DOMAINS.map((d) => (
+                      <th key={d} className={`text-center px-2 py-2 text-xs font-semibold ${DOMAIN_COLORS[d].text}`}>
+                        {DOMAIN_LABELS[d]}
+                      </th>
+                    ))}
+                    <th className="text-center px-3 py-2 text-xs font-semibold text-gray-500">Overall</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {allAssessments.map((a, i) => {
+                    const prev = i > 0 ? allAssessments[i - 1] : null;
+                    return (
+                      <tr key={a.id} className={a.id === assessment.id ? "bg-meq-sky-light/30" : ""}>
+                        <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                          {TERM_LABELS[a.term] || a.term} {a.academicYear}
+                          {a.id === assessment.id && <span className="text-xs text-meq-sky ml-1">(current)</span>}
+                        </td>
+                        {DOMAINS.map((domain) => {
+                          const scoreKey = `${domain.charAt(0).toLowerCase()}${domain.slice(1)}Score` as keyof typeof a;
+                          const score = (a[scoreKey] as number | null) ?? 0;
+                          const prevScore = prev ? ((prev[scoreKey] as number | null) ?? 0) : null;
+                          const diff = prevScore !== null ? score - prevScore : null;
+                          return (
+                            <td key={domain} className="text-center px-2 py-2 text-sm">
+                              {score}
+                              {diff !== null && diff !== 0 && (
+                                <span className={`text-xs ml-1 ${diff > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                  {diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1)}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="text-center px-3 py-2 text-sm font-medium">
+                          {a.totalScore ?? 0}
+                          {prev && prev.totalScore !== null && a.totalScore !== null && (
+                            <span className={`text-xs ml-1 ${
+                              (a.totalScore - (prev.totalScore ?? 0)) > 0 ? "text-emerald-600" : (a.totalScore - (prev.totalScore ?? 0)) < 0 ? "text-red-500" : ""
+                            }`}>
+                              {(a.totalScore - (prev.totalScore ?? 0)) > 0 ? "+" : ""}
+                              {(a.totalScore - (prev.totalScore ?? 0)).toFixed(1)}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Individual Answers */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

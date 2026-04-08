@@ -25,6 +25,7 @@ export default async function SuperAdminLayout({
           </div>
           <div className="flex items-center gap-4">
             <Link href="/super" className="text-sm text-gray-400 hover:text-white">Schools</Link>
+            <Link href="/super/settings" className="text-sm text-gray-400 hover:text-white">Settings</Link>
             <form action={logoutSuperAdmin}>
               <button type="submit" className="text-sm text-gray-400 hover:text-white">Sign Out</button>
             </form>

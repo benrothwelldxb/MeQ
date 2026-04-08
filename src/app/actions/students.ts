@@ -303,6 +303,37 @@ export async function updateStudent(studentId: string, formData: FormData) {
   return { success: true };
 }
 
+export async function bulkDeleteStudents(studentIds: string[]) {
+  if (studentIds.length === 0) return { error: "No students selected." };
+
+  await prisma.teacherAssessment.deleteMany({ where: { studentId: { in: studentIds } } });
+  await prisma.assessment.deleteMany({ where: { studentId: { in: studentIds } } });
+  await prisma.student.deleteMany({ where: { id: { in: studentIds } } });
+
+  revalidatePath("/admin/students");
+  revalidatePath("/admin");
+  return { success: true, count: studentIds.length };
+}
+
+export async function bulkReassignClass(studentIds: string[], classGroupId: string) {
+  if (studentIds.length === 0) return { error: "No students selected." };
+
+  const classGroup = classGroupId
+    ? await prisma.classGroup.findUnique({ where: { id: classGroupId }, include: { yearGroup: true } })
+    : null;
+
+  await prisma.student.updateMany({
+    where: { id: { in: studentIds } },
+    data: {
+      classGroupId: classGroup?.id || null,
+      className: classGroup?.name || null,
+    },
+  });
+
+  revalidatePath("/admin/students");
+  return { success: true, count: studentIds.length };
+}
+
 export async function resetAssessment(assessmentId: string) {
   await prisma.assessment.delete({ where: { id: assessmentId } });
   revalidatePath("/admin/students");

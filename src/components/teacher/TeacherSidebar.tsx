@@ -10,6 +10,7 @@ export default function TeacherSidebar({ teacherName }: { teacherName: string })
 
   const navItems = [
     { href: "/teacher", label: "My Classes" },
+    { href: "/teacher/settings", label: "Settings" },
   ];
 
   return (

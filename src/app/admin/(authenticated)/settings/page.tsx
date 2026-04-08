@@ -2,7 +2,9 @@ import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { getAdminSession } from "@/lib/session";
 import { updateSchoolSettings } from "@/app/actions/settings";
 import { getYearGroups } from "@/app/actions/year-groups";
+import { changeAdminPassword } from "@/app/actions/change-password";
 import SettingsForm from "@/components/admin/SettingsForm";
+import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -67,6 +69,12 @@ export default async function SettingsPage() {
             <p className="text-sm text-gray-500">No year groups set up yet.</p>
           )}
         </div>
+      </div>
+
+      {/* Change Password */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 className="font-bold text-gray-900 mb-4">Change Password</h2>
+        <ChangePasswordForm action={changeAdminPassword} />
       </div>
 
       {/* Quick Links */}
