@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
-import { DOMAIN_LABELS, type Domain } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
