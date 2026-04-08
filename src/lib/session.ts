@@ -12,6 +12,7 @@ export interface AdminSessionData {
   adminId: string;
   schoolId: string;
   email: string;
+  pendingEmail?: string;
 }
 
 export interface TeacherSessionData {

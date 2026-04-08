@@ -34,17 +34,13 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-meq-cloud p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Image src="/meq-logo.png" alt="MeQ" width={80} height={80} className="rounded-2xl mb-4" />
+          <Image src="/meq-logo.png" alt="MeQ" width={80} height={80} className="rounded-2xl mb-4 mx-auto" />
           <h1 className="text-3xl font-bold text-meq-slate mb-2">
             Welcome to MeQ
           </h1>
           <p className="text-lg text-gray-500">
             Type your special code to begin!
           </p>
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
-            <span>by</span>
-            <Image src="/wasil-logo-grey.png" alt="Wasil" width={60} height={20} className="opacity-50" />
-          </div>
         </div>
 
         <form action={formAction}>
@@ -77,6 +73,11 @@ export default function LoginPage() {
             <SubmitButton disabled={code.length !== 8} />
           </div>
         </form>
+
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
+          <span>by</span>
+          <Image src="/wasil-logo-grey.png" alt="Wasil" width={60} height={20} className="opacity-50" />
+        </div>
 
         <p className="text-center text-sm text-gray-400 mt-6">
           Ask your teacher if you need help finding your code.

@@ -17,17 +17,20 @@ export async function createSchool(formData: FormData) {
   const existingSlug = await prisma.school.findUnique({ where: { slug } });
   if (existingSlug) return { error: "A school with this slug already exists." };
 
-  const existingEmail = await prisma.admin.findUnique({ where: { email: adminEmail } });
-  if (existingEmail) return { error: "An admin with this email already exists." };
-
   const school = await prisma.school.create({
     data: { name, slug },
   });
 
+  // If this email already exists as an admin elsewhere, reuse their password hash
+  const existingAdmin = await prisma.admin.findFirst({ where: { email: adminEmail } });
+  const passwordHash = existingAdmin
+    ? existingAdmin.passwordHash
+    : hashSync(adminPassword, 10);
+
   await prisma.admin.create({
     data: {
       email: adminEmail,
-      passwordHash: hashSync(adminPassword, 10),
+      passwordHash,
       schoolId: school.id,
     },
   });

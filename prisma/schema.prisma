@@ -38,11 +38,13 @@ model School {
 
 model Admin {
   id           String   @id @default(cuid())
-  email        String   @unique
+  email        String
   passwordHash String
   schoolId     String
   school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
+
+  @@unique([email, schoolId])
 }
 
 model Teacher {

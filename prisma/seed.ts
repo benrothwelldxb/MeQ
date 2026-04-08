@@ -222,7 +222,7 @@ async function main() {
 
   // Create school admin
   await prisma.admin.upsert({
-    where: { email: "admin@demo-school.local" },
+    where: { email_schoolId: { email: "admin@demo-school.local", schoolId: school.id } },
     update: {},
     create: {
       email: "admin@demo-school.local",
