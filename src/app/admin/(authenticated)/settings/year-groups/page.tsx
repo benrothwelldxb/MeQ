@@ -46,7 +46,15 @@ export default function YearGroupsPage() {
   const handleAddClass = async (formData: FormData) => {
     const result = await createClassGroup(formData);
     if (result.error) alert(result.error);
-    else loadData();
+    else {
+      // Clear and refocus the input
+      const form = document.querySelector(`form[data-yg="${formData.get("yearGroupId")}"]`) as HTMLFormElement;
+      if (form) {
+        const input = form.querySelector('input[name="name"]') as HTMLInputElement;
+        if (input) { input.value = ""; input.focus(); }
+      }
+      loadData();
+    }
   };
 
   const handleDeleteClass = async (id: string) => {
@@ -106,7 +114,7 @@ export default function YearGroupsPage() {
             </div>
 
             {/* Add Class */}
-            <form action={handleAddClass} className="flex gap-2 ml-4">
+            <form action={handleAddClass} data-yg={yg.id} className="flex gap-2 ml-4">
               <input type="hidden" name="yearGroupId" value={yg.id} />
               <input name="name" placeholder="e.g. 3A" required className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm focus:border-meq-sky focus:outline-none" />
               <button type="submit" className="px-3 py-1.5 rounded-lg text-xs font-bold text-meq-sky bg-meq-sky-light hover:bg-blue-100">Add Class</button>
