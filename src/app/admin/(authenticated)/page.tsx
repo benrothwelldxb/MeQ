@@ -1,19 +1,22 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import StatCard from "@/components/admin/StatCard";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
+  const session = await getAdminSession();
+
   const [totalStudents, totalCompleted, assessments] = await Promise.all([
-    prisma.student.count(),
-    prisma.assessment.count({ where: { status: "completed" } }),
+    prisma.student.count({ where: { schoolId: session.schoolId } }),
+    prisma.assessment.count({ where: { status: "completed", student: { schoolId: session.schoolId } } }),
     prisma.assessment.findMany({
-      where: { status: "completed", totalScore: { not: null } },
+      where: { status: "completed", totalScore: { not: null }, student: { schoolId: session.schoolId } },
       select: { totalScore: true },
     }),
   ]);
 
   const inProgress = await prisma.assessment.count({
-    where: { status: "in_progress" },
+    where: { status: "in_progress", student: { schoolId: session.schoolId } },
   });
 
   const avgScore =

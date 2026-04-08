@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import PrintButton from "./PrintButton";
 
@@ -7,7 +8,9 @@ export default async function PrintCodesPage({
 }: {
   searchParams: { yearGroup?: string; className?: string };
 }) {
-  const where: Record<string, unknown> = {};
+  const session = await getAdminSession();
+
+  const where: Record<string, unknown> = { schoolId: session.schoolId };
   if (searchParams.yearGroup) where.yearGroup = searchParams.yearGroup;
   if (searchParams.className) where.className = searchParams.className;
 
@@ -26,6 +29,7 @@ export default async function PrintCodesPage({
 
   // Get filter options
   const allStudents = await prisma.student.findMany({
+    where: { schoolId: session.schoolId },
     select: { yearGroup: true, className: true },
     distinct: ["yearGroup", "className"],
     orderBy: { yearGroup: "asc" },

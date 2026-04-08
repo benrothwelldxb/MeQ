@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { type Level } from "@/lib/constants";
 import { notFound } from "next/navigation";
@@ -11,7 +12,8 @@ export default async function SLTYearGroupPage({
 }: {
   params: { yearGroupId: string };
 }) {
-  const school = await getSchoolSettings();
+  const session = await getAdminSession();
+  const school = await getSchoolSettings(session.schoolId);
 
   const yearGroup = await prisma.yearGroup.findUnique({
     where: { id: params.yearGroupId },

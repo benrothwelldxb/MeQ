@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { createTeacher } from "@/app/actions/teachers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function AddTeacherPage() {
+  const session = await getAdminSession();
+
   const yearGroups = await prisma.yearGroup.findMany({
+    where: { schoolId: session.schoolId },
     orderBy: { sortOrder: "asc" },
     include: { classes: { orderBy: { name: "asc" } } },
   });

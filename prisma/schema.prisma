@@ -7,12 +7,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============ AUTH ============
+// ============ SUPER ADMIN (platform owner) ============
+
+model SuperAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// ============ SCHOOL ============
+
+model School {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique // URL-friendly identifier
+  currentTerm  String   @default("term1")
+  academicYear String   @default("2025-2026")
+  isActive     Boolean  @default(true)
+  admins       Admin[]
+  teachers     Teacher[]
+  yearGroups   YearGroup[]
+  classGroups  ClassGroup[]
+  students     Student[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============ SCHOOL AUTH ============
 
 model Admin {
   id           String   @id @default(cuid())
-  username     String   @unique
+  email        String   @unique
   passwordHash String
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
 }
 
@@ -22,6 +51,8 @@ model Teacher {
   lastName           String
   email              String              @unique
   passwordHash       String
+  schoolId           String
+  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classes            ClassGroup[]
   teacherAssessments TeacherAssessment[]
   createdAt          DateTime            @default(now())
@@ -29,23 +60,18 @@ model Teacher {
 
 // ============ SCHOOL STRUCTURE ============
 
-model School {
-  id           String   @id @default(cuid())
-  name         String   @default("My School")
-  currentTerm  String   @default("term1") // term1 | term2 | term3
-  academicYear String   @default("2025-2026")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
 model YearGroup {
   id        String       @id @default(cuid())
-  name      String       @unique
+  name      String
   sortOrder Int          @default(0)
-  tier      String       @default("standard") // junior | standard
+  tier      String       @default("standard")
+  schoolId  String
+  school    School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classes   ClassGroup[]
   students  Student[]
   createdAt DateTime     @default(now())
+
+  @@unique([schoolId, name])
 }
 
 model ClassGroup {
@@ -53,6 +79,8 @@ model ClassGroup {
   name        String
   yearGroupId String
   yearGroup   YearGroup @relation(fields: [yearGroupId], references: [id], onDelete: Cascade)
+  schoolId    String
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   students    Student[]
   teachers    Teacher[]
   createdAt   DateTime  @default(now())
@@ -68,14 +96,16 @@ model Student {
   firstName          String
   lastName           String
   displayName        String?
-  yearGroup          String // kept for backward compat
-  className          String? // kept for backward compat
+  yearGroup          String
+  className          String?
   yearGroupId        String?
   yearGroupRef       YearGroup?          @relation(fields: [yearGroupId], references: [id])
   classGroupId       String?
   classGroupRef      ClassGroup?         @relation(fields: [classGroupId], references: [id])
   tier               String              @default("standard")
-  schoolUuid         String? // optional school ID number
+  schoolUuid         String?
+  schoolId           String
+  school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt          DateTime            @default(now())
   assessments        Assessment[]
   teacherAssessments TeacherAssessment[]
@@ -106,7 +136,7 @@ model Assessment {
   studentId             String
   student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   tier                  String    @default("standard")
-  term                  String    @default("term1") // term1 | term2 | term3
+  term                  String    @default("term1")
   academicYear          String    @default("2025-2026")
   status                String    @default("in_progress")
   answers               String    @default("{}")
@@ -149,7 +179,7 @@ model TeacherAssessment {
   teacher               Teacher   @relation(fields: [teacherId], references: [id])
   studentId             String
   student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  term                  String    // term1 | term2 | term3
+  term                  String
   academicYear          String    @default("2025-2026")
   status                String    @default("in_progress")
   answers               String    @default("{}")
@@ -173,14 +203,15 @@ model TeacherAssessment {
 
 model Intervention {
   id          String   @id @default(cuid())
-  domain      String // KnowMe | ManageMe | UnderstandOthers | WorkWithOthers | ChooseWell
-  level       String // Emerging | Developing | Secure | Advanced
-  tier        String   @default("standard") // junior | standard
-  audience    String // student | teacher
+  domain      String
+  level       String
+  tier        String   @default("standard")
+  audience    String
   title       String
   description String
   sortOrder   Int      @default(0)
   isDefault   Boolean  @default(true)
+  schoolId    String?  // null = system default, set = school custom
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -10,13 +10,20 @@ export interface StudentSessionData {
 
 export interface AdminSessionData {
   adminId: string;
-  username: string;
+  schoolId: string;
+  email: string;
 }
 
 export interface TeacherSessionData {
   teacherId: string;
+  schoolId: string;
   email: string;
   firstName: string;
+}
+
+export interface SuperAdminSessionData {
+  superAdminId: string;
+  email: string;
 }
 
 const sessionOptions = {
@@ -39,6 +46,11 @@ const teacherSessionOptions = {
   cookieName: "meq-teacher-session",
 };
 
+const superAdminSessionOptions = {
+  ...sessionOptions,
+  cookieName: "meq-super-session",
+};
+
 export async function getStudentSession(): Promise<IronSession<StudentSessionData>> {
   const cookieStore = await cookies();
   return getIronSession<StudentSessionData>(cookieStore, sessionOptions);
@@ -52,4 +64,9 @@ export async function getAdminSession(): Promise<IronSession<AdminSessionData>> 
 export async function getTeacherSession(): Promise<IronSession<TeacherSessionData>> {
   const cookieStore = await cookies();
   return getIronSession<TeacherSessionData>(cookieStore, teacherSessionOptions);
+}
+
+export async function getSuperAdminSession(): Promise<IronSession<SuperAdminSessionData>> {
+  const cookieStore = await cookies();
+  return getIronSession<SuperAdminSessionData>(cookieStore, superAdminSessionOptions);
 }

@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
-import { adminLoginSchema } from "@/lib/validation";
 import { compareSync } from "bcryptjs";
 import { redirect } from "next/navigation";
 
@@ -10,26 +9,30 @@ export async function loginAdmin(
   _prevState: { error?: string } | null,
   formData: FormData
 ) {
-  const parsed = adminLoginSchema.safeParse({
-    username: formData.get("username"),
-    password: formData.get("password"),
-  });
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const password = formData.get("password") as string;
 
-  if (!parsed.success) {
-    return { error: "Please enter username and password." };
+  if (!email || !password) {
+    return { error: "Please enter email and password." };
   }
 
   const admin = await prisma.admin.findUnique({
-    where: { username: parsed.data.username },
+    where: { email },
+    include: { school: true },
   });
 
-  if (!admin || !compareSync(parsed.data.password, admin.passwordHash)) {
-    return { error: "Invalid username or password." };
+  if (!admin || !compareSync(password, admin.passwordHash)) {
+    return { error: "Invalid email or password." };
+  }
+
+  if (!admin.school.isActive) {
+    return { error: "This school account is not currently active." };
   }
 
   const session = await getAdminSession();
   session.adminId = admin.id;
-  session.username = admin.username;
+  session.schoolId = admin.schoolId;
+  session.email = admin.email;
   await session.save();
 
   redirect("/admin");

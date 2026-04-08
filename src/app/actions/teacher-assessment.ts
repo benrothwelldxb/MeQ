@@ -12,7 +12,7 @@ export async function saveTeacherAnswers(
   const session = await getTeacherSession();
   if (!session.teacherId) return { error: "Not logged in" };
 
-  const school = await getSchoolSettings();
+  const school = await getSchoolSettings(session.schoolId);
   const { currentTerm, academicYear } = school;
 
   await prisma.teacherAssessment.upsert({
@@ -43,7 +43,7 @@ export async function submitTeacherAssessments(classGroupId: string) {
   const session = await getTeacherSession();
   if (!session.teacherId) return { error: "Not logged in" };
 
-  const school = await getSchoolSettings();
+  const school = await getSchoolSettings(session.schoolId);
   const { currentTerm, academicYear } = school;
 
   const questions = await prisma.teacherQuestion.findMany({

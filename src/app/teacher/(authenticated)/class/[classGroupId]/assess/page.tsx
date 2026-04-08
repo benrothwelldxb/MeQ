@@ -10,7 +10,7 @@ export default async function AssessClassPage({
   params: { classGroupId: string };
 }) {
   const session = await getTeacherSession();
-  const school = await getSchoolSettings();
+  const school = await getSchoolSettings(session.schoolId);
 
   const classGroup = await prisma.classGroup.findUnique({
     where: { id: params.classGroupId },

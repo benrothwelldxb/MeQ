@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import { deleteTeacher } from "@/app/actions/teachers";
 
 export default async function TeachersPage() {
+  const session = await getAdminSession();
+
   const teachers = await prisma.teacher.findMany({
+    where: { schoolId: session.schoolId },
     orderBy: { lastName: "asc" },
     include: {
       classes: { include: { yearGroup: true } },

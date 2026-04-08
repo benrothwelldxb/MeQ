@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default async function TeacherDashboard() {
   const session = await getTeacherSession();
-  const school = await getSchoolSettings();
+  const school = await getSchoolSettings(session.schoolId);
 
   const teacher = await prisma.teacher.findUnique({
     where: { id: session.teacherId },

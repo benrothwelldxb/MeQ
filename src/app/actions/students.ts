@@ -3,10 +3,12 @@
 import { prisma } from "@/lib/db";
 import { generateLoginCode } from "@/lib/codes";
 import { getTierFromYearGroup } from "@/lib/constants";
+import { getAdminSession } from "@/lib/session";
 import { parse } from "csv-parse/sync";
 import { revalidatePath } from "next/cache";
 
 export async function uploadStudentsCSV(formData: FormData) {
+  const session = await getAdminSession();
   const file = formData.get("file") as File;
   if (!file || file.size === 0) {
     return { error: "Please select a CSV file." };
@@ -51,6 +53,7 @@ export async function uploadStudentsCSV(formData: FormData) {
     className: string | null;
     loginCode: string;
     tier: string;
+    schoolId: string;
   }> = [];
 
   const errors: string[] = [];
@@ -81,7 +84,7 @@ export async function uploadStudentsCSV(formData: FormData) {
 
     existingCodes.add(loginCode);
     const tier = getTierFromYearGroup(yearGroup);
-    students.push({ firstName, lastName, yearGroup, className, loginCode, tier });
+    students.push({ firstName, lastName, yearGroup, className, loginCode, tier, schoolId: session.schoolId });
   }
 
   if (students.length === 0) {
@@ -117,6 +120,7 @@ export async function deleteStudent(studentId: string) {
 }
 
 export async function addStudent(formData: FormData) {
+  const session = await getAdminSession();
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
   const yearGroupId = formData.get("yearGroupId") as string;
@@ -163,6 +167,7 @@ export async function addStudent(formData: FormData) {
       tier: yearGroup.tier,
       schoolUuid,
       loginCode,
+      schoolId: session.schoolId,
     },
   });
 

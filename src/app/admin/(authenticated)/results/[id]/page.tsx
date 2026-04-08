@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { notFound } from "next/navigation";
 import { DOMAINS, DOMAIN_LABELS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";
@@ -10,8 +11,10 @@ export default async function AdminResultDetailPage({
 }: {
   params: { id: string };
 }) {
-  const assessment = await prisma.assessment.findUnique({
-    where: { id: params.id },
+  const session = await getAdminSession();
+
+  const assessment = await prisma.assessment.findFirst({
+    where: { id: params.id, student: { schoolId: session.schoolId } },
     include: { student: true },
   });
 

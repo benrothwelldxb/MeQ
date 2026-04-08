@@ -1,10 +1,14 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import DeleteStudentButton from "./DeleteStudentButton";
 import ResetAssessmentButton from "./ResetAssessmentButton";
 
 export default async function StudentsPage() {
+  const session = await getAdminSession();
+
   const students = await prisma.student.findMany({
+    where: { schoolId: session.schoolId },
     orderBy: [{ yearGroup: "asc" }, { lastName: "asc" }],
     include: {
       assessments: {

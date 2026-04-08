@@ -1,12 +1,8 @@
 import { prisma } from "./db";
 
-export async function getSchoolSettings() {
-  let school = await prisma.school.findFirst();
-  if (!school) {
-    school = await prisma.school.create({
-      data: { name: "My School" },
-    });
-  }
+export async function getSchoolSettings(schoolId: string) {
+  const school = await prisma.school.findUnique({ where: { id: schoolId } });
+  if (!school) throw new Error("School not found");
   return school;
 }
 

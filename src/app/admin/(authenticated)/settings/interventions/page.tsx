@@ -1,9 +1,18 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { DOMAINS, DOMAIN_LABELS, LEVELS, type Domain } from "@/lib/constants";
 import Link from "next/link";
 
 export default async function InterventionsPage() {
+  const session = await getAdminSession();
+
   const interventions = await prisma.intervention.findMany({
+    where: {
+      OR: [
+        { schoolId: session.schoolId },
+        { isDefault: true, schoolId: null },
+      ],
+    },
     orderBy: [{ domain: "asc" }, { level: "asc" }, { audience: "asc" }, { sortOrder: "asc" }],
   });
 

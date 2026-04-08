@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { notFound, redirect } from "next/navigation";
 import { updateStudent } from "@/app/actions/students";
 import Link from "next/link";
@@ -8,10 +9,13 @@ export default async function EditStudentPage({
 }: {
   params: { id: string };
 }) {
+  const session = await getAdminSession();
+
   const student = await prisma.student.findUnique({ where: { id: params.id } });
   if (!student) return notFound();
 
   const yearGroups = await prisma.yearGroup.findMany({
+    where: { schoolId: session.schoolId },
     orderBy: { sortOrder: "asc" },
     include: { classes: { orderBy: { name: "asc" } } },
   });

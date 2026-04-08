@@ -1,9 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function createIntervention(formData: FormData) {
+  const session = await getAdminSession();
   const domain = formData.get("domain") as string;
   const level = formData.get("level") as string;
   const tier = (formData.get("tier") as string) || "standard";
@@ -16,7 +18,7 @@ export async function createIntervention(formData: FormData) {
   }
 
   await prisma.intervention.create({
-    data: { domain, level, tier, audience, title, description, isDefault: false },
+    data: { domain, level, tier, audience, title, description, isDefault: false, schoolId: session.schoolId },
   });
 
   revalidatePath("/admin/settings/interventions");

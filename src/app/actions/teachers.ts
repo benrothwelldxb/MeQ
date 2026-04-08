@@ -2,9 +2,11 @@
 
 import { prisma } from "@/lib/db";
 import { hashSync } from "bcryptjs";
+import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function createTeacher(formData: FormData) {
+  const session = await getAdminSession();
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
@@ -27,6 +29,7 @@ export async function createTeacher(formData: FormData) {
       lastName,
       email,
       passwordHash: hashSync(password, 10),
+      schoolId: session.schoolId,
       classes: classGroupIds.length > 0
         ? { connect: classGroupIds.map((id) => ({ id })) }
         : undefined,

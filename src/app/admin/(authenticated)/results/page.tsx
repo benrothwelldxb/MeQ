@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import LevelChip from "@/components/LevelChip";
 import { MAX_TOTAL_SCORE, type Level, type Tier } from "@/lib/constants";
@@ -10,7 +11,8 @@ export default async function AdminResultsPage({
 }: {
   searchParams: { yearGroup?: string; className?: string; term?: string; level?: string };
 }) {
-  const school = await getSchoolSettings();
+  const session = await getAdminSession();
+  const school = await getSchoolSettings(session.schoolId);
 
   // Build filter
   const where: Record<string, unknown> = { status: "completed" };
@@ -22,16 +24,14 @@ export default async function AdminResultsPage({
     where.overallLevel = searchParams.level;
   }
 
-  const studentWhere: Record<string, unknown> = {};
+  const studentWhere: Record<string, unknown> = { schoolId: session.schoolId };
   if (searchParams.yearGroup) studentWhere.yearGroup = searchParams.yearGroup;
   if (searchParams.className) studentWhere.className = searchParams.className;
 
   const assessments = await prisma.assessment.findMany({
     where: {
       ...where,
-      ...(Object.keys(studentWhere).length > 0
-        ? { student: studentWhere }
-        : {}),
+      student: studentWhere,
     },
     include: { student: true },
     orderBy: { completedAt: "desc" },
@@ -39,6 +39,7 @@ export default async function AdminResultsPage({
 
   // Get unique values for filter dropdowns
   const allStudents = await prisma.student.findMany({
+    where: { schoolId: session.schoolId },
     select: { yearGroup: true, className: true },
     distinct: ["yearGroup", "className"],
     orderBy: { yearGroup: "asc" },

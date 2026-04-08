@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { type Level } from "@/lib/constants";
 import StatCard from "@/components/admin/StatCard";
@@ -6,9 +7,11 @@ import LevelChip from "@/components/LevelChip";
 import Link from "next/link";
 
 export default async function SLTDashboard() {
-  const school = await getSchoolSettings();
+  const session = await getAdminSession();
+  const school = await getSchoolSettings(session.schoolId);
 
   const yearGroups = await prisma.yearGroup.findMany({
+    where: { schoolId: session.schoolId },
     orderBy: { sortOrder: "asc" },
     include: {
       students: {

@@ -25,8 +25,8 @@ export async function loginStudent(
     return { error: "We couldn't find that code. Please check and try again." };
   }
 
-  // Get current term from school settings
-  const school = await getSchoolSettings();
+  // Get current term from student's school settings
+  const school = await getSchoolSettings(student.schoolId);
   const { currentTerm, academicYear } = school;
 
   // Check for existing assessment for this term

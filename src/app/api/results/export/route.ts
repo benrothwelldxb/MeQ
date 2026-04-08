@@ -20,6 +20,7 @@ export async function GET(request: Request) {
       status: "completed",
       ...(term ? { term } : {}),
       ...(academicYear ? { academicYear } : {}),
+      student: { schoolId: session.schoolId },
     },
     include: { student: true },
     orderBy: [{ student: { yearGroup: "asc" } }, { student: { lastName: "asc" } }],

@@ -196,16 +196,41 @@ const juniorQuestions: QuestionData[] = [
 const allQuestions = [...standardQuestions, ...juniorQuestions];
 
 async function main() {
-  // Create default admin
-  await prisma.admin.upsert({
-    where: { username: "admin" },
+  // Create super admin (platform owner)
+  await prisma.superAdmin.upsert({
+    where: { email: "ben@wasil.org" },
     update: {},
     create: {
-      username: "admin",
-      passwordHash: hashSync("meq-admin-2026", 10),
+      email: "ben@wasil.org",
+      passwordHash: hashSync("meq-super-2026", 10),
     },
   });
-  console.log("Admin user created (admin / meq-admin-2026)");
+  console.log("Super admin created (ben@wasil.org / meq-super-2026)");
+
+  // Create default school
+  const school = await prisma.school.upsert({
+    where: { slug: "demo-school" },
+    update: {},
+    create: {
+      name: "Demo School",
+      slug: "demo-school",
+      currentTerm: "term1",
+      academicYear: "2025-2026",
+    },
+  });
+  console.log(`School created: ${school.name} (${school.slug})`);
+
+  // Create school admin
+  await prisma.admin.upsert({
+    where: { email: "admin@demo-school.local" },
+    update: {},
+    create: {
+      email: "admin@demo-school.local",
+      passwordHash: hashSync("meq-admin-2026", 10),
+      schoolId: school.id,
+    },
+  });
+  console.log("School admin created (admin@demo-school.local / meq-admin-2026)");
 
   // Create questions (upsert by tier+orderIndex compound key)
   for (const q of allQuestions) {
@@ -232,6 +257,7 @@ async function main() {
       yearGroup: "Year 5",
       className: "5A",
       tier: "standard",
+      schoolId: school.id,
     },
   });
   console.log("Test student created (code: TESTAB23, standard tier)");
@@ -247,22 +273,14 @@ async function main() {
       yearGroup: "Year 1",
       className: "1B",
       tier: "junior",
+      schoolId: school.id,
     },
   });
   console.log("Test student created (code: JNRAB234, junior tier)");
 
   // ============ PHASE 2: SCHOOL STRUCTURE ============
 
-  // School settings
-  const schools = await prisma.school.findMany();
-  if (schools.length === 0) {
-    await prisma.school.create({
-      data: { name: "My School", currentTerm: "term1", academicYear: "2025-2026" },
-    });
-  }
-  console.log("School settings created");
-
-  // Year groups
+  // Year groups for demo school
   const yearGroups = [
     { name: "Reception", sortOrder: 0, tier: "junior" },
     { name: "Year 1", sortOrder: 1, tier: "junior" },
@@ -274,9 +292,9 @@ async function main() {
   ];
   for (const yg of yearGroups) {
     await prisma.yearGroup.upsert({
-      where: { name: yg.name },
+      where: { schoolId_name: { schoolId: school.id, name: yg.name } },
       update: yg,
-      create: yg,
+      create: { ...yg, schoolId: school.id },
     });
   }
   console.log(`Seeded ${yearGroups.length} year groups`);

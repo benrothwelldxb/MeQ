@@ -1,12 +1,14 @@
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
+import { getAdminSession } from "@/lib/session";
 import { updateSchoolSettings } from "@/app/actions/settings";
 import { getYearGroups } from "@/app/actions/year-groups";
 import SettingsForm from "@/components/admin/SettingsForm";
 import Link from "next/link";
 
 export default async function SettingsPage() {
-  const school = await getSchoolSettings();
-  const yearGroups = await getYearGroups();
+  const session = await getAdminSession();
+  const school = await getSchoolSettings(session.schoolId);
+  const yearGroups = await getYearGroups(session.schoolId);
 
   return (
     <div className="max-w-3xl">

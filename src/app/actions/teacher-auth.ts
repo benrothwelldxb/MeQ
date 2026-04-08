@@ -29,6 +29,7 @@ export async function loginTeacher(
 
   const session = await getTeacherSession();
   session.teacherId = teacher.id;
+  session.schoolId = teacher.schoolId;
   session.email = teacher.email;
   session.firstName = teacher.firstName;
   await session.save();
