@@ -1,6 +1,7 @@
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { updateSchoolSettings } from "@/app/actions/settings";
 import { getYearGroups } from "@/app/actions/year-groups";
+import SettingsForm from "@/components/admin/SettingsForm";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -14,7 +15,7 @@ export default async function SettingsPage() {
       {/* School Settings */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-4">School Settings</h2>
-        <form action={updateSchoolSettings} className="space-y-4">
+        <SettingsForm action={updateSchoolSettings}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">School Name</label>
             <input name="name" defaultValue={school.name} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
@@ -33,10 +34,7 @@ export default async function SettingsPage() {
               <input name="academicYear" defaultValue={school.academicYear} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
             </div>
           </div>
-          <button type="submit" className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all">
-            Save Settings
-          </button>
-        </form>
+        </SettingsForm>
       </div>
 
       {/* Year Groups & Classes */}
