@@ -3,6 +3,7 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { loginStudent } from "./actions/auth";
 import { useState } from "react";
+import Image from "next/image";
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
@@ -33,7 +34,7 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-meq-cloud p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-meq-sky text-white text-3xl font-extrabold mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-meq-slate text-white text-3xl font-extrabold mb-4">
             MeQ
           </div>
           <h1 className="text-3xl font-bold text-meq-slate mb-2">
@@ -42,6 +43,10 @@ export default function LoginPage() {
           <p className="text-lg text-gray-500">
             Type your special code to begin!
           </p>
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
+            <span>by</span>
+            <Image src="/wasil-logo-grey.png" alt="Wasil" width={60} height={20} className="opacity-50" />
+          </div>
         </div>
 
         <form action={formAction}>

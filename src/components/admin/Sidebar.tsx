@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logoutAdmin } from "@/app/actions/admin-auth";
 
@@ -92,7 +93,10 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
+      <div className="p-4 border-t border-gray-100 space-y-3">
+        <div className="flex items-center justify-center px-3 py-1">
+          <Image src="/wasil-logo-grey.png" alt="Wasil" width={70} height={24} className="opacity-40" />
+        </div>
         <form action={logoutAdmin}>
           <button
             type="submit"

@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { loginAdmin } from "@/app/actions/admin-auth";
+import Image from "next/image";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -27,6 +28,10 @@ export default function AdminLoginPage() {
             MeQ
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
+            <span>by</span>
+            <Image src="/wasil-logo-grey.png" alt="Wasil" width={60} height={20} className="opacity-50" />
+          </div>
         </div>
 
         <form action={formAction}>

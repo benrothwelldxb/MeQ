@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { loginTeacher } from "@/app/actions/teacher-auth";
+import Image from "next/image";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -23,10 +24,14 @@ export default function TeacherLoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-meq-sky text-white text-xl font-extrabold mb-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-meq-slate text-white text-xl font-extrabold mb-3">
             MeQ
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Teacher Login</h1>
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
+            <span>by</span>
+            <Image src="/wasil-logo-grey.png" alt="Wasil" width={60} height={20} className="opacity-50" />
+          </div>
         </div>
 
         <form action={formAction}>
