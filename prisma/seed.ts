@@ -250,6 +250,304 @@ async function main() {
     },
   });
   console.log("Test student created (code: JNRAB234, junior tier)");
+
+  // ============ PHASE 2: SCHOOL STRUCTURE ============
+
+  // School settings
+  const schools = await prisma.school.findMany();
+  if (schools.length === 0) {
+    await prisma.school.create({
+      data: { name: "My School", currentTerm: "term1", academicYear: "2025-2026" },
+    });
+  }
+  console.log("School settings created");
+
+  // Year groups
+  const yearGroups = [
+    { name: "Reception", sortOrder: 0, tier: "junior" },
+    { name: "Year 1", sortOrder: 1, tier: "junior" },
+    { name: "Year 2", sortOrder: 2, tier: "junior" },
+    { name: "Year 3", sortOrder: 3, tier: "standard" },
+    { name: "Year 4", sortOrder: 4, tier: "standard" },
+    { name: "Year 5", sortOrder: 5, tier: "standard" },
+    { name: "Year 6", sortOrder: 6, tier: "standard" },
+  ];
+  for (const yg of yearGroups) {
+    await prisma.yearGroup.upsert({
+      where: { name: yg.name },
+      update: yg,
+      create: yg,
+    });
+  }
+  console.log(`Seeded ${yearGroups.length} year groups`);
+
+  // ============ PHASE 2: TEACHER QUESTIONS ============
+
+  const TEACHER_OPTIONS = JSON.stringify([
+    { label: "Rarely or not yet", value: 1 },
+    { label: "Sometimes", value: 2 },
+    { label: "Often", value: 3 },
+    { label: "Consistently", value: 4 },
+  ]);
+  const TEACHER_SCORE_MAP = JSON.stringify({ "1": 1, "2": 2, "3": 3, "4": 4 });
+
+  const teacherQuestions = [
+    { orderIndex: 1, prompt: "This student can identify and name their emotions.", domain: "KnowMe", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 2, prompt: "This student shows awareness of their strengths and areas for development.", domain: "KnowMe", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 3, prompt: "This student manages frustration and anger appropriately.", domain: "ManageMe", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 4, prompt: "This student perseveres when tasks are challenging.", domain: "ManageMe", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 5, prompt: "This student shows empathy towards peers.", domain: "UnderstandOthers", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 6, prompt: "This student recognises when others are upset or need support.", domain: "UnderstandOthers", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 7, prompt: "This student collaborates effectively in group work.", domain: "WorkWithOthers", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 8, prompt: "This student resolves conflicts with peers constructively.", domain: "WorkWithOthers", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 9, prompt: "This student considers consequences before acting.", domain: "ChooseWell", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+    { orderIndex: 10, prompt: "This student takes responsibility for their actions.", domain: "ChooseWell", answerOptions: TEACHER_OPTIONS, scoreMap: TEACHER_SCORE_MAP, weight: 1.0 },
+  ];
+  for (const tq of teacherQuestions) {
+    await prisma.teacherQuestion.upsert({
+      where: { orderIndex: tq.orderIndex },
+      update: tq,
+      create: tq,
+    });
+  }
+  console.log(`Seeded ${teacherQuestions.length} teacher questions`);
+
+  // ============ PHASE 2: DEFAULT INTERVENTIONS ============
+
+  // Clear existing defaults before reseeding
+  await prisma.intervention.deleteMany({ where: { isDefault: true } });
+
+  const domains = ["KnowMe", "ManageMe", "UnderstandOthers", "WorkWithOthers", "ChooseWell"];
+  const levels = ["Emerging", "Developing", "Secure", "Advanced"];
+
+  // Student-facing interventions (standard tier)
+  const studentInterventions: Record<string, Record<string, { title: string; desc: string }[]>> = {
+    KnowMe: {
+      Emerging: [
+        { title: "Feelings check-in", desc: "Try naming one feeling each morning — happy, sad, worried, or excited." },
+        { title: "Feelings faces", desc: "Use a feelings chart to point to how you feel each day." },
+      ],
+      Developing: [
+        { title: "Feelings diary", desc: "Write or draw one thing that made you feel a strong emotion today." },
+        { title: "Body clues", desc: "Notice where in your body you feel emotions — does your tummy feel tight when you're nervous?" },
+      ],
+      Secure: [
+        { title: "Emotion explorer", desc: "Try to spot the difference between similar feelings, like frustrated vs angry." },
+        { title: "Triggers tracker", desc: "Think about what situations make you feel certain ways and why." },
+      ],
+      Advanced: [
+        { title: "Emotion mentor", desc: "Help a friend name how they're feeling when they're not sure." },
+        { title: "Reflection journal", desc: "Write about a time your emotions surprised you and what you learned." },
+      ],
+    },
+    ManageMe: {
+      Emerging: [
+        { title: "Breathing buddy", desc: "Put a toy on your tummy and watch it rise and fall as you breathe slowly." },
+        { title: "Counting calm", desc: "Count slowly to 10 before reacting when you feel upset." },
+      ],
+      Developing: [
+        { title: "Calm corner", desc: "Find a quiet spot and use a calm-down strategy when emotions feel big." },
+        { title: "Stop-Think-Act", desc: "Before you react, stop, think about what could happen, then choose what to do." },
+      ],
+      Secure: [
+        { title: "Bounce back plan", desc: "When things go wrong, make a plan: what happened, what can I do next time?" },
+        { title: "Goal setting", desc: "Set a small goal for the week and track how you keep going when it gets hard." },
+      ],
+      Advanced: [
+        { title: "Stress toolkit", desc: "Build your own toolkit of 3-4 strategies that work best for you." },
+        { title: "Coaching others", desc: "Share your calming strategies with a friend who is struggling." },
+      ],
+    },
+    UnderstandOthers: {
+      Emerging: [
+        { title: "Face reading", desc: "Look at people's faces and try to guess if they are happy, sad, or worried." },
+        { title: "Kindness moment", desc: "Do one kind thing for someone each day, even something small like smiling." },
+      ],
+      Developing: [
+        { title: "Perspective swap", desc: "When someone is upset, try thinking: how would I feel if that happened to me?" },
+        { title: "Active listening", desc: "When a friend talks, look at them, nod, and ask a question about what they said." },
+      ],
+      Secure: [
+        { title: "Empathy detective", desc: "Notice when someone might be hiding their feelings and gently check in." },
+        { title: "Difference spotter", desc: "Think about how different people might feel differently about the same thing." },
+      ],
+      Advanced: [
+        { title: "Peer supporter", desc: "Be someone others come to when they need to talk — listen without judging." },
+        { title: "Community helper", desc: "Think about how you can help people beyond your friend group." },
+      ],
+    },
+    WorkWithOthers: {
+      Emerging: [
+        { title: "Turn-taking practice", desc: "Play a game where you must wait for your turn before acting." },
+        { title: "Sharing challenge", desc: "Choose one thing to share with someone each day." },
+      ],
+      Developing: [
+        { title: "Idea collector", desc: "In group work, ask everyone to share their idea before deciding." },
+        { title: "Compromise finder", desc: "When you disagree, find something you can both agree on." },
+      ],
+      Secure: [
+        { title: "Team builder", desc: "Notice who hasn't spoken in a group and invite them to share." },
+        { title: "Conflict resolver", desc: "When friends argue, help them talk about it calmly." },
+      ],
+      Advanced: [
+        { title: "Leadership practice", desc: "Take turns being the group leader and letting others lead." },
+        { title: "Feedback giver", desc: "Practise giving kind, honest feedback to help your team improve." },
+      ],
+    },
+    ChooseWell: {
+      Emerging: [
+        { title: "Good choice / tricky choice", desc: "Before you act, ask yourself: is this a good choice or a tricky choice?" },
+        { title: "Ask for help", desc: "When you're not sure what to do, ask a grown-up or friend for advice." },
+      ],
+      Developing: [
+        { title: "Consequence thinking", desc: "Before you choose, think: what could happen next if I do this?" },
+        { title: "Saying sorry", desc: "Practise saying sorry and meaning it when you make a mistake." },
+      ],
+      Secure: [
+        { title: "Values check", desc: "Think about what matters to you — fairness, kindness, honesty — and let that guide your choices." },
+        { title: "Role model spotting", desc: "Notice people who make good choices and think about what you can learn from them." },
+      ],
+      Advanced: [
+        { title: "Ethical dilemmas", desc: "Discuss tricky situations where there's no easy answer and practise thinking them through." },
+        { title: "Decision mentor", desc: "Help younger students think through their choices." },
+      ],
+    },
+  };
+
+  // Teacher-facing interventions (standard tier)
+  const teacherInterventions: Record<string, Record<string, { title: string; desc: string }[]>> = {
+    KnowMe: {
+      Emerging: [
+        { title: "Daily feelings check-in", desc: "Use a visual feelings chart at registration. Ask students to identify their emotion and share one reason why." },
+        { title: "Emotion vocabulary building", desc: "Introduce 2-3 new emotion words per week through stories, role-play, and discussion." },
+      ],
+      Developing: [
+        { title: "Feelings journal", desc: "Provide structured journal prompts: 'Today I felt... because...' Twice weekly, 5 minutes." },
+        { title: "Body mapping", desc: "Draw body outlines and colour where different emotions are felt. Builds somatic awareness." },
+      ],
+      Secure: [
+        { title: "Emotion spectrum discussions", desc: "Explore nuanced emotions (e.g., difference between frustrated, annoyed, furious) in PSHE lessons." },
+        { title: "Trigger analysis", desc: "Help students map their emotional triggers using a simple cause-effect template." },
+      ],
+      Advanced: [
+        { title: "Peer mentoring", desc: "Pair with younger students to help them identify and discuss their feelings." },
+        { title: "Self-reflection projects", desc: "Extended writing or art projects exploring personal emotional growth over time." },
+      ],
+    },
+    ManageMe: {
+      Emerging: [
+        { title: "Calm corner setup", desc: "Establish a calm corner with sensory tools (fidgets, breathing cards, timer). Explicitly teach when and how to use it." },
+        { title: "Breathing exercises", desc: "Teach 3 breathing techniques (square breathing, balloon breath, 5-finger breathing). Practise daily." },
+      ],
+      Developing: [
+        { title: "Zones of Regulation", desc: "Implement Zones framework to help students identify their regulation state and choose appropriate strategies." },
+        { title: "Growth mindset activities", desc: "Use 'yet' language and celebrate effort over outcome. Display learning pit visuals." },
+      ],
+      Secure: [
+        { title: "Self-regulation toolkit", desc: "Students create personal toolkits of strategies that work for them. Review termly." },
+        { title: "Goal setting and review", desc: "Teach SMART goal setting. Weekly check-ins on progress with reflection on setbacks." },
+      ],
+      Advanced: [
+        { title: "Metacognition training", desc: "Teach students to plan, monitor, and evaluate their own emotional regulation strategies." },
+        { title: "Resilience challenges", desc: "Set structured challenges that build perseverance with guided reflection after." },
+      ],
+    },
+    UnderstandOthers: {
+      Emerging: [
+        { title: "Emotion photo cards", desc: "Use photo cards showing different facial expressions. Practise identifying and discussing what the person might feel." },
+        { title: "Kindness jar", desc: "Class kindness jar — when acts of empathy are noticed, add a token. Celebrate milestones together." },
+      ],
+      Developing: [
+        { title: "Perspective-taking stories", desc: "Read stories and pause to ask: 'How do you think [character] feels? Why?' before revealing outcomes." },
+        { title: "Active listening skills", desc: "Explicitly teach and practise: eye contact, nodding, reflecting back, asking follow-up questions." },
+      ],
+      Secure: [
+        { title: "Empathy role-play", desc: "Use drama and role-play to explore different perspectives in conflict situations." },
+        { title: "Community circle", desc: "Regular circle time where students share experiences and practise responding empathetically." },
+      ],
+      Advanced: [
+        { title: "Social action projects", desc: "Lead projects that benefit others — connecting empathy understanding to real-world action." },
+        { title: "Cross-age buddying", desc: "Pair with younger classes for reading buddies or play leaders, developing responsive empathy." },
+      ],
+    },
+    WorkWithOthers: {
+      Emerging: [
+        { title: "Structured pair work", desc: "Start with paired tasks with clear roles (talker/listener) before progressing to group work." },
+        { title: "Turn-taking games", desc: "Use structured games that require explicit turn-taking. Reflect on how it felt to wait." },
+      ],
+      Developing: [
+        { title: "Group role cards", desc: "Assign roles in group work (timekeeper, scribe, encourager, presenter). Rotate each session." },
+        { title: "Conflict resolution scripts", desc: "Teach and display steps: 1) I feel... 2) When you... 3) I would like... 4) Let's agree..." },
+      ],
+      Secure: [
+        { title: "Collaborative challenges", desc: "Set group tasks that require genuine interdependence — no one can complete it alone." },
+        { title: "Peer mediation", desc: "Train students as peer mediators to help resolve playground or classroom disputes." },
+      ],
+      Advanced: [
+        { title: "Team leadership rotation", desc: "Structured leadership opportunities where students plan, delegate, and reflect on team dynamics." },
+        { title: "Feedback culture", desc: "Teach giving and receiving constructive feedback using 'Two stars and a wish' or similar frameworks." },
+      ],
+    },
+    ChooseWell: {
+      Emerging: [
+        { title: "Choice consequence cards", desc: "Visual cards showing choices and their consequences. Sort into 'good choice' and 'tricky choice' piles." },
+        { title: "Rule reminders", desc: "Co-create class rules with students. Refer back to them when making choices. 'Which rule helps us here?'" },
+      ],
+      Developing: [
+        { title: "Decision tree", desc: "Teach a simple decision-making framework: What are my options? What might happen? Which feels right?" },
+        { title: "Restorative conversations", desc: "When things go wrong, use restorative questions: What happened? Who was affected? How can we fix it?" },
+      ],
+      Secure: [
+        { title: "Ethical dilemma discussions", desc: "Present age-appropriate dilemmas in PSHE. No right answer — focus on reasoning and values." },
+        { title: "Responsibility roles", desc: "Give meaningful class responsibilities. Reflect on what it means to be relied upon." },
+      ],
+      Advanced: [
+        { title: "Values-based leadership", desc: "Students identify personal values and connect them to real choices they face. Build a values action plan." },
+        { title: "Peer coaching", desc: "Train students to coach younger peers through decision-making using guided questioning." },
+      ],
+    },
+  };
+
+  let interventionCount = 0;
+  for (const domain of domains) {
+    for (const level of levels) {
+      // Student-facing (standard)
+      const studentItems = studentInterventions[domain]?.[level] || [];
+      for (let i = 0; i < studentItems.length; i++) {
+        await prisma.intervention.create({
+          data: {
+            domain,
+            level,
+            tier: "standard",
+            audience: "student",
+            title: studentItems[i].title,
+            description: studentItems[i].desc,
+            sortOrder: i,
+            isDefault: true,
+          },
+        });
+        interventionCount++;
+      }
+      // Teacher-facing (standard)
+      const teacherItems = teacherInterventions[domain]?.[level] || [];
+      for (let i = 0; i < teacherItems.length; i++) {
+        await prisma.intervention.create({
+          data: {
+            domain,
+            level,
+            tier: "standard",
+            audience: "teacher",
+            title: teacherItems[i].title,
+            description: teacherItems[i].desc,
+            sortOrder: i,
+            isDefault: true,
+          },
+        });
+        interventionCount++;
+      }
+    }
+  }
+  console.log(`Seeded ${interventionCount} default interventions`);
 }
 
 main()

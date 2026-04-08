@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============ AUTH ============
+
 model Admin {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -14,22 +16,76 @@ model Admin {
   createdAt    DateTime @default(now())
 }
 
-model Student {
-  id          String       @id @default(cuid())
-  loginCode   String       @unique
-  firstName   String
-  lastName    String
-  displayName String?
-  yearGroup   String
-  className   String?
-  tier        String       @default("standard") // junior | standard
-  createdAt   DateTime     @default(now())
-  assessments Assessment[]
+model Teacher {
+  id                 String              @id @default(cuid())
+  firstName          String
+  lastName           String
+  email              String              @unique
+  passwordHash       String
+  classes            ClassGroup[]
+  teacherAssessments TeacherAssessment[]
+  createdAt          DateTime            @default(now())
 }
+
+// ============ SCHOOL STRUCTURE ============
+
+model School {
+  id           String   @id @default(cuid())
+  name         String   @default("My School")
+  currentTerm  String   @default("term1") // term1 | term2 | term3
+  academicYear String   @default("2025-2026")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model YearGroup {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  sortOrder Int          @default(0)
+  tier      String       @default("standard") // junior | standard
+  classes   ClassGroup[]
+  students  Student[]
+  createdAt DateTime     @default(now())
+}
+
+model ClassGroup {
+  id          String    @id @default(cuid())
+  name        String
+  yearGroupId String
+  yearGroup   YearGroup @relation(fields: [yearGroupId], references: [id], onDelete: Cascade)
+  students    Student[]
+  teachers    Teacher[]
+  createdAt   DateTime  @default(now())
+
+  @@unique([yearGroupId, name])
+}
+
+// ============ STUDENTS ============
+
+model Student {
+  id                 String              @id @default(cuid())
+  loginCode          String              @unique
+  firstName          String
+  lastName           String
+  displayName        String?
+  yearGroup          String // kept for backward compat
+  className          String? // kept for backward compat
+  yearGroupId        String?
+  yearGroupRef       YearGroup?          @relation(fields: [yearGroupId], references: [id])
+  classGroupId       String?
+  classGroupRef      ClassGroup?         @relation(fields: [classGroupId], references: [id])
+  tier               String              @default("standard")
+  schoolUuid         String? // optional school ID number
+  createdAt          DateTime            @default(now())
+  assessments        Assessment[]
+  teacherAssessments TeacherAssessment[]
+}
+
+// ============ STUDENT QUESTIONS & ASSESSMENTS ============
 
 model Question {
   id             String  @id @default(cuid())
-  tier           String  @default("standard") // junior | standard
+  tier           String  @default("standard")
   orderIndex     Int
   prompt         String
   domain         String
@@ -49,7 +105,9 @@ model Assessment {
   id                    String    @id @default(cuid())
   studentId             String
   student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  tier                  String    @default("standard") // junior | standard
+  tier                  String    @default("standard")
+  term                  String    @default("term1") // term1 | term2 | term3
+  academicYear          String    @default("2025-2026")
   status                String    @default("in_progress")
   answers               String    @default("{}")
   totalScore            Float?
@@ -69,4 +127,60 @@ model Assessment {
   lastQuestionNum       Int       @default(0)
   startedAt             DateTime  @default(now())
   completedAt           DateTime?
+
+  @@unique([studentId, term, academicYear])
+}
+
+// ============ TEACHER QUESTIONS & ASSESSMENTS ============
+
+model TeacherQuestion {
+  id            String @id @default(cuid())
+  orderIndex    Int    @unique
+  prompt        String
+  domain        String
+  answerOptions String
+  scoreMap      String
+  weight        Float  @default(1.0)
+}
+
+model TeacherAssessment {
+  id                    String    @id @default(cuid())
+  teacherId             String
+  teacher               Teacher   @relation(fields: [teacherId], references: [id])
+  studentId             String
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  term                  String    // term1 | term2 | term3
+  academicYear          String    @default("2025-2026")
+  status                String    @default("in_progress")
+  answers               String    @default("{}")
+  knowMeScore           Float?
+  manageMeScore         Float?
+  understandOthersScore Float?
+  workWithOthersScore   Float?
+  chooseWellScore       Float?
+  knowMeLevel           String?
+  manageMeLevel         String?
+  understandOthersLevel String?
+  workWithOthersLevel   String?
+  chooseWellLevel       String?
+  completedAt           DateTime?
+  createdAt             DateTime  @default(now())
+
+  @@unique([teacherId, studentId, term, academicYear])
+}
+
+// ============ INTERVENTIONS ============
+
+model Intervention {
+  id          String   @id @default(cuid())
+  domain      String // KnowMe | ManageMe | UnderstandOthers | WorkWithOthers | ChooseWell
+  level       String // Emerging | Developing | Secure | Advanced
+  tier        String   @default("standard") // junior | standard
+  audience    String // student | teacher
+  title       String
+  description String
+  sortOrder   Int      @default(0)
+  isDefault   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

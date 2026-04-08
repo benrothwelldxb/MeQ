@@ -71,6 +71,76 @@ export const DOMAIN_DESCRIPTIONS_JUNIOR: Record<Domain, string> = {
   ChooseWell: "Making good choices",
 };
 
+// === CASEL ALIGNMENT ===
+
+export const CASEL_ALIGNMENT: Record<Domain, {
+  caselName: string;
+  caselDefinition: string;
+  caselSkills: string[];
+  meqAlignment: string;
+}> = {
+  KnowMe: {
+    caselName: "Self-Awareness",
+    caselDefinition: "The abilities to understand one's own emotions, thoughts, and values and how they influence behaviour across contexts. This includes recognising one's strengths and limitations with confidence and purpose.",
+    caselSkills: [
+      "Identifying one's emotions",
+      "Having a growth mindset",
+      "Demonstrating honesty and integrity",
+      "Experiencing self-efficacy",
+      "Developing interests and sense of purpose",
+    ],
+    meqAlignment: "Know Me measures how well a child can identify, name, and understand their own emotions. It captures the foundational CASEL skill of emotional self-awareness through age-appropriate self-report and scenario questions.",
+  },
+  ManageMe: {
+    caselName: "Self-Management",
+    caselDefinition: "The abilities to manage one's emotions, thoughts, and behaviours effectively in different situations and to achieve goals and aspirations. This includes delaying gratification, managing stress, and feeling agency.",
+    caselSkills: [
+      "Managing one's emotions",
+      "Identifying and using stress management strategies",
+      "Exhibiting self-discipline and self-motivation",
+      "Setting personal and collective goals",
+      "Showing courage to take initiative",
+    ],
+    meqAlignment: "Manage Me assesses a child's capacity to regulate emotions, persevere through difficulty, and exercise self-control. It directly maps to the CASEL competency of managing emotions and behaviours to achieve goals.",
+  },
+  UnderstandOthers: {
+    caselName: "Social Awareness",
+    caselDefinition: "The abilities to understand the perspectives of and empathise with others, including those from diverse backgrounds, cultures, and contexts. This includes recognising community resources and supports.",
+    caselSkills: [
+      "Taking others' perspectives",
+      "Demonstrating empathy and compassion",
+      "Showing concern for others' feelings",
+      "Recognising strengths in others",
+      "Understanding and expressing gratitude",
+    ],
+    meqAlignment: "Understand Others measures a child's ability to recognise emotions in others, show empathy, and consider different perspectives. It aligns with the CASEL competency of perspective-taking and compassion.",
+  },
+  WorkWithOthers: {
+    caselName: "Relationship Skills",
+    caselDefinition: "The abilities to establish and maintain healthy and supportive relationships and to effectively navigate settings with diverse individuals and groups. This includes clear communication and collaborative problem-solving.",
+    caselSkills: [
+      "Communicating effectively",
+      "Developing positive relationships",
+      "Practising teamwork and collaborative problem-solving",
+      "Resolving conflicts constructively",
+      "Seeking or offering support when needed",
+    ],
+    meqAlignment: "Work With Others assesses how well a child collaborates, communicates, and resolves conflicts with peers. It maps directly to the CASEL competency of building and maintaining healthy relationships.",
+  },
+  ChooseWell: {
+    caselName: "Responsible Decision-Making",
+    caselDefinition: "The abilities to make caring and constructive choices about personal behaviour and social interactions across diverse situations. This includes considering ethical standards and evaluating consequences.",
+    caselSkills: [
+      "Making reasoned judgments after analysing information",
+      "Anticipating and evaluating consequences of actions",
+      "Identifying solutions for personal and social problems",
+      "Reflecting on one's role in promoting well-being",
+      "Demonstrating curiosity and open-mindedness",
+    ],
+    meqAlignment: "Choose Well measures a child's ability to think before acting, consider consequences, and make responsible choices. It aligns with the CASEL competency of ethical, caring decision-making.",
+  },
+};
+
 export const DOMAIN_COLORS: Record<Domain, { bg: string; text: string; border: string }> = {
   KnowMe: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
   ManageMe: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },

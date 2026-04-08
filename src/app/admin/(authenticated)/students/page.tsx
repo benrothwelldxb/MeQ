@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import DeleteStudentButton from "./DeleteStudentButton";
+import ResetAssessmentButton from "./ResetAssessmentButton";
 
 export default async function StudentsPage() {
   const students = await prisma.student.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ yearGroup: "asc" }, { lastName: "asc" }],
     include: {
       assessments: {
-        select: { status: true },
-        take: 1,
+        select: { id: true, status: true, term: true },
         orderBy: { startedAt: "desc" },
       },
     },
@@ -21,12 +21,20 @@ export default async function StudentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-500 mt-1">{students.length} students</p>
         </div>
-        <Link
-          href="/admin/students/upload"
-          className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
-        >
-          Upload CSV
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/students/add"
+            className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
+          >
+            Add Student
+          </Link>
+          <Link
+            href="/admin/students/upload"
+            className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+          >
+            Upload CSV
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -34,28 +42,18 @@ export default async function StudentsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Year / Class
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Tier
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Login Code
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Year / Class</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tier</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Login Code</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {students.map((student) => {
-                const assessment = student.assessments[0];
-                const status = assessment?.status ?? "not_started";
+                const latestAssessment = student.assessments[0];
+                const status = latestAssessment?.status ?? "not_started";
                 return (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
@@ -98,8 +96,20 @@ export default async function StudentsPage() {
                           : "Not Started"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <DeleteStudentButton studentId={student.id} studentName={`${student.firstName} ${student.lastName}`} />
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3 justify-end">
+                        <Link href={`/admin/students/${student.id}/edit`} className="text-xs text-meq-sky hover:underline">
+                          Edit
+                        </Link>
+                        {latestAssessment && (
+                          <ResetAssessmentButton
+                            assessmentId={latestAssessment.id}
+                            studentName={`${student.firstName} ${student.lastName}`}
+                            term={latestAssessment.term}
+                          />
+                        )}
+                        <DeleteStudentButton studentId={student.id} studentName={`${student.firstName} ${student.lastName}`} />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -108,10 +118,9 @@ export default async function StudentsPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     No students yet.{" "}
-                    <Link href="/admin/students/upload" className="text-meq-sky hover:underline">
-                      Upload a CSV
-                    </Link>{" "}
-                    to get started.
+                    <Link href="/admin/students/add" className="text-meq-sky hover:underline">Add a student</Link>{" "}
+                    or{" "}
+                    <Link href="/admin/students/upload" className="text-meq-sky hover:underline">upload a CSV</Link>.
                   </td>
                 </tr>
               )}

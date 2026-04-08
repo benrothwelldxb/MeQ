@@ -115,3 +115,106 @@ export async function deleteStudent(studentId: string) {
   revalidatePath("/admin/students");
   revalidatePath("/admin");
 }
+
+export async function addStudent(formData: FormData) {
+  const firstName = (formData.get("firstName") as string)?.trim();
+  const lastName = (formData.get("lastName") as string)?.trim();
+  const yearGroupId = formData.get("yearGroupId") as string;
+  const classGroupId = (formData.get("classGroupId") as string) || null;
+  const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
+  let loginCode = (formData.get("loginCode") as string)?.trim().toUpperCase() || "";
+
+  if (!firstName || !lastName || !yearGroupId) {
+    return { error: "First name, last name, and year group are required." };
+  }
+
+  // Look up year group for tier and name
+  const yearGroup = await prisma.yearGroup.findUnique({ where: { id: yearGroupId } });
+  if (!yearGroup) return { error: "Year group not found." };
+
+  // Look up class group name if provided
+  let className: string | null = null;
+  if (classGroupId) {
+    const classGroup = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
+    className = classGroup?.name || null;
+  }
+
+  // Generate or validate login code
+  if (!loginCode) {
+    const existingCodes = new Set(
+      (await prisma.student.findMany({ select: { loginCode: true } })).map((s) => s.loginCode)
+    );
+    do {
+      loginCode = generateLoginCode();
+    } while (existingCodes.has(loginCode));
+  } else {
+    const existing = await prisma.student.findUnique({ where: { loginCode } });
+    if (existing) return { error: `Login code ${loginCode} is already in use.` };
+  }
+
+  const student = await prisma.student.create({
+    data: {
+      firstName,
+      lastName,
+      yearGroup: yearGroup.name,
+      className,
+      yearGroupId,
+      classGroupId,
+      tier: yearGroup.tier,
+      schoolUuid,
+      loginCode,
+    },
+  });
+
+  revalidatePath("/admin/students");
+  revalidatePath("/admin");
+
+  return { success: true, loginCode: student.loginCode, studentId: student.id };
+}
+
+export async function updateStudent(studentId: string, formData: FormData) {
+  const firstName = (formData.get("firstName") as string)?.trim();
+  const lastName = (formData.get("lastName") as string)?.trim();
+  const yearGroupId = formData.get("yearGroupId") as string;
+  const classGroupId = (formData.get("classGroupId") as string) || null;
+  const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
+  const displayName = (formData.get("displayName") as string)?.trim() || null;
+
+  if (!firstName || !lastName || !yearGroupId) {
+    return { error: "First name, last name, and year group are required." };
+  }
+
+  const yearGroup = await prisma.yearGroup.findUnique({ where: { id: yearGroupId } });
+  if (!yearGroup) return { error: "Year group not found." };
+
+  let className: string | null = null;
+  if (classGroupId) {
+    const classGroup = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
+    className = classGroup?.name || null;
+  }
+
+  await prisma.student.update({
+    where: { id: studentId },
+    data: {
+      firstName,
+      lastName,
+      displayName,
+      yearGroup: yearGroup.name,
+      className,
+      yearGroupId,
+      classGroupId,
+      tier: yearGroup.tier,
+      schoolUuid,
+    },
+  });
+
+  revalidatePath("/admin/students");
+  return { success: true };
+}
+
+export async function resetAssessment(assessmentId: string) {
+  await prisma.assessment.delete({ where: { id: assessmentId } });
+  revalidatePath("/admin/students");
+  revalidatePath("/admin/results");
+  return { success: true };
+}
