@@ -60,9 +60,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-meq-slate text-white flex items-center justify-center text-sm font-extrabold">
-            MeQ
-          </div>
+          <img src="/meq-logo.png" alt="MeQ" className="w-9 h-9 rounded-lg" />
           <div>
             <div className="font-bold text-gray-900 text-sm">MeQ Admin</div>
             <div className="text-xs text-gray-500">Assessment Manager</div>

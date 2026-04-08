@@ -24,9 +24,7 @@ export default function AdminLoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-meq-slate text-white text-xl font-extrabold mb-3">
-            MeQ
-          </div>
+          <Image src="/meq-logo.png" alt="MeQ" width={56} height={56} className="rounded-xl mb-3 mx-auto" />
           <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
           <div className="mt-2 flex items-center justify-center gap-1.5 text-gray-400 text-xs">
             <span>by</span>

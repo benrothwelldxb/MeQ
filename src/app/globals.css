@@ -38,3 +38,10 @@ input {
     text-wrap: balance;
   }
 }
+
+/* Print styles */
+@media print {
+  body { background: white !important; }
+  @page { margin: 1.5cm; }
+  .print\:hidden { display: none !important; }
+}

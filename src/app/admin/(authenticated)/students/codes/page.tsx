@@ -92,14 +92,6 @@ export default async function PrintCodesPage({
       {students.length === 0 && (
         <p className="text-center text-gray-500 py-12">No students found for the selected filters.</p>
       )}
-
-      {/* Print styles */}
-      <style jsx global>{`
-        @media print {
-          body { background: white !important; }
-          @page { margin: 1.5cm; }
-        }
-      `}</style>
     </div>
   );
 }
