@@ -28,7 +28,7 @@ export default function SuperForgotPasswordPage() {
         {state?.success ? (
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 text-center">
             <p className="text-white font-medium mb-2">Check your email</p>
-            <p className="text-sm text-gray-400">If an account exists, we've sent a reset link.</p>
+            <p className="text-sm text-gray-400">If an account exists, we&apos;ve sent a reset link.</p>
             <Link href="/super/login" className="block mt-4 text-sm text-meq-sky hover:underline">Back to login</Link>
           </div>
         ) : (

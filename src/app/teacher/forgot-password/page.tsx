@@ -34,7 +34,7 @@ export default function TeacherForgotPasswordPage() {
               </svg>
             </div>
             <p className="text-gray-700 font-medium mb-2">Check your email</p>
-            <p className="text-sm text-gray-500">If an account exists with that email, we've sent a password reset link.</p>
+            <p className="text-sm text-gray-500">If an account exists with that email, we&apos;ve sent a password reset link.</p>
             <Link href="/teacher/login" className="block mt-4 text-sm text-meq-sky hover:underline">Back to login</Link>
           </div>
         ) : (
