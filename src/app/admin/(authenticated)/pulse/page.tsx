@@ -71,6 +71,22 @@ export default async function AdminPulsePage() {
     weeks.push(w);
   }
 
+  // Load pulse questions for question text
+  const pulseQuestions = await prisma.pulseQuestion.findMany();
+  const pulseQuestionMap: Record<string, string> = {};
+  for (const pq of pulseQuestions) {
+    pulseQuestionMap[pq.domain] = pq.prompt;
+  }
+
+  // Tips per domain for low-scoring students
+  const domainTips: Record<string, string> = {
+    KnowMe: "Try a quiet check-in with this student. Ask them to name how they're feeling using a feelings chart or emoji cards.",
+    ManageMe: "This student may benefit from a calm-down strategy reminder — breathing exercises, a sensory break, or a visit to a safe space.",
+    UnderstandOthers: "Consider pairing this student with a buddy for group activities. Model empathy language: 'I can see that made you feel...'",
+    WorkWithOthers: "Try giving this student a specific role in group work. Praise collaborative moments and scaffold turn-taking.",
+    ChooseWell: "Help this student practise decision-making with simple choices. Use 'What would happen if...' scenarios during circle time.",
+  };
+
   // Identify flagged students — anyone who scored 1 or 2 on any domain this week
   const flagged: Array<{ student: typeof students[0]; domain: string; score: number }> = [];
   for (const check of thisWeekChecks) {
@@ -144,21 +160,33 @@ export default async function AdminPulsePage() {
       {flagged.length > 0 && (
         <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6">
           <h2 className="font-bold text-red-800 mb-3">Students Needing Attention</h2>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {flagged.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm">
-                <span className="font-medium text-red-900">
-                  {f.student.firstName} {f.student.lastName}
-                </span>
-                {f.student.sen && (
-                  <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>
+              <div key={i} className="bg-white/60 rounded-lg p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="font-semibold text-red-900">
+                    {f.student.firstName} {f.student.lastName}
+                  </span>
+                  {f.student.sen && (
+                    <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>
+                  )}
+                  <span className="text-xs text-red-400">
+                    {f.student.yearGroup}{f.student.className ? ` / ${f.student.className}` : ""}
+                  </span>
+                </div>
+                <p className="text-sm text-red-700 mb-1">
+                  <span className="font-medium">{DOMAIN_LABELS[f.domain as Domain] || f.domain}</span>
+                  {" — scored "}
+                  <span className="font-bold">{f.score}/5</span>
+                  {pulseQuestionMap[f.domain] && (
+                    <span className="text-red-500 italic"> &quot;{pulseQuestionMap[f.domain]}&quot;</span>
+                  )}
+                </p>
+                {domainTips[f.domain] && (
+                  <p className="text-xs text-red-600 bg-red-100/50 rounded px-3 py-2 mt-2">
+                    <span className="font-semibold">Tip:</span> {domainTips[f.domain]}
+                  </p>
                 )}
-                <span className="text-red-600">
-                  {DOMAIN_LABELS[f.domain as Domain] || f.domain}: scored {f.score}/5
-                </span>
-                <span className="text-red-400 text-xs">
-                  {f.student.yearGroup}{f.student.className ? ` / ${f.student.className}` : ""}
-                </span>
               </div>
             ))}
           </div>
