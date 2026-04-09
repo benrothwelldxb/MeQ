@@ -54,10 +54,11 @@ export async function submitQuiz() {
     orderBy: { orderIndex: "asc" },
   });
 
+  const reduced = assessment.isReduced;
   const answers = JSON.parse(assessment.answers) as Record<string, number>;
   const domainScores = calculateDomainScores(answers, questions);
   const totalScore = calculateTotalScore(domainScores);
-  const reliability = calculateReliability(answers, questions);
+  const reliability = reduced ? "Lite" : calculateReliability(answers, questions);
 
   await prisma.assessment.update({
     where: { id: assessment.id },
@@ -65,17 +66,17 @@ export async function submitQuiz() {
       status: "completed",
       completedAt: new Date(),
       totalScore,
-      overallLevel: getOverallLevel(totalScore, tier),
+      overallLevel: getOverallLevel(totalScore, tier, reduced),
       knowMeScore: domainScores.KnowMe,
       manageMeScore: domainScores.ManageMe,
       understandOthersScore: domainScores.UnderstandOthers,
       workWithOthersScore: domainScores.WorkWithOthers,
       chooseWellScore: domainScores.ChooseWell,
-      knowMeLevel: getLevel(domainScores.KnowMe, tier),
-      manageMeLevel: getLevel(domainScores.ManageMe, tier),
-      understandOthersLevel: getLevel(domainScores.UnderstandOthers, tier),
-      workWithOthersLevel: getLevel(domainScores.WorkWithOthers, tier),
-      chooseWellLevel: getLevel(domainScores.ChooseWell, tier),
+      knowMeLevel: getLevel(domainScores.KnowMe, tier, reduced),
+      manageMeLevel: getLevel(domainScores.ManageMe, tier, reduced),
+      understandOthersLevel: getLevel(domainScores.UnderstandOthers, tier, reduced),
+      workWithOthersLevel: getLevel(domainScores.WorkWithOthers, tier, reduced),
+      chooseWellLevel: getLevel(domainScores.ChooseWell, tier, reduced),
       reliabilityScore: reliability,
       rawResponseJson: JSON.stringify(answers),
     },

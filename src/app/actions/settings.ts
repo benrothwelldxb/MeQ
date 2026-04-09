@@ -12,9 +12,13 @@ export async function updateSchoolSettings(formData: FormData) {
   const currentTerm = (formData.get("currentTerm") as string) || school.currentTerm;
   const academicYear = (formData.get("academicYear") as string)?.trim() || school.academicYear;
 
+  const reducedQuestions = formData.get("reducedQuestions") === "on";
+  const pulseEnabled = formData.get("pulseEnabled") === "on";
+  const readAloudEnabled = formData.get("readAloudEnabled") === "on";
+
   await prisma.school.update({
     where: { id: school.id },
-    data: { name, currentTerm, academicYear },
+    data: { name, currentTerm, academicYear, reducedQuestions, pulseEnabled, readAloudEnabled },
   });
 
   revalidatePath("/admin");

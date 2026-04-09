@@ -4,6 +4,10 @@ import {
   JUNIOR_LEVEL_THRESHOLDS,
   OVERALL_LEVEL_THRESHOLDS,
   JUNIOR_OVERALL_LEVEL_THRESHOLDS,
+  REDUCED_LEVEL_THRESHOLDS,
+  REDUCED_JUNIOR_LEVEL_THRESHOLDS,
+  REDUCED_OVERALL_LEVEL_THRESHOLDS,
+  REDUCED_JUNIOR_OVERALL_LEVEL_THRESHOLDS,
   type Domain,
   type Level,
   type Tier,
@@ -21,16 +25,20 @@ interface QuestionData {
   scoreMap: string;
 }
 
-export function getLevel(score: number, tier: Tier = "standard"): Level {
-  const thresholds = tier === "junior" ? JUNIOR_LEVEL_THRESHOLDS : LEVEL_THRESHOLDS;
+export function getLevel(score: number, tier: Tier = "standard", reduced = false): Level {
+  const thresholds = reduced
+    ? (tier === "junior" ? REDUCED_JUNIOR_LEVEL_THRESHOLDS : REDUCED_LEVEL_THRESHOLDS)
+    : (tier === "junior" ? JUNIOR_LEVEL_THRESHOLDS : LEVEL_THRESHOLDS);
   for (const { level, min } of thresholds) {
     if (score >= min) return level;
   }
   return "Emerging";
 }
 
-export function getOverallLevel(totalScore: number, tier: Tier = "standard"): Level {
-  const thresholds = tier === "junior" ? JUNIOR_OVERALL_LEVEL_THRESHOLDS : OVERALL_LEVEL_THRESHOLDS;
+export function getOverallLevel(totalScore: number, tier: Tier = "standard", reduced = false): Level {
+  const thresholds = reduced
+    ? (tier === "junior" ? REDUCED_JUNIOR_OVERALL_LEVEL_THRESHOLDS : REDUCED_OVERALL_LEVEL_THRESHOLDS)
+    : (tier === "junior" ? JUNIOR_OVERALL_LEVEL_THRESHOLDS : OVERALL_LEVEL_THRESHOLDS);
   for (const { level, min } of thresholds) {
     if (totalScore >= min) return level;
   }

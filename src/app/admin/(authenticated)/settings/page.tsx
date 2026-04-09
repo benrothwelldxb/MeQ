@@ -38,6 +38,30 @@ export default async function SettingsPage() {
               <input name="academicYear" defaultValue={school.academicYear} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
             </div>
           </div>
+          <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">Assessment Options</h3>
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="reducedQuestions" name="reducedQuestions" defaultChecked={school.reducedQuestions} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+              <label htmlFor="reducedQuestions" className="text-sm text-gray-700">
+                <span className="font-medium">Reduced question mode</span>
+                <span className="text-gray-500 block text-xs">Junior: 10 questions, Standard: 20 questions (core only, no validation)</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="pulseEnabled" name="pulseEnabled" defaultChecked={school.pulseEnabled} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+              <label htmlFor="pulseEnabled" className="text-sm text-gray-700">
+                <span className="font-medium">Weekly Pulse check-in</span>
+                <span className="text-gray-500 block text-xs">5-question weekly wellbeing check for students</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="readAloudEnabled" name="readAloudEnabled" defaultChecked={school.readAloudEnabled} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+              <label htmlFor="readAloudEnabled" className="text-sm text-gray-700">
+                <span className="font-medium">Auto read-aloud</span>
+                <span className="text-gray-500 block text-xs">Automatically play audio for questions (when audio is available)</span>
+              </label>
+            </div>
+          </div>
         </SettingsForm>
       </div>
 

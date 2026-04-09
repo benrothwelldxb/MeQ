@@ -17,6 +17,11 @@ export const TOTAL_QUESTIONS: Record<Tier, number> = {
   standard: 40,
 };
 
+export const REDUCED_TOTAL_QUESTIONS: Record<Tier, number> = {
+  junior: 10,
+  standard: 20,
+};
+
 // Map year groups to tiers
 export function getTierFromYearGroup(yearGroup: string): Tier {
   const normalized = yearGroup.toLowerCase().trim();
@@ -196,6 +201,48 @@ export const MAX_DOMAIN_SCORE: Record<Tier, number> = {
 export const MAX_TOTAL_SCORE: Record<Tier, number> = {
   standard: 130,
   junior: 80,
+};
+
+// === REDUCED MODE ===
+// Standard reduced: 4 core questions per domain (weights ~1+1+1+1.5), max ~18 per domain
+// Junior reduced: 2 core questions per domain (weights 1+1), max 8 per domain
+
+export const REDUCED_LEVEL_THRESHOLDS: { level: Level; min: number }[] = [
+  { level: "Advanced", min: 14 },
+  { level: "Secure", min: 11 },
+  { level: "Developing", min: 7 },
+  { level: "Emerging", min: 0 },
+];
+
+export const REDUCED_JUNIOR_LEVEL_THRESHOLDS: { level: Level; min: number }[] = [
+  { level: "Advanced", min: 7 },
+  { level: "Secure", min: 5 },
+  { level: "Developing", min: 3 },
+  { level: "Emerging", min: 0 },
+];
+
+export const REDUCED_OVERALL_LEVEL_THRESHOLDS: { level: Level; min: number }[] = [
+  { level: "Advanced", min: 70 },
+  { level: "Secure", min: 55 },
+  { level: "Developing", min: 35 },
+  { level: "Emerging", min: 0 },
+];
+
+export const REDUCED_JUNIOR_OVERALL_LEVEL_THRESHOLDS: { level: Level; min: number }[] = [
+  { level: "Advanced", min: 35 },
+  { level: "Secure", min: 25 },
+  { level: "Developing", min: 15 },
+  { level: "Emerging", min: 0 },
+];
+
+export const MAX_DOMAIN_SCORE_REDUCED: Record<Tier, number> = {
+  standard: 18,
+  junior: 8,
+};
+
+export const MAX_TOTAL_SCORE_REDUCED: Record<Tier, number> = {
+  standard: 90,
+  junior: 40,
 };
 
 export const LEVEL_COLORS: Record<Level, { bg: string; text: string }> = {

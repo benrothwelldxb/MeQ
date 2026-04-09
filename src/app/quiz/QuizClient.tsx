@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import ProgressBar from "@/components/ProgressBar";
 import OptionCard from "@/components/OptionCard";
 import EmojiOptionCard from "@/components/EmojiOptionCard";
+import PlayAudioButton from "@/components/PlayAudioButton";
 import QuizNav from "@/components/QuizNav";
 import { saveAnswer, submitQuiz } from "@/app/actions/quiz";
 
@@ -11,6 +12,8 @@ interface QuestionData {
   orderIndex: number;
   prompt: string;
   domain: string;
+  audioUrl?: string;
+  symbolImageUrl?: string;
   answerOptions: { label: string; value: number; emoji?: string }[];
 }
 
@@ -20,12 +23,14 @@ export default function QuizClient({
   studentName,
   startQuestion,
   tier = "standard",
+  readAloudEnabled = false,
 }: {
   questions: QuestionData[];
   savedAnswers: Record<string, number>;
   studentName: string;
   startQuestion: number;
   tier?: string;
+  readAloudEnabled?: boolean;
 }) {
   const isJunior = tier === "junior";
   const [currentIndex, setCurrentIndex] = useState(
@@ -148,11 +153,29 @@ export default function QuizClient({
                 ? `${currentIndex + 1} of ${totalQuestions}`
                 : `Question ${currentIndex + 1}`}
             </span>
-            <h2 className={`font-bold text-meq-slate leading-relaxed ${
-              isJunior ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
-            }`}>
-              {question.prompt}
-            </h2>
+            {question.symbolImageUrl && (
+              <div className="mb-4">
+                <img
+                  src={question.symbolImageUrl}
+                  alt=""
+                  className="h-20 sm:h-24 mx-auto object-contain"
+                />
+              </div>
+            )}
+            <div className="flex items-start gap-3">
+              <h2 className={`font-bold text-meq-slate leading-relaxed flex-1 ${
+                isJunior ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl"
+              }`}>
+                {question.prompt}
+              </h2>
+              {question.audioUrl && (
+                <PlayAudioButton
+                  key={question.orderIndex}
+                  src={question.audioUrl}
+                  autoPlay={readAloudEnabled}
+                />
+              )}
+            </div>
           </div>
 
           {/* Options */}

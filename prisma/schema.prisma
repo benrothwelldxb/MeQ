@@ -24,7 +24,10 @@ model School {
   slug         String   @unique // URL-friendly identifier
   currentTerm  String   @default("term1")
   academicYear String   @default("2025-2026")
-  isActive     Boolean  @default(true)
+  isActive         Boolean  @default(true)
+  reducedQuestions Boolean  @default(false)
+  pulseEnabled     Boolean  @default(false)
+  readAloudEnabled Boolean  @default(false)
   admins       Admin[]
   teachers     Teacher[]
   yearGroups   YearGroup[]
@@ -112,6 +115,7 @@ model Student {
   createdAt          DateTime            @default(now())
   assessments        Assessment[]
   teacherAssessments TeacherAssessment[]
+  pulseChecks        PulseCheck[]
 }
 
 // ============ STUDENT QUESTIONS & ASSESSMENTS ============
@@ -129,6 +133,8 @@ model Question {
   weight         Float   @default(1.0)
   isValidation   Boolean @default(false)
   isTrap         Boolean @default(false)
+  audioUrl       String?
+  symbolImageUrl String?
   validationPair Int?
 
   @@unique([tier, orderIndex])
@@ -142,6 +148,7 @@ model Assessment {
   term                  String    @default("term1")
   academicYear          String    @default("2025-2026")
   status                String    @default("in_progress")
+  isReduced             Boolean   @default(false)
   answers               String    @default("{}")
   totalScore            Float?
   overallLevel          String?
@@ -200,6 +207,31 @@ model TeacherAssessment {
   createdAt             DateTime  @default(now())
 
   @@unique([teacherId, studentId, term, academicYear])
+}
+
+// ============ WEEKLY PULSE ============
+
+model PulseQuestion {
+  id         String  @id @default(cuid())
+  domain     String
+  prompt     String
+  tier       String  @default("standard")
+  emoji      String?
+  orderIndex Int
+
+  @@unique([tier, domain])
+}
+
+model PulseCheck {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  weekOf      DateTime
+  answers     String    @default("{}") // JSON: { "KnowMe": 3, ... }
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([studentId, weekOf])
 }
 
 // ============ PASSWORD RESET ============

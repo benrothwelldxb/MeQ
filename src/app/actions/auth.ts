@@ -6,6 +6,15 @@ import { getSchoolSettings } from "@/lib/school";
 import { loginCodeSchema } from "@/lib/validation";
 import { redirect } from "next/navigation";
 
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export async function loginStudent(
   _prevState: { error?: string } | null,
   formData: FormData
@@ -55,6 +64,7 @@ export async function loginStudent(
         tier: student.tier,
         term: currentTerm,
         academicYear,
+        isReduced: school.reducedQuestions,
       },
     });
   }
@@ -65,6 +75,17 @@ export async function loginStudent(
   session.firstName = student.displayName || student.firstName;
   session.tier = student.tier;
   await session.save();
+
+  // Check if pulse check-in is needed this week
+  if (school.pulseEnabled) {
+    const weekOf = getMonday(new Date());
+    const existingPulse = await prisma.pulseCheck.findUnique({
+      where: { studentId_weekOf: { studentId: student.id, weekOf } },
+    });
+    if (!existingPulse || !existingPulse.completedAt) {
+      redirect("/pulse");
+    }
+  }
 
   redirect("/quiz");
 }

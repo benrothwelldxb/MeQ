@@ -195,6 +195,21 @@ const juniorQuestions: QuestionData[] = [
 
 const allQuestions = [...standardQuestions, ...juniorQuestions];
 
+// === PULSE QUESTIONS ===
+
+const pulseQuestions = [
+  { domain: "KnowMe", prompt: "I understand how I'm feeling today", tier: "standard", emoji: null, orderIndex: 1 },
+  { domain: "ManageMe", prompt: "I feel in control of my emotions", tier: "standard", emoji: null, orderIndex: 2 },
+  { domain: "UnderstandOthers", prompt: "I've been understanding of others this week", tier: "standard", emoji: null, orderIndex: 3 },
+  { domain: "WorkWithOthers", prompt: "I've worked well with other people", tier: "standard", emoji: null, orderIndex: 4 },
+  { domain: "ChooseWell", prompt: "I've been making good choices", tier: "standard", emoji: null, orderIndex: 5 },
+  { domain: "KnowMe", prompt: "Do you know how you feel today?", tier: "junior", emoji: "\ud83e\uddd0", orderIndex: 1 },
+  { domain: "ManageMe", prompt: "Are you feeling calm today?", tier: "junior", emoji: "\ud83d\ude0c", orderIndex: 2 },
+  { domain: "UnderstandOthers", prompt: "Have you been kind to others?", tier: "junior", emoji: "\ud83e\udd17", orderIndex: 3 },
+  { domain: "WorkWithOthers", prompt: "Did you play nicely with friends?", tier: "junior", emoji: "\ud83d\ude4b", orderIndex: 4 },
+  { domain: "ChooseWell", prompt: "Did you make good choices today?", tier: "junior", emoji: "\u2b50", orderIndex: 5 },
+];
+
 async function main() {
   // Create super admin (platform owner)
   await prisma.superAdmin.upsert({
@@ -566,6 +581,16 @@ async function main() {
     }
   }
   console.log(`Seeded ${interventionCount} default interventions`);
+
+  // Seed pulse questions
+  for (const pq of pulseQuestions) {
+    await prisma.pulseQuestion.upsert({
+      where: { tier_domain: { tier: pq.tier, domain: pq.domain } },
+      update: { prompt: pq.prompt, emoji: pq.emoji, orderIndex: pq.orderIndex },
+      create: pq,
+    });
+  }
+  console.log(`Seeded ${pulseQuestions.length} pulse questions`);
 }
 
 main()

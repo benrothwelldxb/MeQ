@@ -282,6 +282,89 @@ export default async function ClassResultsPage({
               );
             })}
           </div>
+
+          {/* Weekly Pulse */}
+          {await (async () => {
+            if (!school.pulseEnabled) return null;
+
+            const studentIds = classGroup.students.map((s) => s.id);
+            const sixWeeksAgo = new Date();
+            sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42);
+
+            const pulseChecks = await prisma.pulseCheck.findMany({
+              where: {
+                studentId: { in: studentIds },
+                weekOf: { gte: sixWeeksAgo },
+                completedAt: { not: null },
+              },
+              orderBy: { weekOf: "asc" },
+            });
+
+            if (pulseChecks.length === 0) return null;
+
+            // Group by week
+            const weeks = Array.from(new Set(pulseChecks.map((p) => p.weekOf.toISOString()))).sort();
+
+            // Calculate weekly class averages per domain
+            const weeklyAverages = weeks.map((weekIso) => {
+              const weekChecks = pulseChecks.filter((p) => p.weekOf.toISOString() === weekIso);
+              const avgs: Record<string, number> = {};
+              for (const domain of DOMAINS) {
+                const values = weekChecks
+                  .map((p) => (JSON.parse(p.answers) as Record<string, number>)[domain])
+                  .filter((v) => v !== undefined);
+                avgs[domain] = values.length > 0
+                  ? Math.round((values.reduce((s, v) => s + v, 0) / values.length) * 10) / 10
+                  : 0;
+              }
+              return {
+                week: new Date(weekIso).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+                count: weekChecks.length,
+                ...avgs,
+              };
+            });
+
+            return (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-gray-900">Weekly Pulse</h2>
+                  <span className="text-xs text-gray-400">Last 6 weeks</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Week</th>
+                        <th className="text-center px-2 py-2 text-xs font-semibold text-gray-500">Responses</th>
+                        {DOMAINS.map((d) => (
+                          <th key={d} className={`text-center px-2 py-2 text-xs font-semibold ${DOMAIN_COLORS[d].text}`}>
+                            {DOMAIN_LABELS[d]}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {weeklyAverages.map((row, i) => (
+                        <tr key={i}>
+                          <td className="px-3 py-2 text-sm font-medium text-gray-900">{row.week}</td>
+                          <td className="text-center px-2 py-2 text-sm text-gray-500">{row.count}</td>
+                          {DOMAINS.map((d) => {
+                            const val = (row as Record<string, number | string>)[d] as number;
+                            const color = val >= 4 ? "text-emerald-600" : val >= 3 ? "text-gray-700" : val >= 2 ? "text-amber-600" : "text-red-600";
+                            return (
+                              <td key={d} className={`text-center px-2 py-2 text-sm font-medium ${color}`}>
+                                {val > 0 ? val : "—"}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
         </>
       )}
     </div>
