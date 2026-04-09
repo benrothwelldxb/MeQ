@@ -701,7 +701,12 @@ function CSVQuestionUpload({
 
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mt-4">
-      <h3 className="text-sm font-medium text-gray-400 mb-2">Bulk Upload via CSV</h3>
+      <h3 className="text-sm font-medium text-gray-400 mb-2">
+        Bulk Upload via CSV
+        <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded bg-gray-700 text-gray-300">
+          {tier === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
+        </span>
+      </h3>
       <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
         <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">prompt</code></p>
         <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">type</code> (core/validation/trap), <code className="text-gray-300">weight</code>, <code className="text-gray-300">reverse</code> (yes/no)</p>
