@@ -88,7 +88,7 @@ export default async function ResultsPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-6 mb-4">
           <h3 className={`font-bold text-meq-slate mb-4 flex items-center gap-2 ${isJunior ? "text-xl" : ""}`}>
             <span className="text-xl">&#11088;</span>
-            {isJunior ? " You&apos;re great at..." : " Your Strengths"}
+            {isJunior ? " You're great at..." : " Your Strengths"}
           </h3>
           <ul className="space-y-3">
             {strengths.map((d) => (
