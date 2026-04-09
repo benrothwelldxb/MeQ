@@ -222,6 +222,52 @@ async function main() {
   });
   console.log("Super admin created (ben@wasil.org / meq-super-2026)");
 
+  // Create default MeQ Standard framework
+  const framework = await prisma.framework.upsert({
+    where: { slug: "meq-standard" },
+    update: {},
+    create: {
+      name: "MeQ Standard",
+      slug: "meq-standard",
+      description: "The default MeQ emotional intelligence framework with 5 domains aligned to CASEL competencies.",
+      isDefault: true,
+      config: JSON.stringify({
+        levels: ["Emerging", "Developing", "Secure", "Advanced"],
+        tiers: {
+          standard: {
+            levelThresholds: [{ level: "Advanced", min: 18 }, { level: "Secure", min: 15 }, { level: "Developing", min: 10 }, { level: "Emerging", min: 0 }],
+            overallThresholds: [{ level: "Advanced", min: 90 }, { level: "Secure", min: 75 }, { level: "Developing", min: 50 }, { level: "Emerging", min: 0 }],
+            maxDomainScore: 26,
+            maxTotalScore: 130,
+          },
+          junior: {
+            levelThresholds: [{ level: "Advanced", min: 14 }, { level: "Secure", min: 11 }, { level: "Developing", min: 8 }, { level: "Emerging", min: 0 }],
+            overallThresholds: [{ level: "Advanced", min: 70 }, { level: "Secure", min: 55 }, { level: "Developing", min: 40 }, { level: "Emerging", min: 0 }],
+            maxDomainScore: 16,
+            maxTotalScore: 80,
+          },
+        },
+      }),
+    },
+  });
+
+  const domainDefs = [
+    { key: "KnowMe", label: "Know Me", color: "blue", sortOrder: 0 },
+    { key: "ManageMe", label: "Manage Me", color: "emerald", sortOrder: 1 },
+    { key: "UnderstandOthers", label: "Understand Others", color: "purple", sortOrder: 2 },
+    { key: "WorkWithOthers", label: "Work With Others", color: "amber", sortOrder: 3 },
+    { key: "ChooseWell", label: "Choose Well", color: "rose", sortOrder: 4 },
+  ];
+
+  for (const d of domainDefs) {
+    await prisma.frameworkDomain.upsert({
+      where: { frameworkId_key: { frameworkId: framework.id, key: d.key } },
+      update: { label: d.label, color: d.color, sortOrder: d.sortOrder },
+      create: { frameworkId: framework.id, ...d },
+    });
+  }
+  console.log(`MeQ Standard framework seeded with ${domainDefs.length} domains`);
+
   // Create default school
   const school = await prisma.school.upsert({
     where: { slug: "demo-school" },

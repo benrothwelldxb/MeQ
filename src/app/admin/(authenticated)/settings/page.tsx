@@ -1,5 +1,6 @@
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { getAdminSession } from "@/lib/session";
+import { prisma } from "@/lib/db";
 import { updateSchoolSettings } from "@/app/actions/settings";
 import { getYearGroups } from "@/app/actions/year-groups";
 import { changeAdminPassword } from "@/app/actions/change-password";
@@ -11,6 +12,11 @@ export default async function SettingsPage() {
   const session = await getAdminSession();
   const school = await getSchoolSettings(session.schoolId);
   const yearGroups = await getYearGroups(session.schoolId);
+  const frameworks = await prisma.framework.findMany({
+    where: { isActive: true },
+    include: { domains: { orderBy: { sortOrder: "asc" } } },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="max-w-3xl">
@@ -37,6 +43,17 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
               <input name="academicYear" defaultValue={school.academicYear} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assessment Framework</label>
+            <select name="frameworkId" defaultValue={school.frameworkId || ""} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none">
+              <option value="">MeQ Standard (default)</option>
+              {frameworks.map((fw) => (
+                <option key={fw.id} value={fw.id}>
+                  {fw.name} ({fw.domains.length} domains)
+                </option>
+              ))}
+            </select>
           </div>
           <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">Assessment Options</h3>

@@ -28,6 +28,8 @@ model School {
   reducedQuestions Boolean  @default(false)
   pulseEnabled     Boolean  @default(false)
   readAloudEnabled Boolean  @default(false)
+  frameworkId      String?
+  framework        Framework? @relation(fields: [frameworkId], references: [id])
   admins       Admin[]
   teachers     Teacher[]
   yearGroups   YearGroup[]
@@ -35,6 +37,59 @@ model School {
   students     Student[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// ============ FRAMEWORKS ============
+
+model Framework {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  config      String   @default("{}") // JSON: thresholds, levels, messages
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdBy   String?  // schoolId if school-created, null if system
+  domains     FrameworkDomain[]
+  questions   FrameworkQuestion[]
+  schools     School[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FrameworkDomain {
+  id          String    @id @default(cuid())
+  frameworkId String
+  framework   Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  key         String
+  label       String
+  description String?
+  color       String    @default("blue")
+  sortOrder   Int       @default(0)
+
+  @@unique([frameworkId, key])
+}
+
+model FrameworkQuestion {
+  id             String    @id @default(cuid())
+  frameworkId    String
+  framework      Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  domainKey      String
+  tier           String    @default("standard")
+  orderIndex     Int
+  prompt         String
+  type           String    @default("core")
+  questionFormat String    @default("self-report")
+  answerOptions  String
+  scoreMap       String
+  weight         Float     @default(1.0)
+  isValidation   Boolean   @default(false)
+  isTrap         Boolean   @default(false)
+  validationPair Int?
+  audioUrl       String?
+  symbolImageUrl String?
+
+  @@unique([frameworkId, tier, orderIndex])
 }
 
 // ============ SCHOOL AUTH ============
@@ -164,6 +219,9 @@ model Assessment {
   chooseWellLevel       String?
   reliabilityScore      String?
   rawResponseJson       String?
+  domainScoresJson      String?   // JSON: { "KnowMe": 15.5, ... } — for framework-based scoring
+  domainLevelsJson      String?   // JSON: { "KnowMe": "Secure", ... }
+  frameworkId           String?
   lastQuestionNum       Int       @default(0)
   startedAt             DateTime  @default(now())
   completedAt           DateTime?
@@ -203,6 +261,9 @@ model TeacherAssessment {
   understandOthersLevel String?
   workWithOthersLevel   String?
   chooseWellLevel       String?
+  domainScoresJson      String?
+  domainLevelsJson      String?
+  frameworkId           String?
   completedAt           DateTime?
   createdAt             DateTime  @default(now())
 
