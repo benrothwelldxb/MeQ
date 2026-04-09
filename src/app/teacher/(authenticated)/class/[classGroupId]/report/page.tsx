@@ -1,14 +1,8 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
+import { getSchoolFramework, getLevelFromThresholds } from "@/lib/framework";
 import { getInterventionsForDomains } from "@/lib/interventions";
-import {
-  DOMAINS,
-  DOMAIN_LABELS,
-  type Domain,
-  type Level,
-} from "@/lib/constants";
-import { getLevel } from "@/lib/scoring";
 import { notFound, redirect } from "next/navigation";
 import PrintButton from "./PrintButton";
 
@@ -21,6 +15,8 @@ export default async function ClassReportPage({
   if (!session.teacherId) redirect("/teacher/login");
 
   const school = await getSchoolSettings(session.schoolId);
+  const framework = await getSchoolFramework(session.schoolId);
+  const domains = framework.domains;
 
   const classGroup = await prisma.classGroup.findUnique({
     where: { id: params.classGroupId },
@@ -45,33 +41,38 @@ export default async function ClassReportPage({
 
   if (!classGroup || classGroup.teachers.length === 0) return notFound();
 
-  const tier = classGroup.yearGroup.tier as "junior" | "standard";
+  const tier = classGroup.yearGroup.tier || "standard";
+  const scoringModel = framework.scoringModels[tier];
+  const thresholds = scoringModel?.thresholds || [];
   const completedStudents = classGroup.students.filter((s) => s.assessments.length > 0);
   const count = completedStudents.length || 1;
 
-  const domainTotals: Record<Domain, number> = { KnowMe: 0, ManageMe: 0, UnderstandOthers: 0, WorkWithOthers: 0, ChooseWell: 0 };
+  // Dynamic domain totals
+  const domainTotals: Record<string, number> = {};
+  for (const d of domains) domainTotals[d.key] = 0;
   for (const student of completedStudents) {
     const a = student.assessments[0];
-    domainTotals.KnowMe += a.knowMeScore ?? 0;
-    domainTotals.ManageMe += a.manageMeScore ?? 0;
-    domainTotals.UnderstandOthers += a.understandOthersScore ?? 0;
-    domainTotals.WorkWithOthers += a.workWithOthersScore ?? 0;
-    domainTotals.ChooseWell += a.chooseWellScore ?? 0;
+    const scores: Record<string, number> = a.domainScoresJson ? JSON.parse(a.domainScoresJson) : {};
+    for (const d of domains) domainTotals[d.key] += scores[d.key] ?? 0;
   }
 
-  const domainAverages: Record<Domain, number> = {} as Record<Domain, number>;
+  const domainAverages: Record<string, number> = {};
   const domainLevels: Record<string, string> = {};
-  for (const domain of DOMAINS) {
-    domainAverages[domain] = Math.round((domainTotals[domain] / count) * 10) / 10;
-    domainLevels[domain] = getLevel(domainAverages[domain], tier);
+  for (const d of domains) {
+    domainAverages[d.key] = Math.round((domainTotals[d.key] / count) * 10) / 10;
+    domainLevels[d.key] = getLevelFromThresholds(domainAverages[d.key], thresholds);
   }
 
-  const weakest = [...DOMAINS].sort((a, b) => domainAverages[a] - domainAverages[b]).slice(0, 2);
+  const strengthCount = Math.min(2, Math.floor(domains.length / 2)) || 1;
+  const weakest = domains.map((d) => d.key).sort((a, b) => (domainAverages[a] ?? 0) - (domainAverages[b] ?? 0)).slice(0, strengthCount);
   const weakestLevels: Record<string, string> = {};
   for (const d of weakest) weakestLevels[d] = domainLevels[d];
-  const interventions = await getInterventionsForDomains(weakestLevels, tier, "teacher");
+  const interventions = await getInterventionsForDomains(weakestLevels, tier, "teacher", framework.id);
 
-  const levelColors: Record<Level, string> = {
+  const labelMap: Record<string, string> = {};
+  for (const d of domains) labelMap[d.key] = d.label;
+
+  const levelColors: Record<string, string> = {
     Advanced: "color: #059669",
     Secure: "color: #2563eb",
     Developing: "color: #d97706",
@@ -95,7 +96,7 @@ export default async function ClassReportPage({
                 {classGroup.yearGroup.name} — {classGroup.name}
               </h1>
               <p className="text-gray-500 mt-1">
-                MeQ Class Report — {TERM_LABELS[school.currentTerm]} {school.academicYear}
+                {framework.name} Class Report — {TERM_LABELS[school.currentTerm]} {school.academicYear}
               </p>
             </div>
             <div className="text-right text-sm text-gray-500">
@@ -110,19 +111,19 @@ export default async function ClassReportPage({
         <table className="w-full mb-6 border border-gray-200">
           <thead>
             <tr className="bg-gray-50">
-              {DOMAINS.map((d) => (
-                <th key={d} className="px-3 py-2 text-xs font-semibold text-gray-600 border border-gray-200">{DOMAIN_LABELS[d]}</th>
+              {domains.map((d) => (
+                <th key={d.key} className="px-3 py-2 text-xs font-semibold text-gray-600 border border-gray-200">{d.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             <tr>
-              {DOMAINS.map((d) => (
-                <td key={d} className="px-3 py-2 text-center border border-gray-200">
-                  <span className="text-lg font-bold">{domainAverages[d]}</span>
+              {domains.map((d) => (
+                <td key={d.key} className="px-3 py-2 text-center border border-gray-200">
+                  <span className="text-lg font-bold">{domainAverages[d.key]}</span>
                   <br />
-                  <span className="text-xs font-medium" style={{ ...(levelColors[domainLevels[d] as Level] ? { color: levelColors[domainLevels[d] as Level].replace("color: ", "") } : {}) }}>
-                    {domainLevels[d]}
+                  <span className="text-xs font-medium" style={{ color: levelColors[domainLevels[d.key]]?.replace("color: ", "") || "#6b7280" }}>
+                    {domainLevels[d.key]}
                   </span>
                 </td>
               ))}
@@ -137,8 +138,8 @@ export default async function ClassReportPage({
             <tr className="bg-gray-50">
               <th className="text-left px-3 py-2 border border-gray-200 text-xs font-semibold text-gray-600">Student</th>
               <th className="text-center px-2 py-2 border border-gray-200 text-xs font-semibold text-gray-600">SEN</th>
-              {DOMAINS.map((d) => (
-                <th key={d} className="text-center px-2 py-2 border border-gray-200 text-xs font-semibold text-gray-600">{DOMAIN_LABELS[d]}</th>
+              {domains.map((d) => (
+                <th key={d.key} className="text-center px-2 py-2 border border-gray-200 text-xs font-semibold text-gray-600">{d.label}</th>
               ))}
               <th className="text-center px-2 py-2 border border-gray-200 text-xs font-semibold text-gray-600">Overall</th>
             </tr>
@@ -154,17 +155,16 @@ export default async function ClassReportPage({
                   <td className="text-center px-2 py-1.5 border border-gray-200">
                     {student.sen ? "Yes" : ""}
                   </td>
-                  {a ? DOMAINS.map((domain) => {
-                    const scoreKey = `${domain.charAt(0).toLowerCase()}${domain.slice(1)}Score` as keyof typeof a;
-                    const score = (a[scoreKey] as number | null) ?? 0;
-                    const level = getLevel(score, tier);
-                    return (
-                      <td key={domain} className="text-center px-2 py-1.5 border border-gray-200 text-xs">
-                        {level}
+                  {a ? (() => {
+                    const scores: Record<string, number> = a.domainScoresJson ? JSON.parse(a.domainScoresJson) : {};
+                    const levels: Record<string, string> = a.domainLevelsJson ? JSON.parse(a.domainLevelsJson) : {};
+                    return domains.map((d) => (
+                      <td key={d.key} className="text-center px-2 py-1.5 border border-gray-200 text-xs">
+                        {levels[d.key] || getLevelFromThresholds(scores[d.key] ?? 0, thresholds)}
                       </td>
-                    );
-                  }) : (
-                    <td colSpan={5} className="text-center px-2 py-1.5 border border-gray-200 text-gray-400 text-xs">
+                    ));
+                  })() : (
+                    <td colSpan={domains.length} className="text-center px-2 py-1.5 border border-gray-200 text-gray-400 text-xs">
                       Not completed
                     </td>
                   )}
@@ -180,14 +180,14 @@ export default async function ClassReportPage({
         {/* Strategies */}
         <h2 className="font-bold text-gray-900 mb-3">Recommended Class Strategies</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Based on the class&apos;s two areas for development: {weakest.map((d) => DOMAIN_LABELS[d]).join(" and ")}
+          Based on the class&apos;s areas for development: {weakest.map((d) => labelMap[d] || d).join(" and ")}
         </p>
         {weakest.map((domain) => {
           const domainInterventions = interventions[domain] || [];
           return (
             <div key={domain} className="mb-4 last:mb-0">
               <h3 className="font-semibold text-gray-900 mb-1">
-                {DOMAIN_LABELS[domain]} ({domainLevels[domain]})
+                {labelMap[domain] || domain} ({domainLevels[domain]})
               </h3>
               {domainInterventions.length > 0 ? (
                 <ul className="list-disc list-inside space-y-1">

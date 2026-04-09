@@ -165,3 +165,30 @@ export async function deleteFrameworkDomain(domainId: string, frameworkId: strin
   await prisma.frameworkDomain.delete({ where: { id: domainId } });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
+
+export async function addFrameworkIntervention(
+  frameworkId: string,
+  data: { domain: string; level: string; audience: string; title: string; description: string }
+) {
+  const lastIv = await prisma.intervention.findFirst({
+    where: { frameworkId, domain: data.domain, level: data.level, audience: data.audience },
+    orderBy: { sortOrder: "desc" },
+  });
+
+  await prisma.intervention.create({
+    data: {
+      ...data,
+      tier: "standard",
+      frameworkId,
+      isDefault: true,
+      sortOrder: (lastIv?.sortOrder ?? -1) + 1,
+    },
+  });
+
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function deleteFrameworkIntervention(interventionId: string, frameworkId: string) {
+  await prisma.intervention.delete({ where: { id: interventionId } });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}

@@ -1,16 +1,21 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
-import { DOMAINS, DOMAIN_LABELS, LEVELS, type Domain } from "@/lib/constants";
+import { getSchoolFramework } from "@/lib/framework";
 import Link from "next/link";
+
+const LEVELS = ["Emerging", "Developing", "Secure", "Advanced"];
 
 export default async function InterventionsPage() {
   const session = await getAdminSession();
+  const framework = await getSchoolFramework(session.schoolId);
+  const domains = framework.domains;
 
   const interventions = await prisma.intervention.findMany({
     where: {
       OR: [
         { schoolId: session.schoolId },
-        { isDefault: true, schoolId: null },
+        { isDefault: true, schoolId: null, frameworkId: framework.id },
+        { isDefault: true, schoolId: null, frameworkId: null }, // Legacy interventions
       ],
     },
     orderBy: [{ domain: "asc" }, { level: "asc" }, { audience: "asc" }, { sortOrder: "asc" }],
@@ -27,17 +32,17 @@ export default async function InterventionsPage() {
   return (
     <div className="max-w-4xl">
       <Link href="/admin/settings" className="text-sm text-meq-sky hover:underline">&larr; Back to Settings</Link>
-      <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-2">Intervention Bank</h1>
-      <p className="text-gray-500 mb-6">{interventions.length} interventions across all domains and levels</p>
+      <h1 className="text-2xl font-bold text-gray-900 mt-2 mb-1">Intervention Bank</h1>
+      <p className="text-gray-500 mb-6">
+        {interventions.length} interventions — {framework.name} framework
+      </p>
 
-      {DOMAINS.map((domain) => (
-        <div key={domain} className="mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
-            {DOMAIN_LABELS[domain as Domain]}
-          </h2>
+      {domains.map((domain) => (
+        <div key={domain.key} className="mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-3">{domain.label}</h2>
           <div className="space-y-3">
             {LEVELS.map((level) => {
-              const items = grouped[domain]?.[level] || [];
+              const items = grouped[domain.key]?.[level] || [];
               if (items.length === 0) return null;
 
               return (
@@ -69,6 +74,12 @@ export default async function InterventionsPage() {
           </div>
         </div>
       ))}
+
+      {domains.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <p className="text-gray-500">No domains configured for this framework.</p>
+        </div>
+      )}
     </div>
   );
 }

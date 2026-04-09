@@ -94,14 +94,19 @@ export default async function AdminPulsePage() {
     pulseQuestionMap[pq.domain] = pq.prompt;
   }
 
-  // Tips per domain for low-scoring students
-  const domainTips: Record<string, string> = {
+  // Tips per domain — from framework messages (pulse_tip type) or fallback
+  const defaultTips: Record<string, string> = {
     KnowMe: "Try a quiet check-in with this student. Ask them to name how they're feeling using a feelings chart or emoji cards.",
     ManageMe: "This student may benefit from a calm-down strategy reminder — breathing exercises, a sensory break, or a visit to a safe space.",
     UnderstandOthers: "Consider pairing this student with a buddy for group activities. Model empathy language: 'I can see that made you feel...'",
     WorkWithOthers: "Try giving this student a specific role in group work. Praise collaborative moments and scaffold turn-taking.",
     ChooseWell: "Help this student practise decision-making with simple choices. Use 'What would happen if...' scenarios during circle time.",
   };
+  const domainTips: Record<string, string> = {};
+  for (const d of domains) {
+    const fwTips = framework.messages[d.key]?.["pulse_tip"];
+    domainTips[d.key] = fwTips?.[0] || defaultTips[d.key] || `Check in with this student about their ${d.label} skills.`;
+  }
 
   // Identify flagged students — anyone who scored 1 or 2 on any domain this week
   const flagged: Array<{ student: typeof students[0]; domain: string; score: number }> = [];

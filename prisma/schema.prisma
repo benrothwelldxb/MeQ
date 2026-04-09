@@ -52,8 +52,9 @@ model Framework {
   createdBy     String?
   domains       FrameworkDomain[]
   questions     FrameworkQuestion[]
-  scoringModels FrameworkScoringModel[]
-  schools       School[]
+  scoringModels  FrameworkScoringModel[]
+  interventions  Intervention[]
+  schools        School[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -359,16 +360,18 @@ model PasswordResetToken {
 // ============ INTERVENTIONS ============
 
 model Intervention {
-  id          String   @id @default(cuid())
-  domain      String
+  id          String     @id @default(cuid())
+  domain      String     // domain key (matches FrameworkDomain.key)
   level       String
-  tier        String   @default("standard")
-  audience    String
+  tier        String     @default("standard")
+  audience    String     // "student" | "teacher"
   title       String
   description String
-  sortOrder   Int      @default(0)
-  isDefault   Boolean  @default(true)
-  schoolId    String?  // null = system default, set = school custom
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int        @default(0)
+  isDefault   Boolean    @default(true)
+  schoolId    String?    // null = system/framework default, set = school custom
+  frameworkId String?    // null = legacy MeQ Standard, set = framework-specific
+  framework   Framework? @relation(fields: [frameworkId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }

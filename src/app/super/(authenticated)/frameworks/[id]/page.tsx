@@ -13,6 +13,7 @@ export default async function EditFrameworkPage({
     include: {
       domains: { orderBy: { sortOrder: "asc" } },
       questions: { orderBy: [{ tier: "asc" }, { orderIndex: "asc" }] },
+      interventions: { orderBy: [{ domain: "asc" }, { level: "asc" }, { sortOrder: "asc" }] },
     },
   });
 
@@ -52,6 +53,14 @@ export default async function EditFrameworkPage({
           type: q.type,
           questionFormat: q.questionFormat,
           weight: q.weight,
+        }))}
+        interventions={framework.interventions.map((iv) => ({
+          id: iv.id,
+          domain: iv.domain,
+          level: iv.level,
+          audience: iv.audience,
+          title: iv.title,
+          description: iv.description,
         }))}
       />
     </div>

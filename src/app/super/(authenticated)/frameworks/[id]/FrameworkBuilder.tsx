@@ -8,6 +8,8 @@ import {
   updateFrameworkDomain,
   addFrameworkDomain,
   deleteFrameworkDomain,
+  addFrameworkIntervention,
+  deleteFrameworkIntervention,
 } from "@/app/actions/frameworks";
 
 interface Domain {
@@ -28,6 +30,15 @@ interface Question {
   type: string;
   questionFormat: string;
   weight: number;
+}
+
+interface InterventionData {
+  id: string;
+  domain: string;
+  level: string;
+  audience: string;
+  title: string;
+  description: string;
 }
 
 interface FrameworkConfig {
@@ -69,18 +80,21 @@ export default function FrameworkBuilder({
   framework,
   domains,
   questions,
+  interventions,
 }: {
   framework: { id: string; name: string; config: string; isDefault: boolean };
   domains: Domain[];
   questions: Question[];
+  interventions: InterventionData[];
 }) {
-  const [tab, setTab] = useState<"domains" | "questions" | "scoring">("domains");
+  const [tab, setTab] = useState<"domains" | "questions" | "interventions" | "scoring">("domains");
   const [selectedTier, setSelectedTier] = useState("standard");
   const config: FrameworkConfig = JSON.parse(framework.config || "{}");
 
   const tabs = [
     { key: "domains", label: "Domains" },
     { key: "questions", label: "Questions" },
+    { key: "interventions", label: `Interventions (${interventions.length})` },
     { key: "scoring", label: "Scoring & Messages" },
   ];
 
@@ -302,6 +316,16 @@ export default function FrameworkBuilder({
         </div>
       )}
 
+      {/* Interventions Tab */}
+      {tab === "interventions" && (
+        <InterventionsPanel
+          frameworkId={framework.id}
+          domains={domains}
+          interventions={interventions}
+          isDefault={framework.isDefault}
+        />
+      )}
+
       {/* Scoring Tab */}
       {tab === "scoring" && (
         <ScoringConfig
@@ -503,6 +527,140 @@ function ScoringConfig({
       >
         {saving ? "Saving..." : saved ? "Saved!" : "Save Configuration"}
       </button>
+    </div>
+  );
+}
+
+const LEVELS = ["Emerging", "Developing", "Secure", "Advanced"];
+
+function InterventionsPanel({
+  frameworkId,
+  domains,
+  interventions,
+  isDefault,
+}: {
+  frameworkId: string;
+  domains: Domain[];
+  interventions: InterventionData[];
+  isDefault: boolean;
+}) {
+  const [selectedDomain, setSelectedDomain] = useState(domains[0]?.key || "");
+  const [selectedLevel, setSelectedLevel] = useState("Emerging");
+  const [selectedAudience, setSelectedAudience] = useState("teacher");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const handleAdd = async () => {
+    if (!title.trim() || !description.trim()) return;
+    setAdding(true);
+    await addFrameworkIntervention(frameworkId, {
+      domain: selectedDomain,
+      level: selectedLevel,
+      audience: selectedAudience,
+      title: title.trim(),
+      description: description.trim(),
+    });
+    setTitle("");
+    setDescription("");
+    setAdding(false);
+  };
+
+  // Group interventions by domain → level
+  const grouped: Record<string, Record<string, InterventionData[]>> = {};
+  for (const iv of interventions) {
+    if (!grouped[iv.domain]) grouped[iv.domain] = {};
+    if (!grouped[iv.domain][iv.level]) grouped[iv.domain][iv.level] = [];
+    grouped[iv.domain][iv.level].push(iv);
+  }
+
+  return (
+    <div>
+      <p className="text-sm text-gray-400 mb-4">
+        {interventions.length} interventions across {domains.length} domains.
+        Interventions are suggested strategies shown to teachers based on class-level domain scores.
+      </p>
+
+      {/* Intervention list grouped by domain → level */}
+      {domains.map((d) => {
+        const domainIvs = grouped[d.key];
+        if (!domainIvs || Object.keys(domainIvs).length === 0) {
+          return (
+            <div key={d.key} className="mb-4">
+              <h3 className={`text-sm font-semibold mb-2 ${COLOR_CLASSES[d.color] || "text-gray-400"}`}>{d.label}</h3>
+              <p className="text-xs text-gray-500 bg-gray-800 rounded-lg px-4 py-3">No interventions yet for this domain.</p>
+            </div>
+          );
+        }
+        return (
+          <div key={d.key} className="mb-6">
+            <h3 className={`text-sm font-semibold mb-2 ${COLOR_CLASSES[d.color] || "text-gray-400"}`}>{d.label}</h3>
+            {LEVELS.map((level) => {
+              const items = domainIvs[level] || [];
+              if (items.length === 0) return null;
+              return (
+                <div key={level} className="bg-gray-800 rounded-lg border border-gray-700 p-3 mb-2">
+                  <p className="text-xs font-medium text-gray-400 mb-2">{level}</p>
+                  {items.map((iv) => (
+                    <div key={iv.id} className="flex items-start justify-between gap-2 mb-1.5 last:mb-0">
+                      <div className="flex-1">
+                        <span className="text-sm text-white font-medium">{iv.title}</span>
+                        <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${
+                          iv.audience === "student" ? "bg-blue-500/20 text-blue-400" : "bg-purple-500/20 text-purple-400"
+                        }`}>{iv.audience}</span>
+                        <p className="text-xs text-gray-500 mt-0.5">{iv.description}</p>
+                      </div>
+                      <button
+                        onClick={async () => { await deleteFrameworkIntervention(iv.id, frameworkId); }}
+                        className="text-xs text-red-400 hover:text-red-300 flex-shrink-0"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      {/* Add intervention form */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mt-4">
+        <h3 className="text-sm font-medium text-gray-400 mb-3">Add Intervention</h3>
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <select value={selectedDomain} onChange={(e) => setSelectedDomain(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none">
+            {domains.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}
+          </select>
+          <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none">
+            {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <select value={selectedAudience} onChange={(e) => setSelectedAudience(e.target.value)} className="px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none">
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+          </select>
+        </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Intervention title"
+          className="w-full mb-2 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none"
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description / instructions"
+          rows={2}
+          className="w-full mb-3 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={adding || !title.trim() || !description.trim()}
+          className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-50 transition-all"
+        >
+          {adding ? "Adding..." : "Add Intervention"}
+        </button>
+      </div>
     </div>
   );
 }

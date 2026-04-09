@@ -102,7 +102,7 @@ export default async function ClassResultsPage({
 
   const weakestLevels: Record<string, string> = {};
   for (const d of weakest) weakestLevels[d] = domainLevels[d];
-  const interventions = await getInterventionsForDomains(weakestLevels, classTier, "teacher");
+  const interventions = await getInterventionsForDomains(weakestLevels, classTier, "teacher", framework.id);
 
   // Level distribution
   const levelCounts: Record<string, Record<string, number>> = {};

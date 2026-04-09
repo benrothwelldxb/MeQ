@@ -627,7 +627,6 @@ async function main() {
   let interventionCount = 0;
   for (const domain of domains) {
     for (const level of levels) {
-      // Student-facing (standard)
       const studentItems = studentInterventions[domain]?.[level] || [];
       for (let i = 0; i < studentItems.length; i++) {
         await prisma.intervention.create({
@@ -640,11 +639,11 @@ async function main() {
             description: studentItems[i].desc,
             sortOrder: i,
             isDefault: true,
+            frameworkId: framework.id,
           },
         });
         interventionCount++;
       }
-      // Teacher-facing (standard)
       const teacherItems = teacherInterventions[domain]?.[level] || [];
       for (let i = 0; i < teacherItems.length; i++) {
         await prisma.intervention.create({
@@ -657,6 +656,7 @@ async function main() {
             description: teacherItems[i].desc,
             sortOrder: i,
             isDefault: true,
+            frameworkId: framework.id,
           },
         });
         interventionCount++;
