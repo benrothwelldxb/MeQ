@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
-import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, type Domain } from "@/lib/constants";
+import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS } from "@/lib/constants";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
