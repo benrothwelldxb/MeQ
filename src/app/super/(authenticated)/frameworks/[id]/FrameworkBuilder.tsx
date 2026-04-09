@@ -207,12 +207,67 @@ export default function FrameworkBuilder({
             ))}
           </div>
 
+          {/* Guidance Panel */}
+          <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-5 mb-4">
+            <h3 className="font-semibold text-white text-sm mb-2">Question Guidelines</h3>
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
+              <div>
+                <p className="font-medium text-gray-300 mb-1">Recommended per domain:</p>
+                <ul className="space-y-0.5">
+                  <li>{selectedTier === "standard" ? "5" : "3-4"} core questions (scored)</li>
+                  <li>{selectedTier === "standard" ? "2" : "0"} validation questions (reliability check)</li>
+                  <li>{selectedTier === "standard" ? "1" : "0"} trap question (attention check)</li>
+                </ul>
+                <p className="mt-2 text-gray-500">
+                  Total: {selectedTier === "standard" ? `${domains.length * 8} questions (${domains.length} domains x 8)` : `${domains.length * 4} questions (${domains.length} domains x 4)`}
+                </p>
+              </div>
+              <div>
+                <p className="font-medium text-gray-300 mb-1">Question types explained:</p>
+                <ul className="space-y-1">
+                  <li><span className="text-emerald-400 font-medium">Core</span> — directly measures the domain. These are scored.</li>
+                  <li><span className="text-blue-400 font-medium">Validation</span> — rephrased version of a core question. Checks consistency (not scored).</li>
+                  <li><span className="text-amber-400 font-medium">Trap</span> — extreme statement no one would honestly agree with. Flags inattentive responses.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Per-domain progress */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+            {domains.map((d) => {
+              const domainQs = tierQuestions.filter((q) => q.domainKey === d.key);
+              const coreCount = domainQs.filter((q) => q.type === "core").length;
+              const valCount = domainQs.filter((q) => q.type === "validation").length;
+              const trapCount = domainQs.filter((q) => q.type === "trap").length;
+              const minCore = selectedTier === "standard" ? 5 : 3;
+              const isReady = coreCount >= minCore;
+              return (
+                <div key={d.key} className={`rounded-lg border px-3 py-2 ${isReady ? "bg-emerald-500/10 border-emerald-500/30" : "bg-gray-800 border-gray-700"}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-medium ${COLOR_CLASSES[d.color] || ""}`}>{d.label}</span>
+                    {isReady ? (
+                      <span className="text-emerald-400 text-xs">Ready</span>
+                    ) : (
+                      <span className="text-amber-400 text-xs">{minCore - coreCount} more core needed</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-gray-500">
+                    {coreCount} core &middot; {valCount} validation &middot; {trapCount} trap
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Question list */}
           <div className="space-y-2 mb-4">
             {tierQuestions.length === 0 && (
-              <p className="text-gray-500 text-sm py-8 text-center">No questions for this tier yet.</p>
+              <p className="text-gray-500 text-sm py-8 text-center">No questions for this tier yet. Add at least {selectedTier === "standard" ? 5 : 3} core questions per domain.</p>
             )}
             {tierQuestions.map((q) => {
               const domain = domains.find((d) => d.key === q.domainKey);
+              const typeColor = q.type === "core" ? "text-emerald-400" : q.type === "validation" ? "text-blue-400" : "text-amber-400";
               return (
                 <div key={q.id} className="bg-gray-800 rounded-lg border border-gray-700 px-4 py-3 flex items-center gap-3">
                   <span className="text-xs text-gray-500 font-mono w-8">Q{q.orderIndex}</span>
@@ -220,7 +275,8 @@ export default function FrameworkBuilder({
                     {domain?.label || q.domainKey}
                   </span>
                   <span className="text-sm text-gray-300 flex-1">{q.prompt}</span>
-                  <span className="text-xs text-gray-500">{q.type} &middot; w{q.weight}</span>
+                  <span className={`text-xs ${typeColor}`}>{q.type}</span>
+                  <span className="text-xs text-gray-600">w{q.weight}</span>
                   {!framework.isDefault && (
                     <button
                       onClick={async () => {
