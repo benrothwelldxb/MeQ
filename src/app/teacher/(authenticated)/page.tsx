@@ -125,6 +125,14 @@ export default async function TeacherDashboard() {
                   >
                     View Results
                   </Link>
+                  {school.pulseEnabled && (
+                    <Link
+                      href={`/teacher/class/${cls.id}/pulse`}
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                    >
+                      Pulse
+                    </Link>
+                  )}
                 </div>
               </div>
 
