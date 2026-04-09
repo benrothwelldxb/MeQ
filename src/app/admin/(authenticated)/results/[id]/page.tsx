@@ -3,9 +3,8 @@ import { getAdminSession } from "@/lib/session";
 import { TERM_LABELS } from "@/lib/school";
 import { getSchoolFramework } from "@/lib/framework";
 import { notFound } from "next/navigation";
-import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
+import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, MAX_TOTAL_SCORE, type Level, type Tier } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";
-import DomainCard from "@/components/DomainCard";
 import Link from "next/link";
 
 export default async function AdminResultDetailPage({

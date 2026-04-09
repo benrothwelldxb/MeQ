@@ -1,17 +1,15 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
-import { getSchoolFramework, type FrameworkConfig } from "@/lib/framework";
+import { getSchoolFramework } from "@/lib/framework";
 import {
   DOMAIN_LABELS,
   STRENGTH_MESSAGES,
   JUNIOR_STRENGTH_MESSAGES,
   NEXT_STEPS,
   JUNIOR_NEXT_STEPS,
-  type Domain,
   type Tier,
 } from "@/lib/constants";
-import { getStrengths, getGrowthAreas } from "@/lib/scoring";
 import LogoutButton from "./LogoutButton";
 
 export default async function ResultsPage() {

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
-import { DOMAINS, type Tier } from "@/lib/constants";
+import { type Tier } from "@/lib/constants";
 import PulseClient from "./PulseClient";
 
 export default async function PulsePage() {

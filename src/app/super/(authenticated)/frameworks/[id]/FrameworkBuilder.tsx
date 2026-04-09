@@ -75,7 +75,6 @@ export default function FrameworkBuilder({
   questions: Question[];
 }) {
   const [tab, setTab] = useState<"domains" | "questions" | "scoring">("domains");
-  const [saving, setSaving] = useState(false);
   const [selectedTier, setSelectedTier] = useState("standard");
   const config: FrameworkConfig = JSON.parse(framework.config || "{}");
 
@@ -253,7 +252,6 @@ export default function FrameworkBuilder({
           frameworkId={framework.id}
           config={config}
           domains={domains}
-          isDefault={framework.isDefault}
         />
       )}
     </div>
@@ -339,12 +337,10 @@ function ScoringConfig({
   frameworkId,
   config,
   domains,
-  isDefault,
 }: {
   frameworkId: string;
   config: FrameworkConfig;
   domains: Domain[];
-  isDefault: boolean;
 }) {
   const [localConfig, setLocalConfig] = useState(config);
   const [saving, setSaving] = useState(false);
