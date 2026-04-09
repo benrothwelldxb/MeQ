@@ -306,6 +306,43 @@ async function main() {
   console.log(`Seeded ${standardQuestions.length} standard questions`);
   console.log(`Seeded ${juniorQuestions.length} junior questions`);
 
+  // Also seed FrameworkQuestion records for MeQ Standard framework
+  for (const q of allQuestions) {
+    await prisma.frameworkQuestion.upsert({
+      where: {
+        frameworkId_tier_orderIndex: { frameworkId: framework.id, tier: q.tier, orderIndex: q.orderIndex },
+      },
+      update: {
+        domainKey: q.domain,
+        prompt: q.prompt,
+        type: q.type || "core",
+        questionFormat: q.questionFormat || "self-report",
+        answerOptions: q.answerOptions,
+        scoreMap: q.scoreMap,
+        weight: q.weight ?? 1.0,
+        isValidation: q.isValidation ?? false,
+        isTrap: q.isTrap ?? false,
+        validationPair: q.validationPair ?? null,
+      },
+      create: {
+        frameworkId: framework.id,
+        domainKey: q.domain,
+        tier: q.tier,
+        orderIndex: q.orderIndex,
+        prompt: q.prompt,
+        type: q.type || "core",
+        questionFormat: q.questionFormat || "self-report",
+        answerOptions: q.answerOptions,
+        scoreMap: q.scoreMap,
+        weight: q.weight ?? 1.0,
+        isValidation: q.isValidation ?? false,
+        isTrap: q.isTrap ?? false,
+        validationPair: q.validationPair ?? null,
+      },
+    });
+  }
+  console.log(`Seeded ${allQuestions.length} framework questions for MeQ Standard`);
+
   // Create test students
   await prisma.student.upsert({
     where: { loginCode: "TESTAB23" },
