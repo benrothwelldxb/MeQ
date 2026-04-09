@@ -133,6 +133,47 @@ export function calculateReliability(
   return "Low";
 }
 
+// === Framework-aware scoring ===
+
+interface FrameworkThresholds {
+  levelThresholds?: Array<{ level: string; min: number }>;
+  overallThresholds?: Array<{ level: string; min: number }>;
+}
+
+export function getFrameworkLevel(score: number, thresholds: Array<{ level: string; min: number }>): string {
+  for (const { level, min } of thresholds) {
+    if (score >= min) return level;
+  }
+  return thresholds[thresholds.length - 1]?.level || "Emerging";
+}
+
+export function calculateFrameworkDomainScores(
+  answers: Record<string, number>,
+  questions: Array<{ orderIndex: number; domainKey: string; type: string; weight: number; scoreMap: string }>,
+  domainKeys: string[]
+): Record<string, number> {
+  const scores: Record<string, number> = {};
+
+  for (const domain of domainKeys) {
+    const domainQuestions = questions.filter(
+      (q) => q.domainKey === domain && q.type === "core"
+    );
+
+    let weightedSum = 0;
+    for (const q of domainQuestions) {
+      const answer = answers[String(q.orderIndex)];
+      if (answer === undefined) continue;
+      const scoreMap = JSON.parse(q.scoreMap) as Record<string, number>;
+      const mappedScore = scoreMap[String(answer)] ?? answer;
+      weightedSum += mappedScore * q.weight;
+    }
+
+    scores[domain] = Math.round(weightedSum * 10) / 10;
+  }
+
+  return scores;
+}
+
 export function getStrengths(domainScores: Record<Domain, number>): Domain[] {
   return [...DOMAINS]
     .sort((a, b) => domainScores[b] - domainScores[a])

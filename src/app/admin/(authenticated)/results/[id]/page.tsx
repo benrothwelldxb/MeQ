@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { TERM_LABELS } from "@/lib/school";
+import { getSchoolFramework } from "@/lib/framework";
 import { notFound } from "next/navigation";
 import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, MAX_TOTAL_SCORE, type Domain, type Level, type Tier } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";
@@ -30,21 +31,39 @@ export default async function AdminResultDetailPage({
 
   const answers = JSON.parse(assessment.answers || "{}") as Record<string, number>;
 
-  const domainScores: Record<Domain, number> = {
-    KnowMe: assessment.knowMeScore ?? 0,
-    ManageMe: assessment.manageMeScore ?? 0,
-    UnderstandOthers: assessment.understandOthersScore ?? 0,
-    WorkWithOthers: assessment.workWithOthersScore ?? 0,
-    ChooseWell: assessment.chooseWellScore ?? 0,
-  };
+  // Load framework if this assessment used one
+  const framework = assessment.frameworkId
+    ? await getSchoolFramework(assessment.student.schoolId)
+    : null;
 
-  const domainLevels: Record<Domain, Level> = {
-    KnowMe: (assessment.knowMeLevel as Level) ?? "Emerging",
-    ManageMe: (assessment.manageMeLevel as Level) ?? "Emerging",
-    UnderstandOthers: (assessment.understandOthersLevel as Level) ?? "Emerging",
-    WorkWithOthers: (assessment.workWithOthersLevel as Level) ?? "Emerging",
-    ChooseWell: (assessment.chooseWellLevel as Level) ?? "Emerging",
-  };
+  // Read domain scores — prefer JSON, fall back to legacy columns
+  const domainScores: Record<string, number> = assessment.domainScoresJson
+    ? JSON.parse(assessment.domainScoresJson)
+    : {
+        KnowMe: assessment.knowMeScore ?? 0,
+        ManageMe: assessment.manageMeScore ?? 0,
+        UnderstandOthers: assessment.understandOthersScore ?? 0,
+        WorkWithOthers: assessment.workWithOthersScore ?? 0,
+        ChooseWell: assessment.chooseWellScore ?? 0,
+      };
+
+  const domainLevels: Record<string, string> = assessment.domainLevelsJson
+    ? JSON.parse(assessment.domainLevelsJson)
+    : {
+        KnowMe: (assessment.knowMeLevel as Level) ?? "Emerging",
+        ManageMe: (assessment.manageMeLevel as Level) ?? "Emerging",
+        UnderstandOthers: (assessment.understandOthersLevel as Level) ?? "Emerging",
+        WorkWithOthers: (assessment.workWithOthersLevel as Level) ?? "Emerging",
+        ChooseWell: (assessment.chooseWellLevel as Level) ?? "Emerging",
+      };
+
+  // Dynamic domain list — from framework or default
+  const activeDomains = framework
+    ? framework.domains.map((d) => d.key)
+    : [...DOMAINS];
+  const activeLabels: Record<string, string> = framework
+    ? Object.fromEntries(framework.domains.map((d) => [d.key, d.label]))
+    : DOMAIN_LABELS;
 
   return (
     <div className="max-w-3xl">
@@ -105,14 +124,14 @@ export default async function AdminResultDetailPage({
 
       {/* Domain Cards */}
       <div className="grid gap-4 mb-6">
-        {DOMAINS.map((domain) => (
-          <DomainCard
-            key={domain}
-            domain={domain}
-            score={domainScores[domain]}
-            level={domainLevels[domain]}
-            tier={tier}
-          />
+        {activeDomains.map((domain) => (
+          <div key={domain} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-gray-900">{activeLabels[domain] || domain}</p>
+              <p className="text-sm text-gray-500">Score: {domainScores[domain] ?? 0}</p>
+            </div>
+            <LevelChip level={(domainLevels[domain] as Level) ?? "Emerging"} />
+          </div>
         ))}
       </div>
 
@@ -213,7 +232,7 @@ export default async function AdminResultDetailPage({
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-gray-500">
-                        {DOMAIN_LABELS[q.domain as Domain]}
+                        {activeLabels[q.domain] || q.domain}
                       </span>
                       {q.isTrap && (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-medium">

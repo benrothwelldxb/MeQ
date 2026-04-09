@@ -2,13 +2,16 @@
 
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { getSchoolFramework, getFrameworkQuestions } from "@/lib/framework";
 import { type Tier } from "@/lib/constants";
 import {
   calculateDomainScores,
   calculateTotalScore,
   calculateReliability,
+  calculateFrameworkDomainScores,
   getLevel,
   getOverallLevel,
+  getFrameworkLevel,
 } from "@/lib/scoring";
 import { redirect } from "next/navigation";
 
@@ -43,19 +46,81 @@ export async function submitQuiz() {
 
   const assessment = await prisma.assessment.findUnique({
     where: { id: session.assessmentId },
+    include: { student: true },
   });
   if (!assessment || assessment.status !== "in_progress") return;
 
   const tier = (assessment.tier || "standard") as Tier;
+  const reduced = assessment.isReduced;
+  const answers = JSON.parse(assessment.answers) as Record<string, number>;
 
-  // Load only questions for this tier
+  // Check for custom framework
+  const framework = await getSchoolFramework(assessment.student.schoolId);
+
+  if (framework) {
+    const fwQuestions = await getFrameworkQuestions(framework.id, tier);
+    if (fwQuestions.length > 0) {
+      // Framework-based scoring
+      const domainKeys = framework.domains.map((d) => d.key);
+      const domainScores = calculateFrameworkDomainScores(
+        answers,
+        fwQuestions.map((q) => ({
+          orderIndex: q.orderIndex,
+          domainKey: q.domainKey,
+          type: q.type,
+          weight: q.weight,
+          scoreMap: q.scoreMap,
+        })),
+        domainKeys
+      );
+
+      const totalScore = Object.values(domainScores).reduce((s, v) => s + v, 0);
+      const tierConfig = framework.config.tiers?.[tier];
+      const levelThresholds = tierConfig?.levelThresholds || [];
+      const overallThresholds = tierConfig?.overallThresholds || [];
+
+      const domainLevels: Record<string, string> = {};
+      for (const key of domainKeys) {
+        domainLevels[key] = getFrameworkLevel(domainScores[key] || 0, levelThresholds);
+      }
+
+      await prisma.assessment.update({
+        where: { id: assessment.id },
+        data: {
+          status: "completed",
+          completedAt: new Date(),
+          totalScore: Math.round(totalScore * 10) / 10,
+          overallLevel: getFrameworkLevel(totalScore, overallThresholds),
+          // Write to JSON fields for framework assessments
+          domainScoresJson: JSON.stringify(domainScores),
+          domainLevelsJson: JSON.stringify(domainLevels),
+          frameworkId: framework.id,
+          // Also write to legacy columns if domains match
+          knowMeScore: domainScores.KnowMe ?? null,
+          manageMeScore: domainScores.ManageMe ?? null,
+          understandOthersScore: domainScores.UnderstandOthers ?? null,
+          workWithOthersScore: domainScores.WorkWithOthers ?? null,
+          chooseWellScore: domainScores.ChooseWell ?? null,
+          knowMeLevel: domainLevels.KnowMe ?? null,
+          manageMeLevel: domainLevels.ManageMe ?? null,
+          understandOthersLevel: domainLevels.UnderstandOthers ?? null,
+          workWithOthersLevel: domainLevels.WorkWithOthers ?? null,
+          chooseWellLevel: domainLevels.ChooseWell ?? null,
+          reliabilityScore: reduced ? "Lite" : "N/A",
+          rawResponseJson: JSON.stringify(answers),
+        },
+      });
+
+      redirect("/results");
+    }
+  }
+
+  // Legacy MeQ Standard scoring
   const questions = await prisma.question.findMany({
     where: { tier },
     orderBy: { orderIndex: "asc" },
   });
 
-  const reduced = assessment.isReduced;
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
   const domainScores = calculateDomainScores(answers, questions);
   const totalScore = calculateTotalScore(domainScores);
   const reliability = reduced ? "Lite" : calculateReliability(answers, questions);
@@ -79,6 +144,14 @@ export async function submitQuiz() {
       chooseWellLevel: getLevel(domainScores.ChooseWell, tier, reduced),
       reliabilityScore: reliability,
       rawResponseJson: JSON.stringify(answers),
+      domainScoresJson: JSON.stringify(domainScores),
+      domainLevelsJson: JSON.stringify({
+        KnowMe: getLevel(domainScores.KnowMe, tier, reduced),
+        ManageMe: getLevel(domainScores.ManageMe, tier, reduced),
+        UnderstandOthers: getLevel(domainScores.UnderstandOthers, tier, reduced),
+        WorkWithOthers: getLevel(domainScores.WorkWithOthers, tier, reduced),
+        ChooseWell: getLevel(domainScores.ChooseWell, tier, reduced),
+      }),
     },
   });
 

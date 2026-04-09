@@ -35,8 +35,13 @@ export default async function FrameworksPage() {
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-meq-sky/20 text-meq-sky">Default</span>
                 )}
               </div>
-              <div className="text-sm text-gray-400">
-                {fw._count.schools} school{fw._count.schools !== 1 ? "s" : ""} &middot; {fw._count.questions} questions
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-400">
+                  {fw._count.schools} school{fw._count.schools !== 1 ? "s" : ""} &middot; {fw._count.questions} questions
+                </span>
+                <Link href={`/super/frameworks/${fw.id}`} className="text-sm text-meq-sky hover:underline">
+                  Edit
+                </Link>
               </div>
             </div>
 

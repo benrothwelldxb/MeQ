@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { getSchoolFramework, type FrameworkConfig } from "@/lib/framework";
 import {
   DOMAIN_LABELS,
   STRENGTH_MESSAGES,
@@ -30,20 +31,43 @@ export default async function ResultsPage() {
 
   const tier = (assessment.tier || "standard") as Tier;
   const isJunior = tier === "junior";
-
-  const domainScores: Record<Domain, number> = {
-    KnowMe: assessment.knowMeScore ?? 0,
-    ManageMe: assessment.manageMeScore ?? 0,
-    UnderstandOthers: assessment.understandOthersScore ?? 0,
-    WorkWithOthers: assessment.workWithOthersScore ?? 0,
-    ChooseWell: assessment.chooseWellScore ?? 0,
-  };
-
-  const strengths = getStrengths(domainScores);
-  const growthAreas = getGrowthAreas(domainScores);
-  const strengthMessages = isJunior ? JUNIOR_STRENGTH_MESSAGES : STRENGTH_MESSAGES;
-  const nextSteps = isJunior ? JUNIOR_NEXT_STEPS : NEXT_STEPS;
   const firstName = assessment.student.displayName || assessment.student.firstName;
+
+  // Check if this assessment used a custom framework
+  const framework = assessment.frameworkId
+    ? await getSchoolFramework(assessment.student.schoolId)
+    : null;
+
+  // Get domain scores — prefer JSON fields, fall back to legacy columns
+  let domainScores: Record<string, number>;
+  let domainLabels: Record<string, string>;
+  let strengthMsgs: Record<string, string>;
+  let nextStepMsgs: Record<string, string[]>;
+
+  if (assessment.domainScoresJson && framework) {
+    // Framework-based results
+    domainScores = JSON.parse(assessment.domainScoresJson) as Record<string, number>;
+    domainLabels = Object.fromEntries(framework.domains.map((d) => [d.key, d.label]));
+    strengthMsgs = framework.config.strengthMessages || {};
+    nextStepMsgs = framework.config.nextSteps || {};
+  } else {
+    // Legacy MeQ Standard results
+    domainScores = {
+      KnowMe: assessment.knowMeScore ?? 0,
+      ManageMe: assessment.manageMeScore ?? 0,
+      UnderstandOthers: assessment.understandOthersScore ?? 0,
+      WorkWithOthers: assessment.workWithOthersScore ?? 0,
+      ChooseWell: assessment.chooseWellScore ?? 0,
+    };
+    domainLabels = DOMAIN_LABELS;
+    strengthMsgs = isJunior ? JUNIOR_STRENGTH_MESSAGES : STRENGTH_MESSAGES;
+    nextStepMsgs = isJunior ? JUNIOR_NEXT_STEPS : NEXT_STEPS;
+  }
+
+  // Sort domains by score to find strengths and growth areas
+  const sortedDomains = Object.keys(domainScores).sort((a, b) => domainScores[b] - domainScores[a]);
+  const strengths = sortedDomains.slice(0, 2);
+  const growthAreas = sortedDomains.slice(-2).reverse();
 
   return (
     <main className="min-h-screen bg-meq-cloud py-8 px-4">
@@ -52,13 +76,13 @@ export default async function ResultsPage() {
         <div className="text-center mb-8">
           <h1 className={`font-extrabold text-meq-slate mb-2 ${isJunior ? "text-4xl" : "text-3xl"}`}>
             {isJunior
-              ? `Amazing job, ${firstName}! 🌟`
+              ? `Amazing job, ${firstName}! \u{1F31F}`
               : `Well done, ${firstName}!`}
           </h1>
           <p className={`text-gray-500 ${isJunior ? "text-xl" : "text-lg"}`}>
             {isJunior
               ? "Look at what you can do!"
-              : "Here are your MeQ results. You should feel proud!"}
+              : `Here are your ${framework?.name || "MeQ"} results. You should feel proud!`}
           </p>
         </div>
 
@@ -66,19 +90,19 @@ export default async function ResultsPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-6 mb-4">
           <h3 className={`font-bold text-meq-slate mb-4 flex items-center gap-2 ${isJunior ? "text-xl" : ""}`}>
             <span className="text-xl">&#11088;</span>
-            {isJunior ? " You're great at..." : " Your Strengths"}
+            {isJunior ? " You&apos;re great at..." : " Your Strengths"}
           </h3>
           <ul className="space-y-3">
             {strengths.map((d) => (
               <li key={d} className={`text-gray-600 ${isJunior ? "text-lg" : ""}`}>
-                {isJunior ? (
-                  strengthMessages[d]
+                {isJunior && strengthMsgs[d] ? (
+                  strengthMsgs[d]
                 ) : (
                   <>
                     <span className="font-semibold text-meq-slate">
-                      {DOMAIN_LABELS[d]}:
+                      {domainLabels[d] || d}:
                     </span>{" "}
-                    {strengthMessages[d]}
+                    {strengthMsgs[d] || `You show strong skills in ${domainLabels[d] || d}.`}
                   </>
                 )}
               </li>
@@ -96,22 +120,24 @@ export default async function ResultsPage() {
             <div key={d} className="mb-4 last:mb-0">
               {!isJunior && (
                 <p className="font-semibold text-meq-slate mb-2">
-                  {DOMAIN_LABELS[d]}
+                  {domainLabels[d] || d}
                 </p>
               )}
-              <ul className="space-y-1.5">
-                {nextSteps[d].map((step, i) => (
-                  <li
-                    key={i}
-                    className={`text-gray-600 flex items-start gap-2 ${isJunior ? "text-lg" : ""}`}
-                  >
-                    <span className="text-meq-sky mt-0.5 flex-shrink-0">
-                      &bull;
-                    </span>
-                    {step}
-                  </li>
-                ))}
-              </ul>
+              {nextStepMsgs[d] && nextStepMsgs[d].length > 0 ? (
+                <ul className="space-y-1.5">
+                  {nextStepMsgs[d].map((step, i) => (
+                    <li
+                      key={i}
+                      className={`text-gray-600 flex items-start gap-2 ${isJunior ? "text-lg" : ""}`}
+                    >
+                      <span className="text-meq-sky mt-0.5 flex-shrink-0">&bull;</span>
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">Keep practising your {domainLabels[d] || d} skills!</p>
+              )}
             </div>
           ))}
         </div>
@@ -120,7 +146,7 @@ export default async function ResultsPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-6 text-center mb-6">
           {isJunior ? (
             <p className="text-meq-slate font-medium text-lg">
-              Everyone is good at different things. You did a really great job! 🎉
+              Everyone is good at different things. You did a really great job! {"\ud83c\udf89"}
             </p>
           ) : (
             <>

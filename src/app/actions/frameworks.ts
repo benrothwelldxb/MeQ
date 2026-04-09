@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function createFramework(
   _prevState: { error?: string; success?: boolean } | null,
@@ -84,4 +85,84 @@ export async function createFramework(
 
   revalidatePath("/super/frameworks");
   return { success: true };
+}
+
+export async function updateFrameworkConfig(frameworkId: string, config: string) {
+  await prisma.framework.update({
+    where: { id: frameworkId },
+    data: { config },
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function addFrameworkQuestion(
+  frameworkId: string,
+  data: {
+    domainKey: string;
+    tier: string;
+    prompt: string;
+    questionFormat: string;
+    answerOptions: string;
+    scoreMap: string;
+    weight: number;
+    type: string;
+  }
+) {
+  // Get next orderIndex for this framework+tier
+  const lastQ = await prisma.frameworkQuestion.findFirst({
+    where: { frameworkId, tier: data.tier },
+    orderBy: { orderIndex: "desc" },
+  });
+  const orderIndex = (lastQ?.orderIndex ?? 0) + 1;
+
+  await prisma.frameworkQuestion.create({
+    data: {
+      frameworkId,
+      orderIndex,
+      ...data,
+    },
+  });
+
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function deleteFrameworkQuestion(questionId: string, frameworkId: string) {
+  await prisma.frameworkQuestion.delete({ where: { id: questionId } });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function updateFrameworkDomain(
+  domainId: string,
+  frameworkId: string,
+  data: { label?: string; description?: string; color?: string }
+) {
+  await prisma.frameworkDomain.update({
+    where: { id: domainId },
+    data,
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function addFrameworkDomain(
+  frameworkId: string,
+  data: { key: string; label: string; color: string; description?: string }
+) {
+  const lastDomain = await prisma.frameworkDomain.findFirst({
+    where: { frameworkId },
+    orderBy: { sortOrder: "desc" },
+  });
+
+  await prisma.frameworkDomain.create({
+    data: {
+      frameworkId,
+      sortOrder: (lastDomain?.sortOrder ?? -1) + 1,
+      ...data,
+    },
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function deleteFrameworkDomain(domainId: string, frameworkId: string) {
+  await prisma.frameworkDomain.delete({ where: { id: domainId } });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
 }
