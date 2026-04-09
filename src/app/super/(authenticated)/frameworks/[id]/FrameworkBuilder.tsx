@@ -11,6 +11,7 @@ import {
   addFrameworkIntervention,
   deleteFrameworkIntervention,
 } from "@/app/actions/frameworks";
+import { uploadFrameworkQuestions } from "@/app/actions/framework-questions-upload";
 
 interface Domain {
   id: string;
@@ -307,11 +308,18 @@ export default function FrameworkBuilder({
           </div>
 
           {!framework.isDefault && (
-            <AddQuestionForm
-              frameworkId={framework.id}
-              domains={domains}
-              tier={selectedTier}
-            />
+            <>
+              <AddQuestionForm
+                frameworkId={framework.id}
+                domains={domains}
+                tier={selectedTier}
+              />
+              <CSVQuestionUpload
+                frameworkId={framework.id}
+                tier={selectedTier}
+                domainKeys={domains.map((d) => d.key)}
+              />
+            </>
           )}
         </div>
       )}
@@ -661,6 +669,71 @@ function InterventionsPanel({
           {adding ? "Adding..." : "Add Intervention"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function CSVQuestionUpload({
+  frameworkId,
+  tier,
+  domainKeys,
+}: {
+  frameworkId: string;
+  tier: string;
+  domainKeys: string[];
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<{ count?: number; errors?: string[]; error?: string } | null>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setResult(null);
+
+    const text = await file.text();
+    const res = await uploadFrameworkQuestions(frameworkId, tier, text);
+    setResult(res);
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mt-4">
+      <h3 className="text-sm font-medium text-gray-400 mb-2">Bulk Upload via CSV</h3>
+      <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
+        <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">prompt</code></p>
+        <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">type</code> (core/validation/trap), <code className="text-gray-300">weight</code>, <code className="text-gray-300">reverse</code> (yes/no)</p>
+        <p className="text-xs text-gray-500 mt-2">Domain values must match: {domainKeys.join(", ")}</p>
+      </div>
+
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleUpload}
+        disabled={uploading}
+        className="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-300 hover:file:bg-gray-600 cursor-pointer disabled:opacity-50"
+      />
+
+      {uploading && <p className="text-xs text-gray-400 mt-2">Uploading...</p>}
+
+      {result?.error && (
+        <p className="text-xs text-red-400 mt-2">{result.error}</p>
+      )}
+
+      {result?.count !== undefined && (
+        <div className="mt-2">
+          <p className="text-xs text-emerald-400">{result.count} questions added successfully.</p>
+          {result.errors && result.errors.length > 0 && (
+            <div className="mt-1">
+              {result.errors.map((err, i) => (
+                <p key={i} className="text-xs text-amber-400">{err}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
