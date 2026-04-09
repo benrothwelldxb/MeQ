@@ -330,7 +330,6 @@ export default function FrameworkBuilder({
           frameworkId={framework.id}
           domains={domains}
           interventions={interventions}
-          isDefault={framework.isDefault}
         />
       )}
 
@@ -545,12 +544,10 @@ function InterventionsPanel({
   frameworkId,
   domains,
   interventions,
-  isDefault,
 }: {
   frameworkId: string;
   domains: Domain[];
   interventions: InterventionData[];
-  isDefault: boolean;
 }) {
   const [selectedDomain, setSelectedDomain] = useState(domains[0]?.key || "");
   const [selectedLevel, setSelectedLevel] = useState("Emerging");

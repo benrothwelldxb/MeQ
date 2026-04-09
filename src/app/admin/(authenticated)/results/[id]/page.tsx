@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { TERM_LABELS } from "@/lib/school";
-import { getSchoolFramework, getLevelFromThresholds } from "@/lib/framework";
+import { getSchoolFramework } from "@/lib/framework";
 import { notFound } from "next/navigation";
 import { type Level } from "@/lib/constants";
 import LevelChip from "@/components/LevelChip";

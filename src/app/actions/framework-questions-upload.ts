@@ -24,8 +24,6 @@ export async function uploadFrameworkQuestions(
     return { error: "CSV is empty." };
   }
 
-  const headers = Object.keys(records[0]).map((h) => h.toLowerCase().trim());
-
   // Find prompt column
   const promptCol = Object.keys(records[0]).find((h) => {
     const lc = h.toLowerCase().trim();

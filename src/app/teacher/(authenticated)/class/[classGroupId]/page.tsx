@@ -3,7 +3,6 @@ import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import { getSchoolFramework, getLevelFromThresholds } from "@/lib/framework";
 import { getInterventionsForDomains } from "@/lib/interventions";
-import { type Level } from "@/lib/constants";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -45,8 +44,6 @@ export default async function ClassResultsPage({
   const school = await getSchoolSettings(session.schoolId);
   const framework = await getSchoolFramework(session.schoolId);
   const domains = framework.domains;
-  const tier = "standard"; // Will be determined by class year group below
-
   const classGroup = await prisma.classGroup.findUnique({
     where: { id: params.classGroupId },
     include: {
