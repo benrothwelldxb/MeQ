@@ -5,11 +5,11 @@ import { savePulseAnswer, submitPulse } from "@/app/actions/pulse";
 import Image from "next/image";
 
 const EMOJI_SCALE = [
-  { value: 1, emoji: "\ud83d\ude22", label: "Not good" },
-  { value: 2, emoji: "\ud83d\ude1f", label: "A bit low" },
-  { value: 3, emoji: "\ud83d\ude10", label: "OK" },
-  { value: 4, emoji: "\ud83d\ude42", label: "Good" },
-  { value: 5, emoji: "\ud83d\ude0a", label: "Great" },
+  { value: 1, emoji: "😟", label: "Not really" },
+  { value: 2, emoji: "🫤", label: "A little" },
+  { value: 3, emoji: "😐", label: "Sometimes" },
+  { value: 4, emoji: "🙂", label: "Mostly" },
+  { value: 5, emoji: "😊", label: "Definitely" },
 ];
 
 interface PulseQuestion {
