@@ -135,11 +135,6 @@ export function calculateReliability(
 
 // === Framework-aware scoring ===
 
-interface FrameworkThresholds {
-  levelThresholds?: Array<{ level: string; min: number }>;
-  overallThresholds?: Array<{ level: string; min: number }>;
-}
-
 export function getFrameworkLevel(score: number, thresholds: Array<{ level: string; min: number }>): string {
   for (const { level, min } of thresholds) {
     if (score >= min) return level;
