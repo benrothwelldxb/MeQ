@@ -326,7 +326,10 @@ function AddQuestionForm({
   const [prompt, setPrompt] = useState("");
   const [domainKey, setDomainKey] = useState(domains[0]?.key || "");
   const [type, setType] = useState("core");
+  const [reversed, setReversed] = useState(false);
   const [adding, setAdding] = useState(false);
+
+  const REVERSE_SCORE_MAP = JSON.stringify({ "1": 3, "2": 2, "3": 1, "4": 0 });
 
   const handleAdd = async () => {
     if (!prompt.trim() || !domainKey) return;
@@ -337,11 +340,12 @@ function AddQuestionForm({
       prompt: prompt.trim(),
       questionFormat: "self-report",
       answerOptions: DEFAULT_ANSWER_OPTIONS,
-      scoreMap: DEFAULT_SCORE_MAP,
+      scoreMap: reversed ? REVERSE_SCORE_MAP : DEFAULT_SCORE_MAP,
       weight: 1.0,
       type,
     });
     setPrompt("");
+    setReversed(false);
     setAdding(false);
   };
 
@@ -367,6 +371,10 @@ function AddQuestionForm({
           <option value="validation">Validation</option>
           <option value="trap">Trap</option>
         </select>
+        <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 cursor-pointer">
+          <input type="checkbox" checked={reversed} onChange={(e) => setReversed(e.target.checked)} className="w-3.5 h-3.5 rounded border-gray-500 text-amber-500 focus:ring-amber-500" />
+          <span className="text-xs text-gray-400 whitespace-nowrap">Reverse scored</span>
+        </label>
       </div>
       <div className="flex gap-3">
         <input
@@ -384,7 +392,7 @@ function AddQuestionForm({
           {adding ? "..." : "Add"}
         </button>
       </div>
-      <p className="text-xs text-gray-500 mt-2">Uses default 4-point Likert scale. Questions can be customised later.</p>
+      <p className="text-xs text-gray-500 mt-2">Uses 4-point Likert scale. Reverse scored = highest answer gives lowest score (prevents acquiescence bias).</p>
     </div>
   );
 }

@@ -674,6 +674,93 @@ async function main() {
     });
   }
   console.log(`Seeded ${pulseQuestions.length} pulse questions`);
+
+  // === SEED EXAMPLE FRAMEWORKS ===
+
+  const exampleFrameworks = [
+    {
+      name: "HEART",
+      slug: "heart",
+      description: "Head, Emotions, Actions, Relationships, Thinking — a holistic wellbeing framework.",
+      domains: [
+        { key: "Head", label: "Head", color: "blue" },
+        { key: "Emotions", label: "Emotions", color: "rose" },
+        { key: "Actions", label: "Actions", color: "emerald" },
+        { key: "Relationships", label: "Relationships", color: "purple" },
+        { key: "Thinking", label: "Thinking", color: "amber" },
+      ],
+    },
+    {
+      name: "PERMA",
+      slug: "perma",
+      description: "Positive Emotion, Engagement, Relationships, Meaning, Accomplishment — Seligman's wellbeing model.",
+      domains: [
+        { key: "PositiveEmotion", label: "Positive Emotion", color: "amber" },
+        { key: "Engagement", label: "Engagement", color: "blue" },
+        { key: "Relationships", label: "Relationships", color: "purple" },
+        { key: "Meaning", label: "Meaning", color: "emerald" },
+        { key: "Accomplishment", label: "Accomplishment", color: "rose" },
+      ],
+    },
+    {
+      name: "Character Education",
+      slug: "character-education",
+      description: "A values-based framework focusing on core character virtues.",
+      domains: [
+        { key: "Respect", label: "Respect", color: "blue" },
+        { key: "Responsibility", label: "Responsibility", color: "emerald" },
+        { key: "Resilience", label: "Resilience", color: "amber" },
+        { key: "Integrity", label: "Integrity", color: "purple" },
+        { key: "Compassion", label: "Compassion", color: "rose" },
+        { key: "Courage", label: "Courage", color: "red" },
+      ],
+    },
+  ];
+
+  for (const ef of exampleFrameworks) {
+    const existing = await prisma.framework.findUnique({ where: { slug: ef.slug } });
+    if (existing) continue;
+
+    const domainCount = ef.domains.length;
+    const fw = await prisma.framework.create({
+      data: {
+        name: ef.name,
+        slug: ef.slug,
+        description: ef.description,
+        config: JSON.stringify({
+          levels: ["Emerging", "Developing", "Secure", "Advanced"],
+          tiers: {
+            standard: {
+              levelThresholds: [{ level: "Advanced", min: 18 }, { level: "Secure", min: 15 }, { level: "Developing", min: 10 }, { level: "Emerging", min: 0 }],
+              overallThresholds: [{ level: "Advanced", min: 18 * domainCount }, { level: "Secure", min: 15 * domainCount }, { level: "Developing", min: 10 * domainCount }, { level: "Emerging", min: 0 }],
+              maxDomainScore: 26,
+              maxTotalScore: 26 * domainCount,
+            },
+            junior: {
+              levelThresholds: [{ level: "Advanced", min: 14 }, { level: "Secure", min: 11 }, { level: "Developing", min: 8 }, { level: "Emerging", min: 0 }],
+              overallThresholds: [{ level: "Advanced", min: 14 * domainCount }, { level: "Secure", min: 11 * domainCount }, { level: "Developing", min: 8 * domainCount }, { level: "Emerging", min: 0 }],
+              maxDomainScore: 16,
+              maxTotalScore: 16 * domainCount,
+            },
+          },
+        }),
+      },
+    });
+
+    for (let i = 0; i < ef.domains.length; i++) {
+      await prisma.frameworkDomain.create({
+        data: {
+          frameworkId: fw.id,
+          key: ef.domains[i].key,
+          label: ef.domains[i].label,
+          color: ef.domains[i].color,
+          sortOrder: i,
+        },
+      });
+    }
+
+    console.log(`Seeded ${ef.name} framework with ${ef.domains.length} domains`);
+  }
 }
 
 main()
