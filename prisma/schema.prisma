@@ -42,19 +42,20 @@ model School {
 // ============ FRAMEWORKS ============
 
 model Framework {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  config      String   @default("{}") // JSON: thresholds, levels, messages
-  isDefault   Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  createdBy   String?  // schoolId if school-created, null if system
-  domains     FrameworkDomain[]
-  questions   FrameworkQuestion[]
-  schools     School[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  config        String   @default("{}") // Legacy JSON config (being replaced by scoring models)
+  isDefault     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdBy     String?
+  domains       FrameworkDomain[]
+  questions     FrameworkQuestion[]
+  scoringModels FrameworkScoringModel[]
+  schools       School[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model FrameworkDomain {
@@ -66,6 +67,30 @@ model FrameworkDomain {
   description String?
   color       String    @default("blue")
   sortOrder   Int       @default(0)
+  messages    FrameworkDomainMessage[]
+
+  @@unique([frameworkId, key])
+}
+
+model FrameworkDomainMessage {
+  id                String          @id @default(cuid())
+  frameworkDomainId String
+  frameworkDomain   FrameworkDomain @relation(fields: [frameworkDomainId], references: [id], onDelete: Cascade)
+  messageType       String          // "strength", "strength_junior", "next_step", "next_step_junior"
+  content           String
+  sortOrder         Int             @default(0)
+}
+
+model FrameworkScoringModel {
+  id                 String    @id @default(cuid())
+  frameworkId        String
+  framework          Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  key                String    // "standard", "junior"
+  name               String    // "Standard (8-11)"
+  thresholds         String    // JSON: [{level, min}] for per-domain
+  overallThresholds  String    // JSON: [{level, min}] for overall
+  maxDomainScore     Float
+  maxTotalScore      Float
 
   @@unique([frameworkId, key])
 }
@@ -225,8 +250,20 @@ model Assessment {
   lastQuestionNum       Int       @default(0)
   startedAt             DateTime  @default(now())
   completedAt           DateTime?
+  domainScoreRecords    AssessmentDomainScore[]
 
   @@unique([studentId, term, academicYear])
+}
+
+model AssessmentDomainScore {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  domainKey    String
+  score        Float
+  level        String
+
+  @@unique([assessmentId, domainKey])
 }
 
 // ============ TEACHER QUESTIONS & ASSESSMENTS ============
@@ -263,11 +300,23 @@ model TeacherAssessment {
   chooseWellLevel       String?
   domainScoresJson      String?
   domainLevelsJson      String?
-  frameworkId           String?
-  completedAt           DateTime?
-  createdAt             DateTime  @default(now())
+  frameworkId                  String?
+  completedAt                  DateTime?
+  createdAt                    DateTime  @default(now())
+  domainScoreRecords           TeacherAssessmentDomainScore[]
 
   @@unique([teacherId, studentId, term, academicYear])
+}
+
+model TeacherAssessmentDomainScore {
+  id                    String            @id @default(cuid())
+  teacherAssessmentId   String
+  teacherAssessment     TeacherAssessment @relation(fields: [teacherAssessmentId], references: [id], onDelete: Cascade)
+  domainKey             String
+  score                 Float
+  level                 String
+
+  @@unique([teacherAssessmentId, domainKey])
 }
 
 // ============ WEEKLY PULSE ============

@@ -2,17 +2,8 @@
 
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
-import { getSchoolFramework, getFrameworkQuestions } from "@/lib/framework";
-import { type Tier } from "@/lib/constants";
-import {
-  calculateDomainScores,
-  calculateTotalScore,
-  calculateReliability,
-  calculateFrameworkDomainScores,
-  getLevel,
-  getOverallLevel,
-  getFrameworkLevel,
-} from "@/lib/scoring";
+import { getSchoolFramework, getFrameworkQuestions, getLevelFromThresholds } from "@/lib/framework";
+import { calculateFrameworkDomainScores } from "@/lib/scoring";
 import { redirect } from "next/navigation";
 
 export async function saveAnswer(questionNum: number, value: number) {
@@ -50,110 +41,138 @@ export async function submitQuiz() {
   });
   if (!assessment || assessment.status !== "in_progress") return;
 
-  const tier = (assessment.tier || "standard") as Tier;
+  const tier = assessment.tier || "standard";
   const reduced = assessment.isReduced;
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
 
-  // Check for custom framework
+  // Always use framework-driven scoring
   const framework = await getSchoolFramework(assessment.student.schoolId);
+  const scoringModel = framework.scoringModels[tier];
 
-  if (framework) {
-    const fwQuestions = await getFrameworkQuestions(framework.id, tier);
-    if (fwQuestions.length > 0) {
-      // Framework-based scoring
-      const domainKeys = framework.domains.map((d) => d.key);
-      const domainScores = calculateFrameworkDomainScores(
-        answers,
-        fwQuestions.map((q) => ({
-          orderIndex: q.orderIndex,
-          domainKey: q.domainKey,
-          type: q.type,
-          weight: q.weight,
-          scoreMap: q.scoreMap,
-        })),
-        domainKeys
-      );
+  // Load questions — prefer framework questions, fall back to legacy
+  let fwQuestions = await getFrameworkQuestions(framework.id, tier);
 
-      const totalScore = Object.values(domainScores).reduce((s, v) => s + v, 0);
-      const tierConfig = framework.config.tiers?.[tier];
-      const levelThresholds = tierConfig?.levelThresholds || [];
-      const overallThresholds = tierConfig?.overallThresholds || [];
+  if (fwQuestions.length === 0) {
+    // Fall back to legacy Question model for MeQ Standard
+    const legacyQuestions = await prisma.question.findMany({
+      where: { tier },
+      orderBy: { orderIndex: "asc" },
+    });
+    // Convert to framework question shape
+    fwQuestions = legacyQuestions.map((q) => ({
+      ...q,
+      frameworkId: framework.id,
+      domainKey: q.domain,
+      type: q.type || "core",
+      questionFormat: q.questionFormat || "self-report",
+    }));
+  }
 
-      const domainLevels: Record<string, string> = {};
-      for (const key of domainKeys) {
-        domainLevels[key] = getFrameworkLevel(domainScores[key] || 0, levelThresholds);
+  const answers = JSON.parse(assessment.answers) as Record<string, number>;
+  const domainKeys = framework.domains.map((d) => d.key);
+
+  // Calculate domain scores
+  const domainScores = calculateFrameworkDomainScores(
+    answers,
+    fwQuestions.map((q) => ({
+      orderIndex: q.orderIndex,
+      domainKey: q.domainKey,
+      type: q.type,
+      weight: q.weight,
+      scoreMap: q.scoreMap,
+    })),
+    domainKeys
+  );
+
+  const totalScore = Math.round(
+    Object.values(domainScores).reduce((s, v) => s + v, 0) * 10
+  ) / 10;
+
+  // Get thresholds
+  const domainThresholds = scoringModel?.thresholds || [];
+  const overallThresholds = scoringModel?.overallThresholds || [];
+
+  // Calculate levels
+  const domainLevels: Record<string, string> = {};
+  for (const key of domainKeys) {
+    domainLevels[key] = getLevelFromThresholds(domainScores[key] || 0, domainThresholds);
+  }
+  const overallLevel = getLevelFromThresholds(totalScore, overallThresholds);
+
+  // Determine reliability
+  let reliability = "Lite";
+  if (!reduced) {
+    const validationQs = fwQuestions.filter((q) => q.isValidation && q.validationPair);
+    const trapQs = fwQuestions.filter((q) => q.isTrap);
+    if (validationQs.length > 0 || trapQs.length > 0) {
+      let consistentPairs = 0;
+      let totalPairs = 0;
+      let trapFlags = 0;
+      let totalTraps = 0;
+      for (const vq of validationQs) {
+        const va = answers[String(vq.orderIndex)];
+        const pa = answers[String(vq.validationPair)];
+        if (va !== undefined && pa !== undefined) {
+          totalPairs++;
+          if (Math.abs(va - pa) <= 1) consistentPairs++;
+        }
       }
-
-      await prisma.assessment.update({
-        where: { id: assessment.id },
-        data: {
-          status: "completed",
-          completedAt: new Date(),
-          totalScore: Math.round(totalScore * 10) / 10,
-          overallLevel: getFrameworkLevel(totalScore, overallThresholds),
-          // Write to JSON fields for framework assessments
-          domainScoresJson: JSON.stringify(domainScores),
-          domainLevelsJson: JSON.stringify(domainLevels),
-          frameworkId: framework.id,
-          // Also write to legacy columns if domains match
-          knowMeScore: domainScores.KnowMe ?? null,
-          manageMeScore: domainScores.ManageMe ?? null,
-          understandOthersScore: domainScores.UnderstandOthers ?? null,
-          workWithOthersScore: domainScores.WorkWithOthers ?? null,
-          chooseWellScore: domainScores.ChooseWell ?? null,
-          knowMeLevel: domainLevels.KnowMe ?? null,
-          manageMeLevel: domainLevels.ManageMe ?? null,
-          understandOthersLevel: domainLevels.UnderstandOthers ?? null,
-          workWithOthersLevel: domainLevels.WorkWithOthers ?? null,
-          chooseWellLevel: domainLevels.ChooseWell ?? null,
-          reliabilityScore: reduced ? "Lite" : "N/A",
-          rawResponseJson: JSON.stringify(answers),
-        },
-      });
-
-      redirect("/results");
+      for (const tq of trapQs) {
+        const a = answers[String(tq.orderIndex)];
+        if (a !== undefined) {
+          totalTraps++;
+          if (a === 4) trapFlags++;
+        }
+      }
+      const pairRatio = totalPairs > 0 ? consistentPairs / totalPairs : 1;
+      const trapRatio = totalTraps > 0 ? trapFlags / totalTraps : 0;
+      if (pairRatio >= 0.8 && trapRatio <= 0.2) reliability = "High";
+      else if (pairRatio >= 0.5 && trapRatio <= 0.4) reliability = "Medium";
+      else reliability = "Low";
+    } else {
+      reliability = "High"; // No validation/trap = always high (junior)
     }
   }
 
-  // Legacy MeQ Standard scoring
-  const questions = await prisma.question.findMany({
-    where: { tier },
-    orderBy: { orderIndex: "asc" },
-  });
-
-  const domainScores = calculateDomainScores(answers, questions);
-  const totalScore = calculateTotalScore(domainScores);
-  const reliability = reduced ? "Lite" : calculateReliability(answers, questions);
-
+  // Write assessment results — framework-driven only
   await prisma.assessment.update({
     where: { id: assessment.id },
     data: {
       status: "completed",
       completedAt: new Date(),
       totalScore,
-      overallLevel: getOverallLevel(totalScore, tier, reduced),
-      knowMeScore: domainScores.KnowMe,
-      manageMeScore: domainScores.ManageMe,
-      understandOthersScore: domainScores.UnderstandOthers,
-      workWithOthersScore: domainScores.WorkWithOthers,
-      chooseWellScore: domainScores.ChooseWell,
-      knowMeLevel: getLevel(domainScores.KnowMe, tier, reduced),
-      manageMeLevel: getLevel(domainScores.ManageMe, tier, reduced),
-      understandOthersLevel: getLevel(domainScores.UnderstandOthers, tier, reduced),
-      workWithOthersLevel: getLevel(domainScores.WorkWithOthers, tier, reduced),
-      chooseWellLevel: getLevel(domainScores.ChooseWell, tier, reduced),
+      overallLevel,
+      domainScoresJson: JSON.stringify(domainScores),
+      domainLevelsJson: JSON.stringify(domainLevels),
+      frameworkId: framework.id,
       reliabilityScore: reliability,
       rawResponseJson: JSON.stringify(answers),
-      domainScoresJson: JSON.stringify(domainScores),
-      domainLevelsJson: JSON.stringify({
-        KnowMe: getLevel(domainScores.KnowMe, tier, reduced),
-        ManageMe: getLevel(domainScores.ManageMe, tier, reduced),
-        UnderstandOthers: getLevel(domainScores.UnderstandOthers, tier, reduced),
-        WorkWithOthers: getLevel(domainScores.WorkWithOthers, tier, reduced),
-        ChooseWell: getLevel(domainScores.ChooseWell, tier, reduced),
-      }),
+      // Legacy columns — write for backwards compat with existing reports
+      knowMeScore: domainScores["KnowMe"] ?? null,
+      manageMeScore: domainScores["ManageMe"] ?? null,
+      understandOthersScore: domainScores["UnderstandOthers"] ?? null,
+      workWithOthersScore: domainScores["WorkWithOthers"] ?? null,
+      chooseWellScore: domainScores["ChooseWell"] ?? null,
+      knowMeLevel: domainLevels["KnowMe"] ?? null,
+      manageMeLevel: domainLevels["ManageMe"] ?? null,
+      understandOthersLevel: domainLevels["UnderstandOthers"] ?? null,
+      workWithOthersLevel: domainLevels["WorkWithOthers"] ?? null,
+      chooseWellLevel: domainLevels["ChooseWell"] ?? null,
     },
   });
+
+  // Write domain score records (queryable)
+  for (const key of domainKeys) {
+    await prisma.assessmentDomainScore.upsert({
+      where: { assessmentId_domainKey: { assessmentId: assessment.id, domainKey: key } },
+      update: { score: domainScores[key] || 0, level: domainLevels[key] || "Emerging" },
+      create: {
+        assessmentId: assessment.id,
+        domainKey: key,
+        score: domainScores[key] || 0,
+        level: domainLevels[key] || "Emerging",
+      },
+    });
+  }
 
   redirect("/results");
 }

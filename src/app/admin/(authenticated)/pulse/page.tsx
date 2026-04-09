@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
-import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS, type Domain } from "@/lib/constants";
+import { getSchoolFramework } from "@/lib/framework";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -20,6 +20,22 @@ function ScoreDot({ value }: { value: number }) {
 export default async function AdminPulsePage() {
   const session = await getAdminSession();
   const school = await getSchoolSettings(session.schoolId);
+
+  const framework = await getSchoolFramework(session.schoolId);
+  const domains = framework.domains;
+
+  const COLOR_STYLES: Record<string, { text: string }> = {
+    blue: { text: "text-blue-700" }, emerald: { text: "text-emerald-700" }, purple: { text: "text-purple-700" },
+    amber: { text: "text-amber-700" }, rose: { text: "text-rose-700" }, red: { text: "text-red-700" },
+    green: { text: "text-green-700" }, indigo: { text: "text-indigo-700" }, pink: { text: "text-pink-700" }, teal: { text: "text-teal-700" },
+  };
+
+  const labelMap: Record<string, string> = {};
+  const colorMap: Record<string, string> = {};
+  for (const d of domains) {
+    labelMap[d.key] = d.label;
+    colorMap[d.key] = COLOR_STYLES[d.color]?.text || "text-gray-700";
+  }
 
   if (!school.pulseEnabled) {
     return (
@@ -106,7 +122,7 @@ export default async function AdminPulsePage() {
       (p) => p.weekOf.toISOString() === week.toISOString()
     );
     const avgs: Record<string, number> = {};
-    for (const domain of DOMAINS) {
+    for (const domain of domains.map((d) => d.key)) {
       const values = weekChecks
         .map((p) => (JSON.parse(p.answers) as Record<string, number>)[domain])
         .filter((v) => v !== undefined);
@@ -175,7 +191,7 @@ export default async function AdminPulsePage() {
                   </span>
                 </div>
                 <p className="text-sm text-red-700 mb-1">
-                  <span className="font-medium">{DOMAIN_LABELS[f.domain as Domain] || f.domain}</span>
+                  <span className="font-medium">{labelMap[f.domain] || f.domain}</span>
                   {" — scored "}
                   <span className="font-bold">{f.score}/5</span>
                   {pulseQuestionMap[f.domain] && (
@@ -202,9 +218,9 @@ export default async function AdminPulsePage() {
               <tr className="border-b border-gray-100">
                 <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Week</th>
                 <th className="text-center px-2 py-2 text-xs font-semibold text-gray-500">Responses</th>
-                {DOMAINS.map((d) => (
-                  <th key={d} className={`text-center px-2 py-2 text-xs font-semibold ${DOMAIN_COLORS[d].text}`}>
-                    {DOMAIN_LABELS[d]}
+                {domains.map((d) => (
+                  <th key={d.key} className={`text-center px-2 py-2 text-xs font-semibold ${colorMap[d.key]}`}>
+                    {d.label}
                   </th>
                 ))}
               </tr>
@@ -214,11 +230,11 @@ export default async function AdminPulsePage() {
                 <tr key={i}>
                   <td className="px-3 py-2 text-sm font-medium text-gray-900">{row.label}</td>
                   <td className="text-center px-2 py-2 text-sm text-gray-500">{row.count}</td>
-                  {DOMAINS.map((d) => {
-                    const val = row.averages[d];
+                  {domains.map((d) => {
+                    const val = row.averages[d.key];
                     const color = val >= 4 ? "text-emerald-600" : val >= 3 ? "text-gray-700" : val >= 2 ? "text-amber-600" : val > 0 ? "text-red-600" : "text-gray-300";
                     return (
-                      <td key={d} className={`text-center px-2 py-2 text-sm font-medium ${color}`}>
+                      <td key={d.key} className={`text-center px-2 py-2 text-sm font-medium ${color}`}>
                         {val > 0 ? val : "—"}
                       </td>
                     );
@@ -241,9 +257,9 @@ export default async function AdminPulsePage() {
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Student</th>
                 <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Year / Class</th>
-                {DOMAINS.map((d) => (
-                  <th key={d} className="text-center px-2 py-2 text-xs font-semibold text-gray-500">
-                    {DOMAIN_LABELS[d]}
+                {domains.map((d) => (
+                  <th key={d.key} className="text-center px-2 py-2 text-xs font-semibold text-gray-500">
+                    {d.label}
                   </th>
                 ))}
               </tr>
@@ -263,12 +279,12 @@ export default async function AdminPulsePage() {
                     <td className="px-3 py-3 text-sm text-gray-500">
                       {student.yearGroup}{student.className ? ` / ${student.className}` : ""}
                     </td>
-                    {answers ? DOMAINS.map((d) => (
-                      <td key={d} className="text-center px-2 py-3">
-                        {answers[d] ? <ScoreDot value={answers[d]} /> : <span className="text-gray-300">—</span>}
+                    {answers ? domains.map((d) => (
+                      <td key={d.key} className="text-center px-2 py-3">
+                        {answers[d.key] ? <ScoreDot value={answers[d.key]} /> : <span className="text-gray-300">—</span>}
                       </td>
                     )) : (
-                      <td colSpan={5} className="text-center px-2 py-3 text-xs text-gray-400">
+                      <td colSpan={domains.length} className="text-center px-2 py-3 text-xs text-gray-400">
                         Not completed
                       </td>
                     )}

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
-import { DOMAINS, DOMAIN_LABELS, DOMAIN_COLORS } from "@/lib/constants";
+import { getSchoolFramework } from "@/lib/framework";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -32,6 +32,14 @@ export default async function TeacherPulsePage({
   if (!session.teacherId) redirect("/teacher/login");
 
   const school = await getSchoolSettings(session.schoolId);
+  const framework = await getSchoolFramework(session.schoolId);
+  const domains = framework.domains;
+  const COLOR_STYLES: Record<string, { text: string }> = {
+    blue: { text: "text-blue-700" }, emerald: { text: "text-emerald-700" }, purple: { text: "text-purple-700" },
+    amber: { text: "text-amber-700" }, rose: { text: "text-rose-700" }, red: { text: "text-red-700" },
+    green: { text: "text-green-700" }, indigo: { text: "text-indigo-700" }, pink: { text: "text-pink-700" }, teal: { text: "text-teal-700" },
+  };
+
   if (!school.pulseEnabled) {
     return (
       <div className="max-w-3xl">
@@ -105,9 +113,9 @@ export default async function TeacherPulsePage({
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Student</th>
-                {DOMAINS.map((d) => (
-                  <th key={d} className={`text-center px-2 py-2 text-xs font-semibold ${DOMAIN_COLORS[d].text}`}>
-                    {DOMAIN_LABELS[d]}
+                {domains.map((d) => (
+                  <th key={d.key} className={`text-center px-2 py-2 text-xs font-semibold ${COLOR_STYLES[d.color]?.text || "text-gray-700"}`}>
+                    {d.label}
                   </th>
                 ))}
               </tr>
@@ -124,12 +132,12 @@ export default async function TeacherPulsePage({
                         {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
                       </span>
                     </td>
-                    {answers ? DOMAINS.map((d) => (
-                      <td key={d} className="text-center px-2 py-3">
-                        {answers[d] ? <ScoreBadge value={answers[d]} /> : <span className="text-gray-300">—</span>}
+                    {answers ? domains.map((d) => (
+                      <td key={d.key} className="text-center px-2 py-3">
+                        {answers[d.key] ? <ScoreBadge value={answers[d.key]} /> : <span className="text-gray-300">—</span>}
                       </td>
                     )) : (
-                      <td colSpan={5} className="text-center px-2 py-3 text-xs text-gray-400">Not completed</td>
+                      <td colSpan={domains.length} className="text-center px-2 py-3 text-xs text-gray-400">Not completed</td>
                     )}
                   </tr>
                 );

@@ -58,6 +58,10 @@ export async function loginStudent(
     // Resume in-progress assessment
   } else {
     // Create new assessment for current term
+    // Get the school's framework for stamping on the assessment
+    const { getSchoolFramework } = await import("@/lib/framework");
+    const fw = await getSchoolFramework(student.schoolId);
+
     assessment = await prisma.assessment.create({
       data: {
         studentId: student.id,
@@ -65,6 +69,7 @@ export async function loginStudent(
         term: currentTerm,
         academicYear,
         isReduced: school.reducedQuestions,
+        frameworkId: fw.id,
       },
     });
   }
