@@ -707,7 +707,7 @@ function CSVQuestionUpload({
       <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
         <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">prompt</code></p>
         <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">type</code> (core/validation/trap), <code className="text-gray-300">weight</code>, <code className="text-gray-300">reverse</code> (yes/no)</p>
-        <p className="text-xs text-gray-500 mt-2">Domain values must match: {domainKeys.join(", ")}</p>
+        <p className="text-xs text-gray-500 mt-2">Domain values can use names or keys (case-insensitive): {domainKeys.join(", ")}</p>
       </div>
 
       <input

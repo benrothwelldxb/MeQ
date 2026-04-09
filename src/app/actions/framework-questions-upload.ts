@@ -63,7 +63,18 @@ export async function uploadFrameworkQuestions(
   });
   if (!framework) return { error: "Framework not found." };
 
-  const validDomains = new Set(framework.domains.map((d) => d.key));
+  // Build lookup maps: match by key (exact) or label (case-insensitive)
+  const keySet = new Set(framework.domains.map((d) => d.key));
+  const labelToKey: Record<string, string> = {};
+  for (const d of framework.domains) {
+    labelToKey[d.label.toLowerCase()] = d.key;
+    labelToKey[d.key.toLowerCase()] = d.key;
+  }
+
+  function resolveDomain(input: string): string | null {
+    if (keySet.has(input)) return input;
+    return labelToKey[input.toLowerCase()] || null;
+  }
 
   // Get current max orderIndex for this tier
   const lastQ = await prisma.frameworkQuestion.findFirst({
@@ -74,19 +85,21 @@ export async function uploadFrameworkQuestions(
 
   const errors: string[] = [];
   let created = 0;
+  const validLabels = framework.domains.map((d) => `${d.label} (${d.key})`).join(", ");
 
   for (let i = 0; i < records.length; i++) {
     const row = records[i];
     const prompt = row[promptCol]?.trim();
-    const domain = row[domainCol]?.trim();
+    const domainRaw = row[domainCol]?.trim();
 
-    if (!prompt || !domain) {
+    if (!prompt || !domainRaw) {
       errors.push(`Row ${i + 2}: Missing prompt or domain`);
       continue;
     }
 
-    if (!validDomains.has(domain)) {
-      errors.push(`Row ${i + 2}: Unknown domain "${domain}". Valid: ${Array.from(validDomains).join(", ")}`);
+    const domain = resolveDomain(domainRaw);
+    if (!domain) {
+      errors.push(`Row ${i + 2}: Unknown domain "${domainRaw}". Valid: ${validLabels}`);
       continue;
     }
 
