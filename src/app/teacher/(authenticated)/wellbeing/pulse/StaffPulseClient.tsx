@@ -4,11 +4,11 @@ import { useState } from "react";
 import { saveStaffPulseAnswer, submitStaffPulse } from "@/app/actions/staff-wellbeing";
 
 const EMOJI_SCALE = [
-  { value: 1, emoji: "😟", label: "Not really" },
-  { value: 2, emoji: "🫤", label: "A little" },
-  { value: 3, emoji: "😐", label: "Sometimes" },
-  { value: 4, emoji: "🙂", label: "Mostly" },
-  { value: 5, emoji: "😊", label: "Definitely" },
+  { value: 1, emoji: "😟", label: "Strongly disagree" },
+  { value: 2, emoji: "🫤", label: "Disagree" },
+  { value: 3, emoji: "😐", label: "Neutral" },
+  { value: 4, emoji: "🙂", label: "Agree" },
+  { value: 5, emoji: "😊", label: "Strongly agree" },
 ];
 
 interface PulseQuestion {
