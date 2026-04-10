@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getAdminSession, getTeacherSession, getSuperAdminSession } from "@/lib/session";
+import { validatePassword } from "@/lib/security";
 import { compareSync, hashSync } from "bcryptjs";
 
 export async function changeAdminPassword(
@@ -16,7 +17,8 @@ export async function changeAdminPassword(
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!currentPassword || !newPassword) return { error: "Please fill in all fields." };
-  if (newPassword.length < 6) return { error: "New password must be at least 6 characters." };
+  const validation = validatePassword(newPassword);
+  if (!validation.valid) return { error: validation.error };
   if (newPassword !== confirmPassword) return { error: "Passwords do not match." };
 
   const admin = await prisma.admin.findUnique({ where: { id: session.adminId } });
@@ -45,7 +47,8 @@ export async function changeTeacherPassword(
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!currentPassword || !newPassword) return { error: "Please fill in all fields." };
-  if (newPassword.length < 6) return { error: "New password must be at least 6 characters." };
+  const validation = validatePassword(newPassword);
+  if (!validation.valid) return { error: validation.error };
   if (newPassword !== confirmPassword) return { error: "Passwords do not match." };
 
   const teacher = await prisma.teacher.findUnique({ where: { id: session.teacherId } });
@@ -73,7 +76,8 @@ export async function changeSuperAdminPassword(
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!currentPassword || !newPassword) return { error: "Please fill in all fields." };
-  if (newPassword.length < 6) return { error: "New password must be at least 6 characters." };
+  const validation = validatePassword(newPassword);
+  if (!validation.valid) return { error: validation.error };
   if (newPassword !== confirmPassword) return { error: "Passwords do not match." };
 
   const superAdmin = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId } });

@@ -96,6 +96,145 @@ export async function sendTeacherWelcomeEmail({
   });
 }
 
+// === Safeguarding Alerts ===
+
+export async function sendPulseSafeguardingAlert({
+  dslEmail,
+  schoolName,
+  studentName,
+  yearGroup,
+  className,
+  flaggedDomains,
+  freeText,
+}: {
+  dslEmail: string;
+  schoolName: string;
+  studentName: string;
+  yearGroup: string;
+  className: string | null;
+  flaggedDomains: Array<{ domain: string; score: number }>;
+  freeText?: string | null;
+}) {
+  const pulseUrl = `${APP_URL}/admin/pulse`;
+
+  await sendEmail({
+    to: dslEmail,
+    subject: `\u26A0\uFE0F Safeguarding alert \u2014 ${studentName} (${schoolName})`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <h2 style="color: #991b1b; margin: 0 0 8px; font-size: 18px;">\u26A0\uFE0F Weekly Pulse Safeguarding Alert</h2>
+          <p style="color: #7f1d1d; margin: 0; font-size: 14px;">
+            A student's Weekly Pulse response indicates they may need support.
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student</p>
+          <p style="margin: 0 0 12px; color: #1e293b; font-weight: 600; font-size: 16px;">${studentName}</p>
+
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Year / Class</p>
+          <p style="margin: 0 0 12px; color: #1e293b;">${yearGroup}${className ? ` / ${className}` : ""}</p>
+
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Low scoring domains</p>
+          <ul style="margin: 0 0 12px; padding-left: 20px;">
+            ${flaggedDomains.map((f) => `<li style="color: #991b1b;">${f.domain} \u2014 scored ${f.score}/5</li>`).join("")}
+          </ul>
+
+          ${freeText ? `
+            <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student comment</p>
+            <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${freeText}"</p>
+          ` : ""}
+        </div>
+
+        <div style="margin: 32px 0;">
+          <a href="${pulseUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Review in MeQ
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px;">
+          This alert was sent automatically by MeQ. Follow your school's safeguarding procedures.
+          You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
+        </p>
+      </div>
+    `,
+  });
+}
+
+export async function sendSurveySafeguardingAlert({
+  dslEmail,
+  schoolName,
+  surveyTitle,
+  studentName,
+  yearGroup,
+  className,
+  flagReason,
+  flaggedText,
+  anonymous,
+  surveyId,
+}: {
+  dslEmail: string;
+  schoolName: string;
+  surveyTitle: string;
+  studentName: string | null;
+  yearGroup: string | null;
+  className: string | null;
+  flagReason: string;
+  flaggedText: string;
+  anonymous: boolean;
+  surveyId: string;
+}) {
+  const surveyUrl = `${APP_URL}/admin/surveys/${surveyId}/results`;
+
+  await sendEmail({
+    to: dslEmail,
+    subject: `\u26A0\uFE0F Safeguarding alert \u2014 "${surveyTitle}" response flagged (${schoolName})`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <h2 style="color: #991b1b; margin: 0 0 8px; font-size: 18px;">\u26A0\uFE0F Survey Response Flagged</h2>
+          <p style="color: #7f1d1d; margin: 0; font-size: 14px;">
+            A response to "${surveyTitle}" contains content that may indicate a concern.
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student</p>
+          <p style="margin: 0 0 12px; color: #1e293b; font-weight: 600;">
+            ${anonymous ? "Anonymous (cannot identify)" : studentName || "Unknown"}
+            ${!anonymous && yearGroup ? ` \u00B7 ${yearGroup}${className ? ` / ${className}` : ""}` : ""}
+          </p>
+
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Flag reason</p>
+          <p style="margin: 0 0 12px; color: #991b1b;">Keyword match: ${flagReason}</p>
+
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Flagged text</p>
+          <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${flaggedText}"</p>
+        </div>
+
+        <div style="margin: 32px 0;">
+          <a href="${surveyUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Review in MeQ
+          </a>
+        </div>
+
+        ${anonymous ? `
+          <p style="color: #94a3b8; font-size: 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 12px;">
+            <strong>Note:</strong> This survey was anonymous. The student cannot be identified from the response.
+            If the content indicates immediate risk, work with your pastoral team to identify patterns or speak to all students who completed this survey.
+          </p>
+        ` : ""}
+
+        <p style="color: #94a3b8; font-size: 12px; margin-top: 16px;">
+          This alert was sent automatically by MeQ. Follow your school's safeguarding procedures.
+          You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
+        </p>
+      </div>
+    `,
+  });
+}
+
 export async function sendAdminWelcomeEmail({
   email,
   schoolName,

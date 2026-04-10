@@ -52,6 +52,23 @@ export default async function SettingsPage() {
             </div>
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Safeguarding Lead Email
+            </label>
+            <input
+              name="dslEmail"
+              type="email"
+              defaultValue={school.dslEmail || ""}
+              placeholder="dsl@yourschool.sch.uk"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              The Designated Safeguarding Lead receives automatic email alerts when a student&apos;s Pulse response
+              is concerning or a survey response is flagged by our keyword moderation.
+            </p>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assessment Framework</label>
             <select name="frameworkId" defaultValue={school.frameworkId || ""} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none">
               <option value="">MeQ Standard (default)</option>

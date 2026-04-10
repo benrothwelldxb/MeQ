@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { teacherLoginSchema } from "@/lib/validation";
+import { isLockedOut, recordFailedLogin, clearFailedLogins, formatLockoutMessage } from "@/lib/security";
 import { compareSync } from "bcryptjs";
 import { redirect } from "next/navigation";
 
@@ -19,13 +20,23 @@ export async function loginTeacher(
     return { error: "Please enter a valid email and password." };
   }
 
+  const email = parsed.data.email.toLowerCase();
+
+  const lockout = await isLockedOut(email, "teacher");
+  if (lockout.locked && lockout.unlocksAt) {
+    return { error: formatLockoutMessage(lockout.unlocksAt) };
+  }
+
   const teacher = await prisma.teacher.findUnique({
-    where: { email: parsed.data.email },
+    where: { email },
   });
 
   if (!teacher || !compareSync(parsed.data.password, teacher.passwordHash)) {
+    await recordFailedLogin(email, "teacher");
     return { error: "Invalid email or password." };
   }
+
+  await clearFailedLogins(email, "teacher");
 
   const session = await getTeacherSession();
   session.teacherId = teacher.id;

@@ -167,6 +167,7 @@ export async function submitSurveyResponse(
   // Moderate free text answers
   let flagged = false;
   let flagReason: string | null = null;
+  let flaggedText: string | null = null;
   for (const q of survey.questions) {
     if (q.questionType === "free_text") {
       const val = answers[q.id];
@@ -175,6 +176,7 @@ export async function submitSurveyResponse(
         if (mod.flagged) {
           flagged = true;
           flagReason = mod.reason || null;
+          flaggedText = val;
           break;
         }
       }
@@ -190,6 +192,40 @@ export async function submitSurveyResponse(
       flagReason,
     },
   });
+
+  // Send safeguarding alert if flagged and school has DSL email set
+  if (flagged && flaggedText && flagReason) {
+    const school = await prisma.school.findUnique({
+      where: { id: survey.schoolId },
+    });
+
+    if (school?.dslEmail) {
+      const student = survey.anonymous
+        ? null
+        : await prisma.student.findUnique({
+            where: { id: session.studentId },
+            select: { firstName: true, lastName: true, yearGroup: true, className: true },
+          });
+
+      try {
+        const { sendSurveySafeguardingAlert } = await import("@/lib/email");
+        await sendSurveySafeguardingAlert({
+          dslEmail: school.dslEmail,
+          schoolName: school.name,
+          surveyTitle: survey.title,
+          studentName: student ? `${student.firstName} ${student.lastName}` : null,
+          yearGroup: student?.yearGroup || null,
+          className: student?.className || null,
+          flagReason,
+          flaggedText,
+          anonymous: survey.anonymous,
+          surveyId: survey.id,
+        });
+      } catch (err) {
+        console.error("[safeguarding-alert] Failed to send survey alert:", err);
+      }
+    }
+  }
 
   return { success: true };
 }

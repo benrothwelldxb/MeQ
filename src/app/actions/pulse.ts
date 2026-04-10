@@ -62,10 +62,48 @@ export async function submitPulse(freeText?: string) {
 
   const weekOf = getMonday(new Date());
 
-  await prisma.pulseCheck.update({
+  const pulseCheck = await prisma.pulseCheck.update({
     where: { studentId_weekOf: { studentId: session.studentId, weekOf } },
     data: { completedAt: new Date(), freeText: freeText || null },
   });
+
+  // Check for safeguarding concerns and email DSL
+  const answers = JSON.parse(pulseCheck.answers) as Record<string, number>;
+  const lowScores = Object.entries(answers)
+    .filter(([, score]) => score <= 2)
+    .map(([domain, score]) => ({ domain, score }));
+
+  if (lowScores.length > 0) {
+    const student = await prisma.student.findUnique({
+      where: { id: session.studentId },
+      include: { school: true },
+    });
+
+    if (student?.school.dslEmail) {
+      const { sendPulseSafeguardingAlert } = await import("@/lib/email");
+      const { moderateText } = await import("@/lib/surveys");
+
+      // Only alert if 2+ domains low OR free text flagged
+      const freeTextFlag = freeText ? moderateText(freeText) : { flagged: false };
+      const shouldAlert = lowScores.length >= 2 || freeTextFlag.flagged;
+
+      if (shouldAlert) {
+        try {
+          await sendPulseSafeguardingAlert({
+            dslEmail: student.school.dslEmail,
+            schoolName: student.school.name,
+            studentName: `${student.firstName} ${student.lastName}`,
+            yearGroup: student.yearGroup,
+            className: student.className,
+            flaggedDomains: lowScores,
+            freeText: freeText || null,
+          });
+        } catch (err) {
+          console.error("[safeguarding-alert] Failed to send pulse alert:", err);
+        }
+      }
+    }
+  }
 
   redirect("/pulse/done");
 }

@@ -29,6 +29,7 @@ model School {
   pulseEnabled          Boolean  @default(false)
   readAloudEnabled      Boolean  @default(false)
   staffWellbeingEnabled Boolean  @default(false)
+  dslEmail              String?  // Designated Safeguarding Lead — receives flagged content alerts
   frameworkId      String?
   framework        Framework? @relation(fields: [frameworkId], references: [id])
   admins               Admin[]
@@ -492,6 +493,17 @@ model StaffPulseCheck {
   createdAt   DateTime  @default(now())
 
   @@unique([teacherId, weekOf])
+}
+
+// ============ SECURITY ============
+
+model FailedLoginAttempt {
+  id          String   @id @default(cuid())
+  email       String
+  userType    String   // "admin" | "teacher" | "super"
+  attemptedAt DateTime @default(now())
+
+  @@index([email, userType, attemptedAt])
 }
 
 // ============ PASSWORD RESET ============

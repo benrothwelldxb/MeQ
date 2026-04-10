@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashSync } from "bcryptjs";
 import { randomBytes } from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { validatePassword } from "@/lib/security";
 
 export async function requestPasswordReset(
   _prevState: { error?: string; success?: boolean } | null,
@@ -53,8 +54,9 @@ export async function resetPassword(
     return { error: "Invalid reset link." };
   }
 
-  if (!password || password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
+  const validation = validatePassword(password);
+  if (!validation.valid) {
+    return { error: validation.error };
   }
 
   if (password !== confirmPassword) {

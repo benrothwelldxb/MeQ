@@ -17,10 +17,11 @@ export async function updateSchoolSettings(formData: FormData) {
   const readAloudEnabled = formData.get("readAloudEnabled") === "on";
   const staffWellbeingEnabled = formData.get("staffWellbeingEnabled") === "on";
   const frameworkId = (formData.get("frameworkId") as string) || null;
+  const dslEmail = (formData.get("dslEmail") as string)?.trim() || null;
 
   await prisma.school.update({
     where: { id: school.id },
-    data: { name, currentTerm, academicYear, reducedQuestions, pulseEnabled, readAloudEnabled, staffWellbeingEnabled, frameworkId },
+    data: { name, currentTerm, academicYear, reducedQuestions, pulseEnabled, readAloudEnabled, staffWellbeingEnabled, frameworkId, dslEmail },
   });
 
   revalidatePath("/admin");

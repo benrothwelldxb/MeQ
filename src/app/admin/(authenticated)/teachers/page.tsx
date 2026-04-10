@@ -21,9 +21,14 @@ export default async function TeachersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
           <p className="text-gray-500 mt-1">{teachers.length} teachers</p>
         </div>
-        <Link href="/admin/teachers/add" className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all">
-          Add Teacher
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/admin/teachers/add" className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all">
+            Add Teacher
+          </Link>
+          <Link href="/admin/teachers/upload" className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">
+            Upload CSV
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
