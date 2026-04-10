@@ -15,6 +15,7 @@ import {
   updateFrameworkSchedule,
 } from "@/app/actions/frameworks";
 import { uploadFrameworkQuestions } from "@/app/actions/framework-questions-upload";
+import { uploadFrameworkInterventions, uploadFrameworkPulseQuestions } from "@/app/actions/framework-bulk-upload";
 import QuestionMediaButton from "@/components/QuestionMediaButton";
 
 interface Domain {
@@ -875,6 +876,64 @@ function InterventionsPanel({
           {adding ? "Adding..." : "Add Intervention"}
         </button>
       </div>
+
+      <CSVInterventionUpload frameworkId={frameworkId} domainKeys={domains.map((d) => d.key)} />
+    </div>
+  );
+}
+
+function CSVInterventionUpload({
+  frameworkId,
+  domainKeys,
+}: {
+  frameworkId: string;
+  domainKeys: string[];
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<{ count?: number; errors?: string[]; error?: string } | null>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setResult(null);
+    const text = await file.text();
+    const res = await uploadFrameworkInterventions(frameworkId, text);
+    setResult(res);
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mt-4">
+      <h3 className="text-sm font-medium text-gray-400 mb-2">Bulk Upload Interventions via CSV</h3>
+      <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
+        <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">level</code>, <code className="text-gray-300">title</code>, <code className="text-gray-300">description</code></p>
+        <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">audience</code> (teacher/student, default: teacher)</p>
+        <p className="text-xs text-gray-500 mt-2">Levels: Emerging, Developing, Secure, Advanced</p>
+        <p className="text-xs text-gray-500">Domains: {domainKeys.join(", ")}</p>
+      </div>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleUpload}
+        disabled={uploading}
+        className="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-300 hover:file:bg-gray-600 cursor-pointer disabled:opacity-50"
+      />
+      {uploading && <p className="text-xs text-gray-400 mt-2">Uploading...</p>}
+      {result?.error && <p className="text-xs text-red-400 mt-2">{result.error}</p>}
+      {result?.count !== undefined && (
+        <div className="mt-2">
+          <p className="text-xs text-emerald-400">{result.count} interventions added successfully.</p>
+          {result.errors && result.errors.length > 0 && (
+            <div className="mt-1">
+              {result.errors.map((err, i) => (
+                <p key={i} className="text-xs text-amber-400">{err}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1061,6 +1120,64 @@ function PulsePanel({
           );
         })}
       </div>
+
+      <CSVPulseUpload frameworkId={frameworkId} domainKeys={domains.map((d) => d.key)} />
+    </div>
+  );
+}
+
+function CSVPulseUpload({
+  frameworkId,
+  domainKeys,
+}: {
+  frameworkId: string;
+  domainKeys: string[];
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<{ count?: number; errors?: string[]; error?: string } | null>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setResult(null);
+    const text = await file.text();
+    const res = await uploadFrameworkPulseQuestions(frameworkId, text);
+    setResult(res);
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="bg-gray-800 rounded-xl border border-gray-700 p-4 mt-6">
+      <h3 className="text-sm font-medium text-gray-400 mb-2">Bulk Upload Pulse Questions via CSV</h3>
+      <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
+        <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">prompt</code></p>
+        <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">tier</code> (standard/junior, default: standard), <code className="text-gray-300">emoji</code></p>
+        <p className="text-xs text-gray-500 mt-2">Domains: {domainKeys.join(", ")}</p>
+        <p className="text-xs text-gray-500">Note: One pulse question per domain per tier — existing ones will be updated.</p>
+      </div>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleUpload}
+        disabled={uploading}
+        className="block w-full text-sm text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-gray-300 hover:file:bg-gray-600 cursor-pointer disabled:opacity-50"
+      />
+      {uploading && <p className="text-xs text-gray-400 mt-2">Uploading...</p>}
+      {result?.error && <p className="text-xs text-red-400 mt-2">{result.error}</p>}
+      {result?.count !== undefined && (
+        <div className="mt-2">
+          <p className="text-xs text-emerald-400">{result.count} pulse questions saved.</p>
+          {result.errors && result.errors.length > 0 && (
+            <div className="mt-1">
+              {result.errors.map((err, i) => (
+                <p key={i} className="text-xs text-amber-400">{err}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
