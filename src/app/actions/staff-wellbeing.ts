@@ -2,8 +2,6 @@
 
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
-import { getSchoolFramework, getLevelFromThresholds } from "@/lib/framework";
-import { calculateFrameworkDomainScores } from "@/lib/scoring";
 import { redirect } from "next/navigation";
 
 function getMonday(date: Date): Date {
@@ -13,6 +11,13 @@ function getMonday(date: Date): Date {
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+function getLevelFromThresholds(score: number, thresholds: Array<{ level: string; min: number }>): string {
+  for (const { level, min } of thresholds) {
+    if (score >= min) return level;
+  }
+  return thresholds[thresholds.length - 1]?.level || "Emerging";
 }
 
 export async function startStaffAssessment() {
@@ -29,7 +34,6 @@ export async function startStaffAssessment() {
     return { error: "Staff wellbeing is not enabled for this school." };
   }
 
-  const framework = await getSchoolFramework(teacher.schoolId);
   const { currentTerm, academicYear } = teacher.school;
 
   let assessment = await prisma.staffAssessment.findUnique({
@@ -46,7 +50,6 @@ export async function startStaffAssessment() {
     assessment = await prisma.staffAssessment.create({
       data: {
         teacherId: teacher.id,
-        frameworkId: framework.id,
         term: currentTerm,
         academicYear,
       },
@@ -87,45 +90,50 @@ export async function submitStaffAssessment(assessmentId: string) {
 
   const assessment = await prisma.staffAssessment.findUnique({
     where: { id: assessmentId },
-    include: { teacher: true },
   });
   if (!assessment || assessment.teacherId !== session.teacherId) return;
   if (assessment.status !== "in_progress") return;
 
-  const framework = await getSchoolFramework(assessment.teacher.schoolId);
-  const scoringModel = framework.scoringModels["standard"];
-
-  // Load staff questions
-  const questions = await prisma.frameworkQuestion.findMany({
-    where: { frameworkId: framework.id, audience: "staff" },
+  // Load all staff questions with their domains
+  const questions = await prisma.staffQuestion.findMany({
+    include: { domain: true },
     orderBy: { orderIndex: "asc" },
   });
 
   const answers = JSON.parse(assessment.answers) as Record<string, number>;
-  const domainKeys = framework.domains.map((d) => d.key);
 
-  const domainScores = calculateFrameworkDomainScores(
-    answers,
-    questions.map((q) => ({
-      orderIndex: q.orderIndex,
-      domainKey: q.domainKey,
-      type: q.type,
-      weight: q.weight,
-      scoreMap: q.scoreMap,
-    })),
-    domainKeys
-  );
+  // Calculate per-domain scores
+  const domainScores: Record<string, number> = {};
+  const domainMap: Record<string, string> = {}; // key -> label
+  for (const q of questions) {
+    if (!domainScores[q.domain.key]) {
+      domainScores[q.domain.key] = 0;
+      domainMap[q.domain.key] = q.domain.label;
+    }
+    const answer = answers[String(q.orderIndex)];
+    if (answer === undefined) continue;
+    const scoreMap = JSON.parse(q.scoreMap) as Record<string, number>;
+    const mapped = scoreMap[String(answer)] ?? answer;
+    domainScores[q.domain.key] += mapped * q.weight;
+  }
+
+  // Round scores
+  for (const key of Object.keys(domainScores)) {
+    domainScores[key] = Math.round(domainScores[key] * 10) / 10;
+  }
 
   const totalScore = Math.round(
     Object.values(domainScores).reduce((s, v) => s + v, 0) * 10
   ) / 10;
 
-  const domainThresholds = scoringModel?.thresholds || [];
-  const overallThresholds = scoringModel?.overallThresholds || [];
+  // Load scoring config
+  const config = await prisma.staffScoringConfig.findUnique({ where: { key: "default" } });
+  const domainThresholds = config ? JSON.parse(config.thresholds) : [];
+  const overallThresholds = config ? JSON.parse(config.overallThresholds) : [];
 
   const domainLevels: Record<string, string> = {};
-  for (const key of domainKeys) {
-    domainLevels[key] = getLevelFromThresholds(domainScores[key] || 0, domainThresholds);
+  for (const key of Object.keys(domainScores)) {
+    domainLevels[key] = getLevelFromThresholds(domainScores[key], domainThresholds);
   }
   const overallLevel = getLevelFromThresholds(totalScore, overallThresholds);
 

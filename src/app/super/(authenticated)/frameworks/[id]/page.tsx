@@ -51,7 +51,6 @@ export default async function EditFrameworkPage({
           id: q.id,
           domainKey: q.domainKey,
           tier: q.tier,
-          audience: q.audience,
           orderIndex: q.orderIndex,
           prompt: q.prompt,
           type: q.type,

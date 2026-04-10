@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
-import { getSchoolFramework } from "@/lib/framework";
 
 const MIN_COHORT = 5;
 
@@ -34,8 +33,9 @@ export default async function AdminStaffWellbeingPage() {
     );
   }
 
-  const framework = await getSchoolFramework(session.schoolId);
-  const domains = framework.domains;
+  const domains = await prisma.staffDomain.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
 
   // Get all staff in school
   const totalStaff = await prisma.teacher.count({ where: { schoolId: session.schoolId } });
@@ -97,7 +97,7 @@ export default async function AdminStaffWellbeingPage() {
     <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Staff Wellbeing</h1>
       <p className="text-gray-500 mb-6">
-        {TERM_LABELS[school.currentTerm]} — {framework.name} framework
+        {TERM_LABELS[school.currentTerm]} — {school.academicYear}
       </p>
 
       {/* Privacy banner */}

@@ -7,8 +7,7 @@ import { revalidatePath } from "next/cache";
 export async function uploadFrameworkQuestions(
   frameworkId: string,
   tier: string,
-  csvText: string,
-  audience: string = "student"
+  csvText: string
 ) {
   let records: Array<Record<string, string>>;
   try {
@@ -77,9 +76,9 @@ export async function uploadFrameworkQuestions(
     return labelToKey[input.toLowerCase()] || null;
   }
 
-  // Get current max orderIndex for this tier+audience
+  // Get current max orderIndex for this tier
   const lastQ = await prisma.frameworkQuestion.findFirst({
-    where: { frameworkId, tier, audience },
+    where: { frameworkId, tier },
     orderBy: { orderIndex: "desc" },
   });
   let nextOrder = (lastQ?.orderIndex ?? 0) + 1;
@@ -112,7 +111,6 @@ export async function uploadFrameworkQuestions(
       data: {
         frameworkId,
         tier,
-        audience,
         orderIndex: nextOrder++,
         domainKey: domain,
         prompt,

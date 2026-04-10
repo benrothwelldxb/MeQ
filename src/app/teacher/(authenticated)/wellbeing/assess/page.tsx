@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
-import { getSchoolFramework } from "@/lib/framework";
 import { startStaffAssessment } from "@/app/actions/staff-wellbeing";
 import { redirect } from "next/navigation";
 import StaffAssessmentClient from "./StaffAssessmentClient";
@@ -12,8 +11,6 @@ export default async function StaffAssessmentPage() {
 
   const school = await getSchoolSettings(session.schoolId);
   if (!school.staffWellbeingEnabled) redirect("/teacher/wellbeing");
-
-  const framework = await getSchoolFramework(session.schoolId);
 
   // Start or resume the assessment
   const startResult = await startStaffAssessment();
@@ -32,9 +29,9 @@ export default async function StaffAssessmentPage() {
     redirect("/teacher/wellbeing");
   }
 
-  // Load staff questions
-  const questions = await prisma.frameworkQuestion.findMany({
-    where: { frameworkId: framework.id, audience: "staff" },
+  // Load staff questions from standalone StaffQuestion model
+  const questions = await prisma.staffQuestion.findMany({
+    include: { domain: true },
     orderBy: { orderIndex: "asc" },
   });
 
@@ -43,8 +40,8 @@ export default async function StaffAssessmentPage() {
       <div className="max-w-md">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Assessment Not Ready</h1>
         <p className="text-gray-600">
-          Your school&apos;s framework doesn&apos;t have staff questions configured yet.
-          Please ask your administrator to set these up.
+          Staff wellbeing questions haven&apos;t been configured yet.
+          Please ask your platform administrator to set these up.
         </p>
       </div>
     );
@@ -58,7 +55,7 @@ export default async function StaffAssessmentPage() {
       questions={questions.map((q) => ({
         orderIndex: q.orderIndex,
         prompt: q.prompt,
-        domain: q.domainKey,
+        domain: q.domain.label,
         answerOptions: JSON.parse(q.answerOptions) as { label: string; value: number }[],
       }))}
       savedAnswers={answers}

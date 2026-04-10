@@ -182,9 +182,9 @@ export async function getAssessmentFramework(
 /**
  * Load quiz questions for a framework.
  */
-export async function getFrameworkQuestions(frameworkId: string, tier: string, audience: string = "student") {
+export async function getFrameworkQuestions(frameworkId: string, tier: string) {
   return prisma.frameworkQuestion.findMany({
-    where: { frameworkId, tier, audience },
+    where: { frameworkId, tier },
     orderBy: { orderIndex: "asc" },
   });
 }

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
-import { getSchoolFramework } from "@/lib/framework";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -34,7 +33,10 @@ export default async function StaffWellbeingPage() {
     );
   }
 
-  const framework = await getSchoolFramework(session.schoolId);
+  // Load staff domains (system-wide, not per-school)
+  const staffDomains = await prisma.staffDomain.findMany({
+    orderBy: { sortOrder: "asc" },
+  });
 
   // Find current assessment
   const assessment = await prisma.staffAssessment.findUnique({
@@ -117,7 +119,7 @@ export default async function StaffWellbeingPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-2">This Term&apos;s Assessment</h2>
         <p className="text-sm text-gray-500 mb-4">
-          A {framework.name} wellbeing check-in. Takes around 5 minutes.
+          A short wellbeing check-in across {staffDomains.length} areas. Takes around 5 minutes.
         </p>
 
         {!assessment || assessment.status === "in_progress" ? (
@@ -139,7 +141,7 @@ export default async function StaffWellbeingPage() {
             {/* Your results */}
             {assessment.domainScoresJson && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-                {framework.domains.map((d) => {
+                {staffDomains.map((d) => {
                   const scores = JSON.parse(assessment.domainScoresJson!) as Record<string, number>;
                   const levels = JSON.parse(assessment.domainLevelsJson || "{}") as Record<string, string>;
                   const colorClass = COLOR_STYLES[d.color] || COLOR_STYLES.blue;

@@ -107,7 +107,6 @@ model FrameworkQuestion {
   framework      Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
   domainKey      String
   tier           String    @default("standard")
-  audience       String    @default("student") // "student" | "staff"
   orderIndex     Int
   prompt         String
   type           String    @default("core")
@@ -121,7 +120,7 @@ model FrameworkQuestion {
   audioUrl       String?
   symbolImageUrl String?
 
-  @@unique([frameworkId, tier, audience, orderIndex])
+  @@unique([frameworkId, tier, orderIndex])
 }
 
 // ============ SCHOOL AUTH ============
@@ -404,12 +403,57 @@ model SurveyResponse {
 }
 
 // ============ STAFF WELLBEING ============
+// Staff wellbeing is system-wide, not tied to frameworks.
+// Super admin manages the staff domains, questions, and scoring;
+// schools just toggle it on.
+
+model StaffDomain {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?
+  color       String   @default("blue")
+  sortOrder   Int      @default(0)
+  questions   StaffQuestion[]
+  pulseQuestions StaffPulseQuestion[]
+}
+
+model StaffQuestion {
+  id             String      @id @default(cuid())
+  domainId       String
+  domain         StaffDomain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  orderIndex     Int         @unique
+  prompt         String
+  type           String      @default("core")
+  questionFormat String      @default("self-report")
+  answerOptions  String
+  scoreMap       String
+  weight         Float       @default(1.0)
+  isValidation   Boolean     @default(false)
+}
+
+model StaffPulseQuestion {
+  id         String      @id @default(cuid())
+  domainId   String      @unique
+  domain     StaffDomain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  prompt     String
+  emoji      String?
+  orderIndex Int         @default(0)
+}
+
+model StaffScoringConfig {
+  id                String @id @default(cuid())
+  key               String @unique @default("default")
+  thresholds        String // JSON [{level, min}]
+  overallThresholds String // JSON [{level, min}]
+  maxDomainScore    Float
+  maxTotalScore     Float
+}
 
 model StaffAssessment {
   id                String    @id @default(cuid())
   teacherId         String
   teacher           Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  frameworkId       String?
   term              String
   academicYear      String
   status            String    @default("in_progress")
