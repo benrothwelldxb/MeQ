@@ -1,7 +1,34 @@
 # MeQ Competitor Feature Comparison
 
-Date: April 2026
+Date: April 2026 (updated)
 Based on live web research of vendor marketing pages.
+
+**Update history:**
+- v1: Original research
+- v2: Updated to reflect MeQ additions — standalone staff wellbeing, bespoke surveys with templates, free text moderation, CSV uploads for interventions and pulse, image/audio upload infrastructure
+
+## TL;DR — What Changed Since v1
+
+**Gaps closed:**
+- ✅ Staff wellbeing (now matches YouHQ/Satchel, exceeds on privacy)
+- ✅ Bespoke surveys with 9 templates, 5 question types, targeting
+- ✅ Anonymous survey mode
+- ✅ Free text moderation with safeguarding keyword detection (**unique — no competitor in sample does this**)
+- ✅ CSV uploads for interventions and pulse questions (already had questions)
+- ✅ Image/audio upload infrastructure (not yet populated)
+
+**Strongest differentiators now:**
+1. Framework flexibility (unchanged, still industry-leading)
+2. Dual-lens assessment (unchanged)
+3. Reliability scoring (unchanged)
+4. **One platform for assessment + pulse + staff + surveys** (new combined strength)
+5. **Free-text moderation** (new — unique in sample)
+6. **Hard-enforced staff privacy** (new — stronger than competitors' "we recommend anonymous")
+
+**Still the top 3 blockers for UK adoption:**
+1. CPOMS / MyConcern integration
+2. Wonde MIS integration
+3. Google / Microsoft SSO
 
 ## Products Analysed
 
@@ -29,7 +56,8 @@ Legend: ✅ built | 🟡 partial / basic | ❌ not built | — not applicable
 | **Assessment structure** | | | | | | | | | | | |
 | Student self-assessment | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Teacher-rated assessment | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | 🟡 | ✅ | ❌ | ✅ | ❌ |
-| Staff wellbeing assessment | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Staff wellbeing assessment | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Confidential staff data (min cohort) | ✅ | ❌ | 🟡 | ❌ | ❌ | ❌ | 🟡 | 🟡 | ❌ | ❌ | ❌ |
 | Direct skill demonstration | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Reliability / validation checks | ✅ | ❌ | 🟡 | 🟡 | 🟡 | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | Multiple tiers (age groups) | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -38,6 +66,9 @@ Legend: ✅ built | 🟡 partial / basic | ❌ not built | — not applicable
 | Custom frameworks (school-defined) | ✅ | 🟡 | ❌ | ❌ | 🟡 | ❌ | 🟡 | 🟡 | ❌ | ❌ | ❌ |
 | Multiple built-in frameworks | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | CSV question upload | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| CSV intervention upload | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| CSV pulse question upload | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Image/audio media per question | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 🟡 | 🟡 |
 | Custom scoring thresholds | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Reverse scoring | ✅ | ❌ | 🟡 | — | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Pulse / check-in** | | | | | | | | | | | |
@@ -46,9 +77,12 @@ Legend: ✅ built | 🟡 partial / basic | ❌ not built | — not applicable
 | Student-initiated check-in | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Flagged/alert system | 🟡 | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | **Bespoke surveys** | | | | | | | | | | | |
-| One-off custom surveys | ❌ | ✅ | 🟡 | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Survey templates | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Anonymous mode | ❌ | ❌ | ❌ | ❌ | 🟡 | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| One-off custom surveys | ✅ | ✅ | 🟡 | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Survey templates | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Anonymous mode | ✅ | ❌ | ❌ | ❌ | 🟡 | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Multiple question types | ✅ | 🟡 | ❌ | ❌ | ✅ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Targeted by year/class | ✅ | ❌ | ❌ | ❌ | 🟡 | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Free text moderation (keyword flags) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Student support content** | | | | | | | | | | | |
 | Self-led wellbeing modules | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ |
 | CBT-style / regulation activities | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
@@ -68,8 +102,8 @@ Legend: ✅ built | 🟡 partial / basic | ❌ not built | — not applicable
 | Impact tracking on interventions | ❌ | ❌ | 🟡 | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
 | **Accessibility** | | | | | | | | | | | |
 | Multilingual student interface | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (27) | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Audio read-aloud | 🟡 schema | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Symbol support | 🟡 schema | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| Audio read-aloud | 🟡 infra | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Symbol support | 🟡 infra | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | Works for non-readers | 🟡 | ❌ | ❌ | ❌ | ❌ | 🟡 | ❌ | ❌ | ✅ | ❌ | ✅ |
 | **Safeguarding** | | | | | | | | | | | |
 | CPOMS integration | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | — | — | — | — | — |
@@ -98,8 +132,8 @@ MeQ's validation-pair + trap-question reliability system is unusual. PASS and DE
 ### 4. Reduced question mode + tiered design
 Junior (5-7) and Standard (8-11) tiers with reduced mode option gives schools flexibility that few competitors match.
 
-### 5. CSV question import + builder UI
-Super-admin framework builder with CSV bulk upload is unique in this sample. Most products are "closed box" with fixed questions.
+### 5. CSV everything (questions, interventions, pulse, students)
+Super-admin framework builder with CSV bulk upload across **question bank, intervention library, AND pulse questions** is unique in this sample. Most products are "closed box" with fixed content.
 
 ### 6. Multi-campus admin
 Admins managing multiple schools with a single login — no competitor in the sample matches this.
@@ -107,8 +141,17 @@ Admins managing multiple schools with a single login — no competitor in the sa
 ### 7. Term-over-term progress tracking + per-domain scoring JSON
 Queryable per-domain historical data with change deltas between assessments.
 
-### 8. Pulse + full assessment in one platform
-Komodo and Closegap do pulse. Bounce/PASS/DESSA do full assessments. **MeQ does both** — with the pulse linked to the same framework domains as the assessment.
+### 8. Pulse + full assessment + surveys in one platform
+Komodo and Closegap do pulse. Bounce/PASS/DESSA do full assessments. Panorama/Satchel do surveys. **MeQ does all three** — with pulse linked to the same framework domains as the assessment, and bespoke surveys as a separate tool for one-off needs.
+
+### 9. Bespoke surveys with free-text moderation
+MeQ ships with 9 pre-built survey templates (Wellbeing Check-In, Anti-Bullying, Online Safety, School Climate, Transition, etc.) with 5 question types, targeting by year/class, and an anonymous mode. **Uniquely, MeQ also has keyword-based free-text moderation** that flags concerning responses (self-harm, abuse, severe bullying) for admin review — no other product in the sample does this automatically. Panorama and Satchel have surveys but no moderation layer.
+
+### 10. Staff wellbeing with hard-enforced privacy
+MeQ now has standalone staff wellbeing with 5 domains, 20 questions, weekly pulse, and termly assessment — matching YouHQ and Satchel Pulse on feature parity. But MeQ goes further on privacy: **minimum cohort size of 5 is hard-enforced in code** before any aggregated data is shown to leadership. Individual staff results are only ever visible to the teacher themselves. This is stronger than competitors' "we recommend anonymous mode" guidance.
+
+### 11. Image and audio upload infrastructure
+Infrastructure built (UploadThing integrated, upload buttons on every question) for per-question symbol images (Widgit-style) and audio read-aloud recordings. Not yet populated with actual media, but the building blocks are in place. Most UK competitors have no accessibility features of this kind.
 
 ---
 
@@ -117,7 +160,7 @@ Komodo and Closegap do pulse. Bounce/PASS/DESSA do full assessments. **MeQ does 
 ### Critical gaps (competitors consistently have these)
 
 **1. CPOMS and MIS integrations**
-Every UK competitor integrates with CPOMS (safeguarding) and MIS (SIMS/Arbor/Bromcom/Wonde). This is table stakes for UK schools and MeQ has neither. **High priority.**
+Every UK competitor integrates with CPOMS (safeguarding) and MIS (SIMS/Arbor/Bromcom/Wonde). This is table stakes for UK schools and MeQ has neither. **Highest priority remaining.**
 
 **2. Google / Microsoft SSO**
 Steer, Bounce, Panorama, Satchel, Closegap, DESSA, SELweb all support SSO. MeQ uses email/password only. Schools hate managing separate credentials. **High priority.**
@@ -125,96 +168,119 @@ Steer, Bounce, Panorama, Satchel, Closegap, DESSA, SELweb all support SSO. MeQ u
 **3. National benchmarking**
 PASS has 600k student benchmarks. Bounce Together has 12 million responses. This is a massive credibility signal MeQ lacks. Hard to build without volume, but schools ask for it. **Medium priority — volume-dependent.**
 
-**4. Bespoke / one-off surveys**
-Komodo, Bounce, Panorama, Satchel all offer custom survey builders. MeQ has this in the backlog (Task #24).
-
-**5. Tiered (MTSS) intervention support**
+**4. Tiered (MTSS) intervention support**
 Panorama, Satchel, DESSA, PASS all tie interventions to tier 1 (universal) / tier 2 (targeted) / tier 3 (individual) support. MeQ has a flat intervention bank per level but no tiering logic.
 
 ### Meaningful gaps
 
-**6. Safeguarding flagging and alerts**
-Komodo, Steer, Bounce, Panorama, Satchel, Closegap all flag concerning responses in real-time with email/dashboard alerts. MeQ has a basic flagged list on the Pulse dashboard but no alerting.
+**5. Real-time safeguarding alerts (email to DSL)**
+Komodo, Steer, Bounce, Panorama, Satchel, Closegap all flag concerning responses in real-time with **email alerts to designated safeguarding leads**. MeQ now has flagging on the Pulse dashboard AND free-text moderation on surveys (with keyword detection), but doesn't yet send email alerts when something is flagged. **The detection is there — just needs an email dispatch layer.**
 
-**7. Multilingual interface**
+**6. Multilingual interface**
 PASS offers 27 languages. Panorama and DESSA support multiple languages. MeQ is English only. Critical for international schools (including your UAE market).
 
-**8. Audio read-aloud actually built**
-SELweb and Closegap have this live. MeQ has the `audioUrl` field in the schema but no upload UI and no audio files. Task #23.
+**7. Audio and symbol media actually populated**
+Infrastructure is built (UploadThing + upload buttons on every question). But no actual audio recordings or symbol images have been generated/uploaded yet. SELweb and Closegap have these live. Task: generate ElevenLabs audio for junior MeQ Standard questions + source Widgit-style symbols.
 
-**9. Anonymous response option**
-Critical for sensitive surveys (bullying, mental health). Panorama, Satchel, and Bounce all support it. Needed for Task #24.
-
-**10. Impact tracking on interventions**
+**8. Impact tracking on interventions**
 Steer, Bounce, Panorama, Satchel, DESSA all let schools mark an intervention as applied and track whether scores improved afterwards. MeQ doesn't track this.
 
 ### Nice-to-have gaps
 
-**11. Student-initiated check-ins**
+**9. Student-initiated check-ins**
 Komodo, YouHQ and Closegap let students proactively request help. MeQ is always scheduled/assigned.
 
-**12. Parent/family surveys**
-Panorama is strong here. MeQ has no parent-facing tooling.
+**10. Parent/family surveys**
+Panorama is strong here. MeQ has no parent-facing tooling. Note: the bespoke survey system could be extended to support parent audiences with moderate work.
 
-**13. AI-driven insights**
-Panorama (Solara), Bounce (AI recommendations), Satchel all market AI analysis. MeQ has no AI layer.
+**11. AI-driven insights**
+Panorama (Solara), Bounce (AI recommendations), Satchel all market AI analysis. MeQ has no AI layer — would be a natural addition via Claude API for summarising assessment trends or generating class-level recommendations.
 
-**14. Staff wellbeing surveys**
-**YouHQ** and Satchel Pulse both measure staff wellbeing alongside students. Panorama supports staff surveys too. MeQ only measures students.
-
-**15. Self-led student wellbeing content**
+**12. Self-led student wellbeing content**
 **YouHQ** bundles CBT-style modules, Wellbeing Warrior activities, and relaxation content. Closegap has in-product coping activities. MeQ has no student-facing wellbeing content — it's an assessment tool only.
 
-**16. In-app support messaging**
+**13. In-app support messaging**
 **YouHQ** lets students message trusted staff in-app. MeQ has no communication layer.
 
-**17. Training and implementation services**
+**14. Training and implementation services**
 **YouHQ** bundles live training and workshops. Bounce Together provides webinars. MeQ is software-only.
-
-**18. Crisis/self-harm keyword detection**
-None of the products clearly explain this, but it's implied safeguarding territory — you flagged it for free-text moderation in Task #24.
 
 ---
 
 ## Strategic Recommendations
 
-### Quick wins (days–weeks)
-1. **Google/Microsoft SSO** — well-trodden implementation with NextAuth. Biggest unlock for UK school adoption.
-2. **CPOMS integration** — reach out to CPOMS for their integration spec. Even basic "concerning response → CPOMS incident" is competitive.
-3. **Anonymous surveys** — goes in Task #24. Low effort, high value.
-4. **Real-time safeguarding alerts** — email DSL when pulse score or free text flags concern. Enhances existing flagged student feature.
+### Since v1 of this analysis, MeQ has shipped:
+- ✅ Staff wellbeing (standalone, with hard-enforced privacy)
+- ✅ Bespoke surveys with 9 templates
+- ✅ Anonymous survey mode
+- ✅ Free text moderation with keyword flagging
+- ✅ CSV uploads for interventions and pulse questions
+- ✅ Image/audio upload infrastructure (UploadThing)
+- ✅ Multiple question types in surveys
+- ✅ Survey targeting by year/class
+- ✅ Reverse scoring toggle on questions
+- ✅ Assessment scheduling / frequency control
+
+### Quick wins (days)
+1. **Email alerts for flagged content** — the detection is already built (moderation for surveys, flagged pulse responses). Just needs: wire into Resend when a flag fires, email the school's DSL. Low effort, big safeguarding credibility.
+2. **Google/Microsoft SSO** — well-trodden NextAuth implementation. Single biggest unlock for UK school adoption.
+3. **Generate ElevenLabs audio** for the junior MeQ Standard questions + source/upload Widgit symbols. Infrastructure exists; just needs the content.
 
 ### Medium term (weeks)
-5. **Wire up audio + image uploads** (Task #23)
-6. **Bespoke surveys with templates** (Task #24)
-7. **Intervention impact tracking** — simple "did scores improve after intervention X was applied?"
-8. **Multilingual support** — at minimum Arabic for UAE, French, Spanish. Next-intl library.
-9. **MIS integration via Wonde** — Wonde is the UK standard abstraction layer; integrate once and get SIMS/Arbor/Bromcom for free.
+4. **Wonde MIS integration** — Wonde is the UK standard abstraction layer; integrate once and get SIMS/Arbor/Bromcom for free. Single most impactful integration.
+5. **CPOMS + MyConcern integration** — once Wonde is done. "Concerning response → CPOMS incident" is competitive table stakes.
+6. **Multilingual support** — at minimum Arabic for UAE, then French and Spanish. Next-intl library. The content files are all in code so translation is mostly mechanical.
+7. **Intervention impact tracking** — simple "did scores improve after intervention X was applied?" builds on existing data model.
 
 ### Longer term (months)
-10. **MTSS tier 1/2/3 intervention model** — reshapes the interventions tab to show tier-appropriate strategies.
-11. **National benchmarking** — wait until you have ~100 schools of data, then publish comparison reports.
-12. **Parent-facing surveys** — extension of Task #24 survey system.
-13. **AI insights** — once you have enough data, summarise trends with a Claude API call at assessment completion.
+8. **MTSS tier 1/2/3 intervention model** — reshape the interventions tab to show tier-appropriate strategies. Important for US market and UK MAT positioning.
+9. **National benchmarking** — wait until you have ~100 schools of data, then publish comparison reports.
+10. **Parent-facing surveys** — extension of existing survey system (just needs a parent login type and new targeting).
+11. **AI insights** — summarise class assessment trends and flag patterns with a Claude API call. The data is already well-structured (domainScoresJson) for this.
+12. **Self-led wellbeing content / CBT modules** — would significantly expand the product beyond assessment. Biggest competitive gap vs YouHQ.
 
 ---
 
-## Positioning
+## Positioning (updated v2)
 
-MeQ's unique position is **framework flexibility + dual-lens + pulse in one tool**. No competitor combines all three. Your pitch should be:
+MeQ's unique position is now **framework flexibility + dual-lens + pulse + staff wellbeing + bespoke surveys in one tool**. No competitor combines all five. Your updated pitch:
 
-> "The only wellbeing platform that lets schools build their own SEL framework — from bespoke domains and questions through to matching interventions — alongside both a termly deep-dive and a weekly pulse check-in, all validated with reliability scoring."
+> "The only wellbeing platform that lets schools build their own SEL framework — from bespoke domains and questions through to matching interventions — alongside a termly deep-dive, weekly pulse check-in, staff wellbeing with enforced privacy, and bespoke surveys with automatic safeguarding keyword detection. All validated with reliability scoring."
 
-The framework builder is genuinely differentiating. Lean into it.
+That's a dense pitch. A simpler version:
+
+> "One platform for every wellbeing conversation in your school — pupil assessments, pulse check-ins, staff wellbeing, and bespoke surveys — built around your framework, not ours."
+
+The framework builder is still the strongest differentiator. Lean into it.
 
 ### vs YouHQ specifically (the closest UK competitor)
 
-YouHQ's pitch is essentially "**PERMAH wellbeing in a box**, with content, training, and safeguarding." It's strong for schools that want an opinionated, pre-packaged approach with lots of hand-holding. MeQ's pitch should be "**bring your own framework**, with psychometric rigour and dual-lens assessment." Different customers:
+YouHQ's pitch is essentially "**PERMAH wellbeing in a box**, with content, training, and safeguarding." It's strong for schools that want an opinionated, pre-packaged approach with lots of hand-holding. MeQ's pitch is "**bring your own framework**, with psychometric rigour, dual-lens assessment, and one platform for every kind of survey you'd want to run." Different customers:
 
-- YouHQ wins schools that want to be told what to measure and get content to use
-- MeQ wins schools (or trusts, or international schools) that already have a framework or want to build one specific to their context
+- **YouHQ wins** schools that want to be told what to measure and get content to use
+- **MeQ wins** schools (or trusts, or international schools) that already have a framework, want flexibility, or need more than just wellbeing (e.g. bullying surveys, transition surveys, climate surveys)
 
-**But MeQ can't win on framework flexibility alone if it lacks CPOMS + MIS integration.** Those are table stakes — no UK school will adopt a tool that forces manual student roster management and can't log safeguarding concerns to their existing system. These need to be built before any serious sales push into UK schools.
+### What's still blocking UK adoption
+
+MeQ now has feature parity or advantage with YouHQ in most categories — **except the three that matter most for a UK school procurement decision**:
+
+1. **CPOMS + MyConcern integration** — still missing
+2. **Wonde MIS integration** — still missing
+3. **Google/Microsoft SSO** — still missing
+
+A UK school evaluating wellbeing tools will ask about these in the first demo. If the answer is "no" to all three, many schools won't proceed regardless of how good the framework builder is. These three items should be the next priority for any UK sales push.
+
+### What unlocks international markets
+
+For the UAE (and other international) markets:
+1. **Multilingual support** — Arabic at minimum for UAE. French/Spanish for broader international.
+2. **Cloud/identity-agnostic auth** — SSO but also basic email that works without UK-specific providers.
+3. **No Ofsted-specific reporting** — already MeQ-friendly since reports are generic.
+
+For US markets:
+1. **Clever + ClassLink integration** (US SSO standard)
+2. **MTSS tier 1/2/3 intervention model**
+3. **District dashboards with subgroup disaggregation**
 
 ## YouHQ — Closer Look
 
