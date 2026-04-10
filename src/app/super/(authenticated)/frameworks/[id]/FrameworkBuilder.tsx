@@ -1033,6 +1033,8 @@ function PulsePanel({
       <p className="text-sm text-gray-400 mb-4">
         Weekly Pulse: a 5-minute check-in where students rate how they&apos;re feeling
         on each domain using a 1-5 emoji scale. One question per domain per tier.
+        The optional emoji field sets a visual icon shown above the question
+        (e.g. 🧐 for self-awareness, 😌 for managing emotions).
       </p>
 
       <div className="flex gap-2 mb-4">
@@ -1081,7 +1083,8 @@ function PulsePanel({
                 />
                 <input
                   defaultValue={existing?.emoji || ""}
-                  placeholder="Emoji"
+                  placeholder="🧐"
+                  title="Domain icon emoji (shown above the question)"
                   maxLength={3}
                   onBlur={async (e) => {
                     const emoji = e.target.value.trim();

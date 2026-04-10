@@ -89,6 +89,11 @@ export default function PulseClient({
 
         {/* Question */}
         <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-6 sm:p-8 mb-4">
+          {question.emoji && (
+            <div className="text-center mb-3">
+              <span className={isJunior ? "text-6xl" : "text-5xl"}>{question.emoji}</span>
+            </div>
+          )}
           <h2 className={`font-bold text-meq-slate text-center mb-6 ${
             isJunior ? "text-2xl" : "text-xl"
           }`}>

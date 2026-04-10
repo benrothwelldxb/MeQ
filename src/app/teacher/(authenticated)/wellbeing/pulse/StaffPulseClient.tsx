@@ -85,6 +85,11 @@ export default function StaffPulseClient({
 
       {/* Question */}
       <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-6 mb-4">
+        {question.emoji && (
+          <div className="text-center mb-3">
+            <span className="text-5xl">{question.emoji}</span>
+          </div>
+        )}
         <h2 className="font-bold text-meq-slate text-center mb-6 text-xl">
           {question.prompt}
         </h2>
