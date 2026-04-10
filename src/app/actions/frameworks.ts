@@ -94,6 +94,21 @@ export async function updateFrameworkConfig(frameworkId: string, config: string)
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
 
+export async function updateFrameworkSchedule(
+  frameworkId: string,
+  assessmentFrequency: string,
+  activeTerms: string[]
+) {
+  await prisma.framework.update({
+    where: { id: frameworkId },
+    data: {
+      assessmentFrequency,
+      activeTerms: JSON.stringify(activeTerms),
+    },
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
 export async function addFrameworkQuestion(
   frameworkId: string,
   data: {
@@ -190,5 +205,28 @@ export async function addFrameworkIntervention(
 
 export async function deleteFrameworkIntervention(interventionId: string, frameworkId: string) {
   await prisma.intervention.delete({ where: { id: interventionId } });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function upsertPulseQuestion(
+  frameworkId: string,
+  data: { tier: string; domain: string; prompt: string; emoji?: string; orderIndex: number }
+) {
+  await prisma.pulseQuestion.upsert({
+    where: {
+      frameworkId_tier_domain: {
+        frameworkId,
+        tier: data.tier,
+        domain: data.domain,
+      },
+    },
+    update: { prompt: data.prompt, emoji: data.emoji || null, orderIndex: data.orderIndex },
+    create: { ...data, emoji: data.emoji || null, frameworkId },
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function deletePulseQuestion(pulseQuestionId: string, frameworkId: string) {
+  await prisma.pulseQuestion.delete({ where: { id: pulseQuestionId } });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }

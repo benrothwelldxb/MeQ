@@ -42,21 +42,24 @@ model School {
 // ============ FRAMEWORKS ============
 
 model Framework {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  description   String?
-  config        String   @default("{}") // Legacy JSON config (being replaced by scoring models)
-  isDefault     Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  createdBy     String?
-  domains       FrameworkDomain[]
-  questions     FrameworkQuestion[]
-  scoringModels  FrameworkScoringModel[]
-  interventions  Intervention[]
-  schools        School[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  description         String?
+  config              String   @default("{}")
+  isDefault           Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  createdBy           String?
+  assessmentFrequency String   @default("termly")
+  activeTerms         String   @default("[\"term1\",\"term2\",\"term3\"]")
+  domains             FrameworkDomain[]
+  questions           FrameworkQuestion[]
+  scoringModels       FrameworkScoringModel[]
+  interventions       Intervention[]
+  pulseQuestions      PulseQuestion[]
+  schools             School[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model FrameworkDomain {
@@ -323,14 +326,16 @@ model TeacherAssessmentDomainScore {
 // ============ WEEKLY PULSE ============
 
 model PulseQuestion {
-  id         String  @id @default(cuid())
-  domain     String
-  prompt     String
-  tier       String  @default("standard")
-  emoji      String?
-  orderIndex Int
+  id          String     @id @default(cuid())
+  domain      String
+  prompt      String
+  tier        String     @default("standard")
+  emoji       String?
+  orderIndex  Int
+  frameworkId String?
+  framework   Framework? @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
 
-  @@unique([tier, domain])
+  @@unique([frameworkId, tier, domain])
 }
 
 model PulseCheck {
@@ -339,6 +344,7 @@ model PulseCheck {
   student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   weekOf      DateTime
   answers     String    @default("{}") // JSON: { "KnowMe": 3, ... }
+  freeText    String?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
 

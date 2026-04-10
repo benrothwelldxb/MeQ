@@ -35,6 +35,8 @@ export interface FrameworkData {
   slug: string;
   isDefault: boolean;
   config: FrameworkConfig;
+  assessmentFrequency: string;
+  activeTerms: string[];
   domains: DomainDef[];
   scoringModels: Record<string, ScoringModelDef>;
   messages: Record<string, Record<string, string[]>>; // domainKey -> messageType -> contents
@@ -140,6 +142,8 @@ export async function getSchoolFramework(schoolId: string): Promise<FrameworkDat
     slug: fw.slug,
     isDefault: fw.isDefault,
     config: JSON.parse(fw.config || "{}"),
+    assessmentFrequency: (fw as { assessmentFrequency?: string }).assessmentFrequency || "termly",
+    activeTerms: JSON.parse((fw as { activeTerms?: string }).activeTerms || '["term1","term2","term3"]'),
     domains: fw.domains.map((d) => ({
       key: d.key,
       label: d.label,

@@ -14,6 +14,7 @@ export default async function EditFrameworkPage({
       domains: { orderBy: { sortOrder: "asc" } },
       questions: { orderBy: [{ tier: "asc" }, { orderIndex: "asc" }] },
       interventions: { orderBy: [{ domain: "asc" }, { level: "asc" }, { sortOrder: "asc" }] },
+      pulseQuestions: { orderBy: [{ tier: "asc" }, { orderIndex: "asc" }] },
     },
   });
 
@@ -35,6 +36,8 @@ export default async function EditFrameworkPage({
           name: framework.name,
           config: framework.config,
           isDefault: framework.isDefault,
+          assessmentFrequency: framework.assessmentFrequency,
+          activeTerms: framework.activeTerms,
         }}
         domains={framework.domains.map((d) => ({
           id: d.id,
@@ -61,6 +64,14 @@ export default async function EditFrameworkPage({
           audience: iv.audience,
           title: iv.title,
           description: iv.description,
+        }))}
+        pulseQuestions={framework.pulseQuestions.map((pq) => ({
+          id: pq.id,
+          tier: pq.tier,
+          domain: pq.domain,
+          prompt: pq.prompt,
+          emoji: pq.emoji,
+          orderIndex: pq.orderIndex,
         }))}
       />
     </div>

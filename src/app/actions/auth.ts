@@ -49,6 +49,11 @@ export async function loginStudent(
     },
   });
 
+  // Get the school's framework and check schedule
+  const { getSchoolFramework } = await import("@/lib/framework");
+  const fw = await getSchoolFramework(student.schoolId);
+  const assessmentActive = fw.activeTerms.includes(currentTerm);
+
   if (assessment) {
     if (assessment.status === "completed") {
       return {
@@ -56,12 +61,8 @@ export async function loginStudent(
       };
     }
     // Resume in-progress assessment
-  } else {
+  } else if (assessmentActive) {
     // Create new assessment for current term
-    // Get the school's framework for stamping on the assessment
-    const { getSchoolFramework } = await import("@/lib/framework");
-    const fw = await getSchoolFramework(student.schoolId);
-
     assessment = await prisma.assessment.create({
       data: {
         studentId: student.id,
@@ -72,11 +73,20 @@ export async function loginStudent(
         frameworkId: fw.id,
       },
     });
+  } else {
+    // Framework's schedule says no assessment this term.
+    // Still allow login for pulse, but no assessment to complete.
+    // We'll fall through — if pulse is also not needed, login fails with a friendly message.
+    if (!school.pulseEnabled) {
+      return {
+        error: "No assessment is scheduled for this term. Check back next term!",
+      };
+    }
   }
 
   const session = await getStudentSession();
   session.studentId = student.id;
-  session.assessmentId = assessment.id;
+  session.assessmentId = assessment?.id || "";
   session.firstName = student.displayName || student.firstName;
   session.tier = student.tier;
   await session.save();
@@ -90,6 +100,11 @@ export async function loginStudent(
     if (!existingPulse || !existingPulse.completedAt) {
       redirect("/pulse");
     }
+  }
+
+  // If no assessment was created (term inactive), redirect home with message
+  if (!assessment) {
+    return { error: "Your check-in is complete! See you next week." };
   }
 
   redirect("/quiz");

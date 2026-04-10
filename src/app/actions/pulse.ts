@@ -56,7 +56,7 @@ export async function savePulseAnswer(domain: string, value: number) {
   });
 }
 
-export async function submitPulse() {
+export async function submitPulse(freeText?: string) {
   const session = await getStudentSession();
   if (!session.studentId) return;
 
@@ -64,7 +64,7 @@ export async function submitPulse() {
 
   await prisma.pulseCheck.update({
     where: { studentId_weekOf: { studentId: session.studentId, weekOf } },
-    data: { completedAt: new Date() },
+    data: { completedAt: new Date(), freeText: freeText || null },
   });
 
   redirect("/pulse/done");

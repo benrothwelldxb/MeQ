@@ -29,6 +29,7 @@ export default function PulseClient({
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [freeText, setFreeText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const question = questions[currentIndex];
@@ -49,7 +50,7 @@ export default function PulseClient({
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await submitPulse();
+    await submitPulse(freeText.trim() || undefined);
   };
 
   const isComplete = Object.keys(answers).length === questions.length;
@@ -115,15 +116,31 @@ export default function PulseClient({
           </div>
         </div>
 
-        {/* Submit / navigation */}
+        {/* Free text + Submit */}
         {isComplete && (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full py-4 rounded-xl text-lg font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-50 transition-all"
-          >
-            {submitting ? "Saving..." : "Done!"}
-          </button>
+          <>
+            <div className="bg-white rounded-2xl shadow-sm border border-meq-mist p-5 mb-4">
+              <label className={`block font-medium text-meq-slate mb-2 ${isJunior ? "text-base" : "text-sm"}`}>
+                {isJunior ? "Anything else you want to tell us? (optional)" : "Anything else you'd like to add? (optional)"}
+              </label>
+              <textarea
+                value={freeText}
+                onChange={(e) => setFreeText(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder={isJunior ? "Type here..." : "Share any thoughts..."}
+                className="w-full px-3 py-2 rounded-lg border border-meq-mist focus:border-meq-sky focus:outline-none text-sm resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-1">{freeText.length}/500</p>
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full py-4 rounded-xl text-lg font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-50 transition-all"
+            >
+              {submitting ? "Saving..." : "Done!"}
+            </button>
+          </>
         )}
 
         <p className="text-center text-xs text-gray-400 mt-4">

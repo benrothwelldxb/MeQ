@@ -214,6 +214,30 @@ export default async function AdminPulsePage() {
         </div>
       )}
 
+      {/* Free text responses */}
+      {thisWeekChecks.some((c) => c.freeText) && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <h2 className="font-bold text-gray-900 mb-3">Student Comments — This Week</h2>
+          <div className="space-y-3">
+            {thisWeekChecks
+              .filter((c) => c.freeText)
+              .map((check) => {
+                const student = students.find((s) => s.id === check.studentId);
+                if (!student) return null;
+                return (
+                  <div key={check.id} className="border-l-4 border-meq-sky pl-4 py-1">
+                    <p className="text-sm text-gray-700 italic">&ldquo;{check.freeText}&rdquo;</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      — {student.firstName} {student.lastName}
+                      {student.yearGroup && ` · ${student.yearGroup}${student.className ? ` / ${student.className}` : ""}`}
+                    </p>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       {/* Weekly Trends Table */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-4">School-wide Weekly Averages</h2>

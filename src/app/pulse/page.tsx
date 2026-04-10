@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { getSchoolFramework } from "@/lib/framework";
 import { type Tier } from "@/lib/constants";
 import PulseClient from "./PulseClient";
 
@@ -8,20 +9,36 @@ export default async function PulsePage() {
   const session = await getStudentSession();
   if (!session.studentId) redirect("/");
 
-  const tier = (session.tier || "standard") as Tier;
+  const student = await prisma.student.findUnique({
+    where: { id: session.studentId },
+    select: { schoolId: true },
+  });
+  if (!student) redirect("/");
 
-  const pulseQuestions = await prisma.pulseQuestion.findMany({
-    where: { tier },
+  const tier = (session.tier || "standard") as Tier;
+  const framework = await getSchoolFramework(student.schoolId);
+
+  // Load framework-specific pulse questions
+  let questions = await prisma.pulseQuestion.findMany({
+    where: { frameworkId: framework.id, tier },
     orderBy: { orderIndex: "asc" },
   });
 
-  // Fallback: if no pulse questions seeded for this tier, use standard
-  const questions = pulseQuestions.length > 0
-    ? pulseQuestions
-    : await prisma.pulseQuestion.findMany({
-        where: { tier: "standard" },
-        orderBy: { orderIndex: "asc" },
-      });
+  // Fall back to standard tier within same framework
+  if (questions.length === 0) {
+    questions = await prisma.pulseQuestion.findMany({
+      where: { frameworkId: framework.id, tier: "standard" },
+      orderBy: { orderIndex: "asc" },
+    });
+  }
+
+  // Final fallback: any pulse questions for this tier (legacy, no framework set)
+  if (questions.length === 0) {
+    questions = await prisma.pulseQuestion.findMany({
+      where: { tier, frameworkId: null },
+      orderBy: { orderIndex: "asc" },
+    });
+  }
 
   if (questions.length === 0) redirect("/quiz");
 

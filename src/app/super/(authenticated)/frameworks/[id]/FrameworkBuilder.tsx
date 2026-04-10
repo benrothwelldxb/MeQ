@@ -10,6 +10,9 @@ import {
   deleteFrameworkDomain,
   addFrameworkIntervention,
   deleteFrameworkIntervention,
+  upsertPulseQuestion,
+  deletePulseQuestion,
+  updateFrameworkSchedule,
 } from "@/app/actions/frameworks";
 import { uploadFrameworkQuestions } from "@/app/actions/framework-questions-upload";
 
@@ -40,6 +43,15 @@ interface InterventionData {
   audience: string;
   title: string;
   description: string;
+}
+
+interface PulseQuestionData {
+  id: string;
+  tier: string;
+  domain: string;
+  prompt: string;
+  emoji: string | null;
+  orderIndex: number;
 }
 
 interface FrameworkConfig {
@@ -82,13 +94,15 @@ export default function FrameworkBuilder({
   domains,
   questions,
   interventions,
+  pulseQuestions,
 }: {
-  framework: { id: string; name: string; config: string; isDefault: boolean };
+  framework: { id: string; name: string; config: string; isDefault: boolean; assessmentFrequency: string; activeTerms: string };
   domains: Domain[];
   questions: Question[];
   interventions: InterventionData[];
+  pulseQuestions: PulseQuestionData[];
 }) {
-  const [tab, setTab] = useState<"domains" | "questions" | "interventions" | "scoring">("domains");
+  const [tab, setTab] = useState<"domains" | "questions" | "interventions" | "pulse" | "scoring" | "schedule">("domains");
   const [selectedTier, setSelectedTier] = useState("standard");
   const config: FrameworkConfig = JSON.parse(framework.config || "{}");
 
@@ -96,7 +110,9 @@ export default function FrameworkBuilder({
     { key: "domains", label: "Domains" },
     { key: "questions", label: "Questions" },
     { key: "interventions", label: `Interventions (${interventions.length})` },
+    { key: "pulse", label: `Pulse (${pulseQuestions.length})` },
     { key: "scoring", label: "Scoring & Messages" },
+    { key: "schedule", label: "Schedule" },
   ];
 
   const tierQuestions = questions.filter((q) => q.tier === selectedTier);
@@ -333,6 +349,15 @@ export default function FrameworkBuilder({
         />
       )}
 
+      {/* Pulse Tab */}
+      {tab === "pulse" && (
+        <PulsePanel
+          frameworkId={framework.id}
+          domains={domains}
+          pulseQuestions={pulseQuestions}
+        />
+      )}
+
       {/* Scoring Tab */}
       {tab === "scoring" && (
         <ScoringConfig
@@ -341,6 +366,133 @@ export default function FrameworkBuilder({
           domains={domains}
         />
       )}
+
+      {/* Schedule Tab */}
+      {tab === "schedule" && (
+        <SchedulePanel
+          frameworkId={framework.id}
+          assessmentFrequency={framework.assessmentFrequency}
+          activeTerms={framework.activeTerms}
+        />
+      )}
+    </div>
+  );
+}
+
+function SchedulePanel({
+  frameworkId,
+  assessmentFrequency: initialFrequency,
+  activeTerms: initialTerms,
+}: {
+  frameworkId: string;
+  assessmentFrequency: string;
+  activeTerms: string;
+}) {
+  const [frequency, setFrequency] = useState(initialFrequency);
+  const [terms, setTerms] = useState<string[]>(JSON.parse(initialTerms || "[]"));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const FREQUENCIES = [
+    { key: "termly", label: "Termly (3x per year)", terms: ["term1", "term2", "term3"] },
+    { key: "biannual", label: "Twice per year", terms: ["term1", "term3"] },
+    { key: "annual", label: "Once per year", terms: ["term1"] },
+    { key: "custom", label: "Custom", terms: [] },
+  ];
+
+  const TERM_OPTIONS = [
+    { key: "term1", label: "Term 1" },
+    { key: "term2", label: "Term 2" },
+    { key: "term3", label: "Term 3" },
+  ];
+
+  const handleFrequencyChange = (newFreq: string) => {
+    setFrequency(newFreq);
+    const preset = FREQUENCIES.find((f) => f.key === newFreq);
+    if (preset && newFreq !== "custom") {
+      setTerms(preset.terms);
+    }
+  };
+
+  const toggleTerm = (termKey: string) => {
+    setTerms((prev) => prev.includes(termKey) ? prev.filter((t) => t !== termKey) : [...prev, termKey]);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    await updateFrameworkSchedule(frameworkId, frequency, terms);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-gray-400">
+        Control how often students complete the full assessment.
+        The Weekly Pulse and bespoke surveys run independently of this schedule.
+      </p>
+
+      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
+        <h3 className="font-bold text-white mb-3">Assessment Frequency</h3>
+        <div className="space-y-2">
+          {FREQUENCIES.map((f) => (
+            <label key={f.key} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-700/50 cursor-pointer">
+              <input
+                type="radio"
+                name="frequency"
+                value={f.key}
+                checked={frequency === f.key}
+                onChange={() => handleFrequencyChange(f.key)}
+                className="mt-0.5 w-4 h-4 text-meq-sky focus:ring-meq-sky"
+              />
+              <div>
+                <p className="text-sm font-medium text-white">{f.label}</p>
+                {f.terms.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Opens in {f.terms.map((t) => t.replace("term", "Term ")).join(", ")}
+                  </p>
+                )}
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
+        <h3 className="font-bold text-white mb-3">Active Terms</h3>
+        <p className="text-xs text-gray-400 mb-3">
+          Which terms the assessment is available in. Students only see the assessment
+          when the school&apos;s current term matches one of these.
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {TERM_OPTIONS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => toggleTerm(t.key)}
+              disabled={frequency !== "custom"}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                terms.includes(t.key)
+                  ? "bg-meq-sky text-white"
+                  : "bg-gray-700 text-gray-400"
+              } ${frequency !== "custom" ? "opacity-60 cursor-not-allowed" : "hover:opacity-80"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {frequency !== "custom" && (
+          <p className="text-xs text-gray-500 mt-2">Switch to Custom to edit terms directly.</p>
+        )}
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-3 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-50 transition-all"
+      >
+        {saving ? "Saving..." : saved ? "Saved!" : "Save Schedule"}
+      </button>
     </div>
   );
 }
@@ -736,6 +888,120 @@ function CSVQuestionUpload({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function PulsePanel({
+  frameworkId,
+  domains,
+  pulseQuestions,
+}: {
+  frameworkId: string;
+  domains: Domain[];
+  pulseQuestions: PulseQuestionData[];
+}) {
+  const [selectedTier, setSelectedTier] = useState("standard");
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const tierQuestions = pulseQuestions.filter((pq) => pq.tier === selectedTier);
+
+  // Build a map of existing questions by domain
+  const existingByDomain: Record<string, PulseQuestionData> = {};
+  for (const pq of tierQuestions) existingByDomain[pq.domain] = pq;
+
+  return (
+    <div>
+      <p className="text-sm text-gray-400 mb-4">
+        Weekly Pulse: a 5-minute check-in where students rate how they&apos;re feeling
+        on each domain using a 1-5 emoji scale. One question per domain per tier.
+      </p>
+
+      <div className="flex gap-2 mb-4">
+        {["standard", "junior"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setSelectedTier(t)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedTier === t ? "bg-gray-700 text-white" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        {domains.map((d, idx) => {
+          const existing = existingByDomain[d.key];
+          const savingThis = saving === d.key;
+          return (
+            <div key={d.key} className="bg-gray-800 rounded-xl border border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${COLOR_CLASSES[d.color] || COLOR_CLASSES.blue}`}>
+                  {d.label}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  defaultValue={existing?.prompt || ""}
+                  placeholder={selectedTier === "junior" ? `How are you feeling about ${d.label}?` : `I feel confident with ${d.label}`}
+                  onBlur={async (e) => {
+                    const prompt = e.target.value.trim();
+                    if (!prompt || prompt === existing?.prompt) return;
+                    setSaving(d.key);
+                    await upsertPulseQuestion(frameworkId, {
+                      tier: selectedTier,
+                      domain: d.key,
+                      prompt,
+                      emoji: existing?.emoji || undefined,
+                      orderIndex: existing?.orderIndex ?? idx + 1,
+                    });
+                    setSaving(null);
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none"
+                />
+                <input
+                  defaultValue={existing?.emoji || ""}
+                  placeholder="Emoji"
+                  maxLength={3}
+                  onBlur={async (e) => {
+                    const emoji = e.target.value.trim();
+                    if (emoji === (existing?.emoji || "")) return;
+                    if (!existing?.prompt) return; // need prompt to save
+                    setSaving(d.key);
+                    await upsertPulseQuestion(frameworkId, {
+                      tier: selectedTier,
+                      domain: d.key,
+                      prompt: existing.prompt,
+                      emoji: emoji || undefined,
+                      orderIndex: existing.orderIndex,
+                    });
+                    setSaving(null);
+                  }}
+                  className="w-16 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm text-center focus:border-meq-sky focus:outline-none"
+                />
+                {existing && (
+                  <button
+                    onClick={async () => {
+                      if (confirm(`Delete pulse question for ${d.label}?`)) {
+                        await deletePulseQuestion(existing.id, frameworkId);
+                      }
+                    }}
+                    className="text-xs text-red-400 hover:text-red-300 px-2"
+                  >
+                    Delete
+                  </button>
+                )}
+                {savingThis && <span className="text-xs text-gray-500 self-center">Saving...</span>}
+              </div>
+              {!existing && (
+                <p className="text-xs text-gray-500 mt-2">Type a prompt and click outside to save.</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

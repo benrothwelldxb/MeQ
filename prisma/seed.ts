@@ -665,15 +665,15 @@ async function main() {
   }
   console.log(`Seeded ${interventionCount} default interventions`);
 
-  // Seed pulse questions
+  // Seed pulse questions (linked to MeQ Standard framework)
   for (const pq of pulseQuestions) {
     await prisma.pulseQuestion.upsert({
-      where: { tier_domain: { tier: pq.tier, domain: pq.domain } },
+      where: { frameworkId_tier_domain: { frameworkId: framework.id, tier: pq.tier, domain: pq.domain } },
       update: { prompt: pq.prompt, emoji: pq.emoji, orderIndex: pq.orderIndex },
-      create: pq,
+      create: { ...pq, frameworkId: framework.id },
     });
   }
-  console.log(`Seeded ${pulseQuestions.length} pulse questions`);
+  console.log(`Seeded ${pulseQuestions.length} pulse questions for MeQ Standard`);
 
   // === SEED EXAMPLE FRAMEWORKS ===
 
