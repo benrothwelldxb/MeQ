@@ -77,6 +77,42 @@ export default async function StaffWellbeingPage() {
         </div>
       </div>
 
+      {/* Weekly Pulse CTA */}
+      {school.pulseEnabled && await (async () => {
+        const weekOf = new Date();
+        const day = weekOf.getDay();
+        const diff = weekOf.getDate() - day + (day === 0 ? -6 : 1);
+        weekOf.setDate(diff);
+        weekOf.setHours(0, 0, 0, 0);
+
+        const thisWeekPulse = await prisma.staffPulseCheck.findUnique({
+          where: { teacherId_weekOf: { teacherId: session.teacherId, weekOf } },
+        });
+
+        const completed = thisWeekPulse?.completedAt !== null && thisWeekPulse?.completedAt !== undefined;
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="font-bold text-gray-900">Weekly Pulse Check-In</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {completed ? "You've completed this week's pulse. Thanks!" : "A 1-minute check-in across all domains."}
+                </p>
+              </div>
+              {!completed && (
+                <Link
+                  href="/teacher/wellbeing/pulse"
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all flex-shrink-0"
+                >
+                  Start
+                </Link>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Current assessment */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-2">This Term&apos;s Assessment</h2>

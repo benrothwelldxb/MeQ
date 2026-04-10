@@ -120,7 +120,7 @@ model FrameworkQuestion {
   audioUrl       String?
   symbolImageUrl String?
 
-  @@unique([frameworkId, tier, orderIndex])
+  @@unique([frameworkId, tier, audience, orderIndex])
 }
 
 // ============ SCHOOL AUTH ============

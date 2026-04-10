@@ -29,6 +29,7 @@ interface Question {
   id: string;
   domainKey: string;
   tier: string;
+  audience: string;
   orderIndex: number;
   prompt: string;
   type: string;
@@ -104,6 +105,7 @@ export default function FrameworkBuilder({
 }) {
   const [tab, setTab] = useState<"domains" | "questions" | "interventions" | "pulse" | "scoring" | "schedule">("domains");
   const [selectedTier, setSelectedTier] = useState("standard");
+  const [selectedAudience, setSelectedAudience] = useState("student");
   const config: FrameworkConfig = JSON.parse(framework.config || "{}");
 
   const tabs = [
@@ -115,7 +117,7 @@ export default function FrameworkBuilder({
     { key: "schedule", label: "Schedule" },
   ];
 
-  const tierQuestions = questions.filter((q) => q.tier === selectedTier);
+  const tierQuestions = questions.filter((q) => q.tier === selectedTier && (q.audience || "student") === selectedAudience);
 
   return (
     <div>
@@ -222,20 +224,44 @@ export default function FrameworkBuilder({
       {/* Questions Tab */}
       {tab === "questions" && (
         <div>
-          <div className="flex gap-2 mb-4">
-            {["standard", "junior"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setSelectedTier(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedTier === t
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                {t === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
-              </button>
-            ))}
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <div className="flex gap-2">
+              <span className="text-xs text-gray-500 self-center mr-1">Audience:</span>
+              {["student", "staff"].map((a) => (
+                <button
+                  key={a}
+                  onClick={() => setSelectedAudience(a)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedAudience === a
+                      ? "bg-meq-sky text-white"
+                      : "bg-gray-800 text-gray-400 hover:text-white"
+                  }`}
+                >
+                  {a === "student" ? "Students" : "Staff"}
+                </button>
+              ))}
+            </div>
+            {selectedAudience === "student" && (
+              <div className="flex gap-2">
+                <span className="text-xs text-gray-500 self-center mr-1">Tier:</span>
+                {["standard", "junior"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setSelectedTier(t)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      selectedTier === t
+                        ? "bg-gray-700 text-white"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {t === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedAudience === "staff" && (
+              <p className="text-xs text-gray-500">Staff questions use a single tier for adults.</p>
+            )}
           </div>
 
           {/* Guidance Panel */}
@@ -244,13 +270,24 @@ export default function FrameworkBuilder({
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-400">
               <div>
                 <p className="font-medium text-gray-300 mb-1">Recommended per domain:</p>
-                <ul className="space-y-0.5">
-                  <li>{selectedTier === "standard" ? "5" : "3-4"} core questions (scored)</li>
-                  <li>{selectedTier === "standard" ? "2" : "0"} validation questions (reliability check)</li>
-                  <li>{selectedTier === "standard" ? "1" : "0"} trap question (attention check)</li>
-                </ul>
+                {selectedAudience === "staff" ? (
+                  <ul className="space-y-0.5">
+                    <li>4-5 core questions (scored)</li>
+                    <li>Optional: 1-2 validation questions</li>
+                  </ul>
+                ) : (
+                  <ul className="space-y-0.5">
+                    <li>{selectedTier === "standard" ? "5" : "3-4"} core questions (scored)</li>
+                    <li>{selectedTier === "standard" ? "2" : "0"} validation questions (reliability check)</li>
+                    <li>{selectedTier === "standard" ? "1" : "0"} trap question (attention check)</li>
+                  </ul>
+                )}
                 <p className="mt-2 text-gray-500">
-                  Total: {selectedTier === "standard" ? `${domains.length * 8} questions (${domains.length} domains x 8)` : `${domains.length * 4} questions (${domains.length} domains x 4)`}
+                  {selectedAudience === "staff"
+                    ? `Target: ~${domains.length * 5} questions (${domains.length} domains x 5)`
+                    : selectedTier === "standard"
+                    ? `Total: ${domains.length * 8} questions (${domains.length} domains x 8)`
+                    : `Total: ${domains.length * 4} questions (${domains.length} domains x 4)`}
                 </p>
               </div>
               <div>
@@ -328,11 +365,13 @@ export default function FrameworkBuilder({
               <AddQuestionForm
                 frameworkId={framework.id}
                 domains={domains}
-                tier={selectedTier}
+                tier={selectedAudience === "staff" ? "standard" : selectedTier}
+                audience={selectedAudience}
               />
               <CSVQuestionUpload
                 frameworkId={framework.id}
-                tier={selectedTier}
+                tier={selectedAudience === "staff" ? "standard" : selectedTier}
+                audience={selectedAudience}
                 domainKeys={domains.map((d) => d.key)}
               />
             </>
@@ -501,10 +540,12 @@ function AddQuestionForm({
   frameworkId,
   domains,
   tier,
+  audience = "student",
 }: {
   frameworkId: string;
   domains: Domain[];
   tier: string;
+  audience?: string;
 }) {
   const [prompt, setPrompt] = useState("");
   const [domainKey, setDomainKey] = useState(domains[0]?.key || "");
@@ -520,6 +561,7 @@ function AddQuestionForm({
     await addFrameworkQuestion(frameworkId, {
       domainKey,
       tier,
+      audience,
       prompt: prompt.trim(),
       questionFormat: "self-report",
       answerOptions: DEFAULT_ANSWER_OPTIONS,
@@ -825,10 +867,12 @@ function InterventionsPanel({
 function CSVQuestionUpload({
   frameworkId,
   tier,
+  audience = "student",
   domainKeys,
 }: {
   frameworkId: string;
   tier: string;
+  audience?: string;
   domainKeys: string[];
 }) {
   const [uploading, setUploading] = useState(false);
@@ -842,7 +886,7 @@ function CSVQuestionUpload({
     setResult(null);
 
     const text = await file.text();
-    const res = await uploadFrameworkQuestions(frameworkId, tier, text);
+    const res = await uploadFrameworkQuestions(frameworkId, tier, text, audience);
     setResult(res);
     setUploading(false);
     e.target.value = "";
@@ -853,7 +897,7 @@ function CSVQuestionUpload({
       <h3 className="text-sm font-medium text-gray-400 mb-2">
         Bulk Upload via CSV
         <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded bg-gray-700 text-gray-300">
-          {tier === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
+          {audience === "staff" ? "Staff" : tier === "standard" ? "Standard (8-11)" : "Junior (5-7)"}
         </span>
       </h3>
       <div className="bg-gray-700/50 rounded-lg p-3 mb-3">

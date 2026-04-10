@@ -310,7 +310,7 @@ async function main() {
   for (const q of allQuestions) {
     await prisma.frameworkQuestion.upsert({
       where: {
-        frameworkId_tier_orderIndex: { frameworkId: framework.id, tier: q.tier, orderIndex: q.orderIndex },
+        frameworkId_tier_audience_orderIndex: { frameworkId: framework.id, tier: q.tier, audience: "student", orderIndex: q.orderIndex },
       },
       update: {
         domainKey: q.domain,
@@ -342,6 +342,73 @@ async function main() {
     });
   }
   console.log(`Seeded ${allQuestions.length} framework questions for MeQ Standard`);
+
+  // Seed staff wellbeing questions for MeQ Standard framework
+  const staffQuestionData: Array<{ domain: string; prompt: string }> = [
+    // KnowMe — self-awareness as an educator
+    { domain: "KnowMe", prompt: "I am aware of how my emotions affect my teaching" },
+    { domain: "KnowMe", prompt: "I recognise when I am feeling stressed or overwhelmed at work" },
+    { domain: "KnowMe", prompt: "I understand what motivates me professionally" },
+    { domain: "KnowMe", prompt: "I can identify my strengths and development areas as an educator" },
+    // ManageMe — self-regulation and coping
+    { domain: "ManageMe", prompt: "I have effective strategies to manage work-related stress" },
+    { domain: "ManageMe", prompt: "I maintain a healthy work-life balance" },
+    { domain: "ManageMe", prompt: "I stay calm in challenging classroom situations" },
+    { domain: "ManageMe", prompt: "I take regular breaks and look after my physical health" },
+    // UnderstandOthers — empathy with pupils and colleagues
+    { domain: "UnderstandOthers", prompt: "I understand the emotions and perspectives of my pupils" },
+    { domain: "UnderstandOthers", prompt: "I listen actively when colleagues share concerns" },
+    { domain: "UnderstandOthers", prompt: "I am aware of how my words and actions affect others" },
+    { domain: "UnderstandOthers", prompt: "I pick up on non-verbal cues from pupils and colleagues" },
+    // WorkWithOthers — collaboration and team
+    { domain: "WorkWithOthers", prompt: "I feel supported by my colleagues and school leadership" },
+    { domain: "WorkWithOthers", prompt: "I contribute positively to my team" },
+    { domain: "WorkWithOthers", prompt: "I can ask for help when I need it" },
+    { domain: "WorkWithOthers", prompt: "I build strong professional relationships at school" },
+    // ChooseWell — decision-making and values
+    { domain: "ChooseWell", prompt: "I make thoughtful decisions even when under pressure" },
+    { domain: "ChooseWell", prompt: "My daily work aligns with my values as an educator" },
+    { domain: "ChooseWell", prompt: "I feel my work has meaning and purpose" },
+    { domain: "ChooseWell", prompt: "I make time for professional growth and reflection" },
+  ];
+
+  const DEFAULT_ANSWER_OPTIONS = JSON.stringify([
+    { label: "Strongly disagree", value: 1 },
+    { label: "Disagree", value: 2 },
+    { label: "Agree", value: 3 },
+    { label: "Strongly agree", value: 4 },
+  ]);
+  const DEFAULT_SCORE_MAP = JSON.stringify({ "1": 0, "2": 1, "3": 2, "4": 3 });
+
+  let staffOrderIndex = 1;
+  for (const q of staffQuestionData) {
+    await prisma.frameworkQuestion.upsert({
+      where: {
+        frameworkId_tier_audience_orderIndex: {
+          frameworkId: framework.id,
+          tier: "standard",
+          audience: "staff",
+          orderIndex: staffOrderIndex,
+        },
+      },
+      update: {},
+      create: {
+        frameworkId: framework.id,
+        domainKey: q.domain,
+        tier: "standard",
+        audience: "staff",
+        orderIndex: staffOrderIndex,
+        prompt: q.prompt,
+        type: "core",
+        questionFormat: "self-report",
+        answerOptions: DEFAULT_ANSWER_OPTIONS,
+        scoreMap: DEFAULT_SCORE_MAP,
+        weight: 1.0,
+      },
+    });
+    staffOrderIndex++;
+  }
+  console.log(`Seeded ${staffQuestionData.length} staff wellbeing questions`);
 
   // Create test students
   await prisma.student.upsert({

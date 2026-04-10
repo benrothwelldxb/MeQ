@@ -4,6 +4,10 @@ ALTER TABLE "School" ADD COLUMN "staffWellbeingEnabled" BOOLEAN NOT NULL DEFAULT
 -- Audience on framework questions
 ALTER TABLE "FrameworkQuestion" ADD COLUMN "audience" TEXT NOT NULL DEFAULT 'student';
 
+-- Update unique constraint to include audience
+DROP INDEX IF EXISTS "FrameworkQuestion_frameworkId_tier_orderIndex_key";
+CREATE UNIQUE INDEX "FrameworkQuestion_frameworkId_tier_audience_orderIndex_key" ON "FrameworkQuestion"("frameworkId", "tier", "audience", "orderIndex");
+
 -- StaffAssessment
 CREATE TABLE "StaffAssessment" (
     "id" TEXT NOT NULL,

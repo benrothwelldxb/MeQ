@@ -5,12 +5,18 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logoutTeacher } from "@/app/actions/teacher-auth";
 
-export default function TeacherSidebar({ teacherName }: { teacherName: string }) {
+export default function TeacherSidebar({
+  teacherName,
+  staffWellbeingEnabled = false,
+}: {
+  teacherName: string;
+  staffWellbeingEnabled?: boolean;
+}) {
   const pathname = usePathname();
 
   const navItems = [
     { href: "/teacher", label: "My Classes" },
-    { href: "/teacher/wellbeing", label: "My Wellbeing" },
+    ...(staffWellbeingEnabled ? [{ href: "/teacher/wellbeing", label: "My Wellbeing" }] : []),
     { href: "/teacher/settings", label: "Settings" },
   ];
 

@@ -15,6 +15,7 @@ export default async function AuthenticatedTeacherLayout({
 
   const teacher = await prisma.teacher.findUnique({
     where: { id: session.teacherId },
+    include: { school: { select: { staffWellbeingEnabled: true } } },
   });
 
   if (!teacher) {
@@ -23,7 +24,10 @@ export default async function AuthenticatedTeacherLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <TeacherSidebar teacherName={`${teacher.firstName} ${teacher.lastName}`} />
+      <TeacherSidebar
+        teacherName={`${teacher.firstName} ${teacher.lastName}`}
+        staffWellbeingEnabled={teacher.school.staffWellbeingEnabled}
+      />
       <main className="flex-1 p-8">{children}</main>
     </div>
   );
