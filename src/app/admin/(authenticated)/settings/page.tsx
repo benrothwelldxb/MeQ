@@ -78,6 +78,13 @@ export default async function SettingsPage() {
                 <span className="text-gray-500 block text-xs">Automatically play audio for questions (when audio is available)</span>
               </label>
             </div>
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="staffWellbeingEnabled" name="staffWellbeingEnabled" defaultChecked={school.staffWellbeingEnabled} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+              <label htmlFor="staffWellbeingEnabled" className="text-sm text-gray-700">
+                <span className="font-medium">Staff wellbeing</span>
+                <span className="text-gray-500 block text-xs">Teachers can take wellbeing assessments. Leadership sees aggregated data only (min 5 responses).</span>
+              </label>
+            </div>
           </div>
         </SettingsForm>
       </div>

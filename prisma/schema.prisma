@@ -24,10 +24,11 @@ model School {
   slug         String   @unique // URL-friendly identifier
   currentTerm  String   @default("term1")
   academicYear String   @default("2025-2026")
-  isActive         Boolean  @default(true)
-  reducedQuestions Boolean  @default(false)
-  pulseEnabled     Boolean  @default(false)
-  readAloudEnabled Boolean  @default(false)
+  isActive              Boolean  @default(true)
+  reducedQuestions      Boolean  @default(false)
+  pulseEnabled          Boolean  @default(false)
+  readAloudEnabled      Boolean  @default(false)
+  staffWellbeingEnabled Boolean  @default(false)
   frameworkId      String?
   framework        Framework? @relation(fields: [frameworkId], references: [id])
   admins       Admin[]
@@ -105,6 +106,7 @@ model FrameworkQuestion {
   framework      Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
   domainKey      String
   tier           String    @default("standard")
+  audience       String    @default("student") // "student" | "staff"
   orderIndex     Int
   prompt         String
   type           String    @default("core")
@@ -144,6 +146,8 @@ model Teacher {
   school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classes            ClassGroup[]
   teacherAssessments TeacherAssessment[]
+  staffAssessments   StaffAssessment[]
+  staffPulseChecks   StaffPulseCheck[]
   createdAt          DateTime            @default(now())
 }
 
@@ -349,6 +353,40 @@ model PulseCheck {
   createdAt   DateTime  @default(now())
 
   @@unique([studentId, weekOf])
+}
+
+// ============ STAFF WELLBEING ============
+
+model StaffAssessment {
+  id                String    @id @default(cuid())
+  teacherId         String
+  teacher           Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  frameworkId       String?
+  term              String
+  academicYear      String
+  status            String    @default("in_progress")
+  answers           String    @default("{}")
+  totalScore        Float?
+  overallLevel      String?
+  domainScoresJson  String?
+  domainLevelsJson  String?
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+
+  @@unique([teacherId, term, academicYear])
+}
+
+model StaffPulseCheck {
+  id          String    @id @default(cuid())
+  teacherId   String
+  teacher     Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  weekOf      DateTime
+  answers     String    @default("{}")
+  freeText    String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([teacherId, weekOf])
 }
 
 // ============ PASSWORD RESET ============

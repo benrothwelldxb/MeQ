@@ -114,6 +114,7 @@ export async function addFrameworkQuestion(
   data: {
     domainKey: string;
     tier: string;
+    audience?: string;
     prompt: string;
     questionFormat: string;
     answerOptions: string;
@@ -122,9 +123,9 @@ export async function addFrameworkQuestion(
     type: string;
   }
 ) {
-  // Get next orderIndex for this framework+tier
+  // Get next orderIndex for this framework+tier+audience
   const lastQ = await prisma.frameworkQuestion.findFirst({
-    where: { frameworkId, tier: data.tier },
+    where: { frameworkId, tier: data.tier, audience: data.audience || "student" },
     orderBy: { orderIndex: "desc" },
   });
   const orderIndex = (lastQ?.orderIndex ?? 0) + 1;

@@ -62,6 +62,7 @@ export async function submitQuiz() {
       ...q,
       frameworkId: framework.id,
       domainKey: q.domain,
+      audience: "student",
       type: q.type || "core",
       questionFormat: q.questionFormat || "self-report",
     }));
