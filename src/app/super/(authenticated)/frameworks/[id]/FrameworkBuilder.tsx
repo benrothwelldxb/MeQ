@@ -1022,6 +1022,7 @@ function PulsePanel({
               </div>
               <div className="flex gap-2">
                 <input
+                  key={`prompt-${selectedTier}-${d.key}-${existing?.id || "new"}`}
                   defaultValue={existing?.prompt || ""}
                   placeholder={selectedTier === "junior" ? `How are you feeling about ${d.label}?` : `I feel confident with ${d.label}`}
                   onBlur={async (e) => {
@@ -1040,6 +1041,7 @@ function PulsePanel({
                   className="flex-1 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm focus:border-meq-sky focus:outline-none"
                 />
                 <input
+                  key={`emoji-${selectedTier}-${d.key}-${existing?.id || "new"}`}
                   defaultValue={existing?.emoji || ""}
                   placeholder="🧐"
                   title="Domain icon emoji (shown above the question)"
