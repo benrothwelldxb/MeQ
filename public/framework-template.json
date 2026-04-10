@@ -1,0 +1,185 @@
+{
+  "name": "HEART",
+  "description": "Head, Emotions, Actions, Relationships, Thinking — a bespoke wellbeing framework.",
+  "assessmentFrequency": "termly",
+  "activeTerms": ["term1", "term2", "term3"],
+  "domains": [
+    {
+      "key": "Head",
+      "label": "Head",
+      "description": "Thoughts, focus, and cognitive wellbeing",
+      "color": "blue",
+      "sortOrder": 0
+    },
+    {
+      "key": "Emotions",
+      "label": "Emotions",
+      "description": "Recognising and managing feelings",
+      "color": "rose",
+      "sortOrder": 1
+    },
+    {
+      "key": "Actions",
+      "label": "Actions",
+      "description": "Behaviour and choices",
+      "color": "emerald",
+      "sortOrder": 2
+    },
+    {
+      "key": "Relationships",
+      "label": "Relationships",
+      "description": "Friendships and connections with others",
+      "color": "purple",
+      "sortOrder": 3
+    },
+    {
+      "key": "Thinking",
+      "label": "Thinking",
+      "description": "Reflection and decision-making",
+      "color": "amber",
+      "sortOrder": 4
+    }
+  ],
+  "scoring": {
+    "standard": {
+      "levelThresholds": [
+        { "level": "Advanced", "min": 18 },
+        { "level": "Secure", "min": 15 },
+        { "level": "Developing", "min": 10 },
+        { "level": "Emerging", "min": 0 }
+      ],
+      "overallThresholds": [
+        { "level": "Advanced", "min": 90 },
+        { "level": "Secure", "min": 75 },
+        { "level": "Developing", "min": 50 },
+        { "level": "Emerging", "min": 0 }
+      ],
+      "maxDomainScore": 26,
+      "maxTotalScore": 130
+    },
+    "junior": {
+      "levelThresholds": [
+        { "level": "Advanced", "min": 14 },
+        { "level": "Secure", "min": 11 },
+        { "level": "Developing", "min": 8 },
+        { "level": "Emerging", "min": 0 }
+      ],
+      "overallThresholds": [
+        { "level": "Advanced", "min": 70 },
+        { "level": "Secure", "min": 55 },
+        { "level": "Developing", "min": 40 },
+        { "level": "Emerging", "min": 0 }
+      ],
+      "maxDomainScore": 16,
+      "maxTotalScore": 80
+    }
+  },
+  "questions": [
+    {
+      "tier": "standard",
+      "domain": "Head",
+      "prompt": "I can concentrate on my work in class",
+      "type": "core",
+      "weight": 1.0
+    },
+    {
+      "tier": "standard",
+      "domain": "Head",
+      "prompt": "I know what I am learning and why",
+      "type": "core",
+      "weight": 1.0
+    },
+    {
+      "tier": "standard",
+      "domain": "Emotions",
+      "prompt": "I can name how I am feeling",
+      "type": "core",
+      "weight": 1.0
+    },
+    {
+      "tier": "standard",
+      "domain": "Emotions",
+      "prompt": "I find it hard to calm down when I'm upset",
+      "type": "core",
+      "weight": 1.0,
+      "reverse": true
+    },
+    {
+      "tier": "junior",
+      "domain": "Head",
+      "prompt": "I listen well in class",
+      "type": "core",
+      "weight": 1.0
+    }
+  ],
+  "pulseQuestions": [
+    {
+      "tier": "standard",
+      "domain": "Head",
+      "prompt": "I've been able to focus this week",
+      "emoji": "🧠"
+    },
+    {
+      "tier": "standard",
+      "domain": "Emotions",
+      "prompt": "I've felt in control of my emotions",
+      "emoji": "💙"
+    },
+    {
+      "tier": "junior",
+      "domain": "Head",
+      "prompt": "I've been listening well",
+      "emoji": "🧠"
+    }
+  ],
+  "interventions": [
+    {
+      "domain": "Head",
+      "level": "Emerging",
+      "audience": "teacher",
+      "title": "Focus breaks",
+      "description": "Build in short 2-minute focus breaks every 20 minutes during lessons for students who struggle to concentrate."
+    },
+    {
+      "domain": "Head",
+      "level": "Developing",
+      "audience": "teacher",
+      "title": "Visual schedules",
+      "description": "Use visual timetables and step-by-step instructions for tasks."
+    },
+    {
+      "domain": "Emotions",
+      "level": "Emerging",
+      "audience": "teacher",
+      "title": "Emotion check-ins",
+      "description": "Daily emotion check-ins using a feelings chart or wheel."
+    }
+  ],
+  "messages": [
+    {
+      "domain": "Head",
+      "type": "strength",
+      "content": "You show strong focus and cognitive skills."
+    },
+    {
+      "domain": "Head",
+      "type": "next_step",
+      "content": "Try breaking big tasks into smaller chunks."
+    },
+    {
+      "domain": "Head",
+      "type": "next_step",
+      "content": "Notice which times of day you focus best and use those for tricky work."
+    },
+    {
+      "domain": "Emotions",
+      "type": "strength",
+      "content": "You are great at recognising and naming your feelings."
+    },
+    {
+      "domain": "Head",
+      "type": "pulse_tip",
+      "content": "This student may benefit from a quiet focus space and shorter work chunks."
+    }
+  ]
+}

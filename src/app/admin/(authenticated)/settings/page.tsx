@@ -12,8 +12,15 @@ export default async function SettingsPage() {
   const session = await getAdminSession();
   const school = await getSchoolSettings(session.schoolId);
   const yearGroups = await getYearGroups(session.schoolId);
+  // Show only: public frameworks (no assignments) + frameworks assigned to this school
   const frameworks = await prisma.framework.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      OR: [
+        { assignments: { none: {} } }, // public — no assignments
+        { assignments: { some: { schoolId: session.schoolId } } }, // explicitly assigned
+      ],
+    },
     include: { domains: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });

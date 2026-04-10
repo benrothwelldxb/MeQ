@@ -31,12 +31,13 @@ model School {
   staffWellbeingEnabled Boolean  @default(false)
   frameworkId      String?
   framework        Framework? @relation(fields: [frameworkId], references: [id])
-  admins       Admin[]
-  teachers     Teacher[]
-  yearGroups   YearGroup[]
-  classGroups  ClassGroup[]
-  students     Student[]
-  surveys      Survey[]
+  admins               Admin[]
+  teachers             Teacher[]
+  yearGroups           YearGroup[]
+  classGroups          ClassGroup[]
+  students             Student[]
+  surveys              Survey[]
+  frameworkAssignments FrameworkAssignment[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -60,8 +61,20 @@ model Framework {
   interventions       Intervention[]
   pulseQuestions      PulseQuestion[]
   schools             School[]
+  assignments         FrameworkAssignment[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model FrameworkAssignment {
+  id          String    @id @default(cuid())
+  frameworkId String
+  framework   Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  schoolId    String
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  assignedAt  DateTime  @default(now())
+
+  @@unique([frameworkId, schoolId])
 }
 
 model FrameworkDomain {

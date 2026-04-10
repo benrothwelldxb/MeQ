@@ -5,7 +5,8 @@ export default async function FrameworksPage() {
   const frameworks = await prisma.framework.findMany({
     include: {
       domains: { orderBy: { sortOrder: "asc" } },
-      _count: { select: { schools: true, questions: true } },
+      assignments: { include: { school: { select: { name: true } } } },
+      _count: { select: { schools: true, questions: true, assignments: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -17,27 +18,44 @@ export default async function FrameworksPage() {
           <h1 className="text-2xl font-bold text-white">Frameworks</h1>
           <p className="text-gray-400 mt-1">Assessment frameworks and custom curricula</p>
         </div>
-        <Link
-          href="/super/frameworks/new"
-          className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
-        >
-          Create Framework
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/super/frameworks/import"
+            className="px-4 py-2.5 rounded-lg text-sm font-bold text-gray-300 bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all"
+          >
+            Import JSON
+          </Link>
+          <Link
+            href="/super/frameworks/new"
+            className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
+          >
+            Create Framework
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4">
         {frameworks.map((fw) => (
           <div key={fw.id} className="bg-gray-800 rounded-xl border border-gray-700 p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h2 className="text-lg font-bold text-white">{fw.name}</h2>
                 {fw.isDefault && (
                   <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-meq-sky/20 text-meq-sky">Default</span>
                 )}
+                {fw._count.assignments > 0 ? (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                    Private &middot; {fw._count.assignments} school{fw._count.assignments !== 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                    Public
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-400">
-                  {fw._count.schools} school{fw._count.schools !== 1 ? "s" : ""} &middot; {fw._count.questions} questions
+                  {fw._count.questions} questions
                 </span>
                 <Link href={`/super/frameworks/${fw.id}`} className="text-sm text-meq-sky hover:underline">
                   Edit

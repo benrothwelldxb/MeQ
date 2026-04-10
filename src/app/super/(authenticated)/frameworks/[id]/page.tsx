@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import FrameworkBuilder from "./FrameworkBuilder";
+import AssignmentPanel from "./AssignmentPanel";
+import ExportButton from "./ExportButton";
 
 export default async function EditFrameworkPage({
   params,
@@ -15,20 +17,49 @@ export default async function EditFrameworkPage({
       questions: { orderBy: [{ tier: "asc" }, { orderIndex: "asc" }] },
       interventions: { orderBy: [{ domain: "asc" }, { level: "asc" }, { sortOrder: "asc" }] },
       pulseQuestions: { orderBy: [{ tier: "asc" }, { orderIndex: "asc" }] },
+      assignments: {
+        include: { school: { select: { id: true, name: true, slug: true } } },
+      },
     },
   });
 
   if (!framework) return notFound();
 
+  const allSchools = await prisma.school.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, slug: true },
+    orderBy: { name: "asc" },
+  });
+
+  const isPublic = framework.assignments.length === 0;
+
   return (
     <div>
       <Link href="/super/frameworks" className="text-sm text-gray-400 hover:text-white">&larr; Back to Frameworks</Link>
-      <div className="flex items-center gap-3 mt-2 mb-6">
-        <h1 className="text-2xl font-bold text-white">{framework.name}</h1>
-        {framework.isDefault && (
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-meq-sky/20 text-meq-sky">Default</span>
-        )}
+      <div className="flex items-center justify-between mt-2 mb-6">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-white">{framework.name}</h1>
+          {framework.isDefault && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-meq-sky/20 text-meq-sky">Default</span>
+          )}
+          {isPublic ? (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">Public</span>
+          ) : (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+              Private &middot; {framework.assignments.length} school{framework.assignments.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <ExportButton frameworkId={framework.id} frameworkName={framework.name} />
       </div>
+
+      {!framework.isDefault && (
+        <AssignmentPanel
+          frameworkId={framework.id}
+          allSchools={allSchools}
+          assignedSchoolIds={framework.assignments.map((a) => a.schoolId)}
+        />
+      )}
 
       <FrameworkBuilder
         framework={{
