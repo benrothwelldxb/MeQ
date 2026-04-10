@@ -57,6 +57,8 @@ export default async function EditFrameworkPage({
           type: q.type,
           questionFormat: q.questionFormat,
           weight: q.weight,
+          audioUrl: q.audioUrl,
+          symbolImageUrl: q.symbolImageUrl,
         }))}
         interventions={framework.interventions.map((iv) => ({
           id: iv.id,

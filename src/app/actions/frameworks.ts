@@ -146,6 +146,18 @@ export async function deleteFrameworkQuestion(questionId: string, frameworkId: s
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
 
+export async function updateQuestionMedia(
+  questionId: string,
+  frameworkId: string,
+  data: { audioUrl?: string | null; symbolImageUrl?: string | null }
+) {
+  await prisma.frameworkQuestion.update({
+    where: { id: questionId },
+    data,
+  });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
 export async function updateFrameworkDomain(
   domainId: string,
   frameworkId: string,

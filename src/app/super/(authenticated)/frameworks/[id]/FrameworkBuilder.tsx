@@ -15,6 +15,7 @@ import {
   updateFrameworkSchedule,
 } from "@/app/actions/frameworks";
 import { uploadFrameworkQuestions } from "@/app/actions/framework-questions-upload";
+import QuestionMediaButton from "@/components/QuestionMediaButton";
 
 interface Domain {
   id: string;
@@ -35,6 +36,8 @@ interface Question {
   type: string;
   questionFormat: string;
   weight: number;
+  audioUrl?: string | null;
+  symbolImageUrl?: string | null;
 }
 
 interface InterventionData {
@@ -345,6 +348,18 @@ export default function FrameworkBuilder({
                   <span className="text-sm text-gray-300 flex-1">{q.prompt}</span>
                   <span className={`text-xs ${typeColor}`}>{q.type}</span>
                   <span className="text-xs text-gray-600">w{q.weight}</span>
+                  <QuestionMediaButton
+                    questionId={q.id}
+                    frameworkId={framework.id}
+                    mediaType="image"
+                    currentUrl={q.symbolImageUrl}
+                  />
+                  <QuestionMediaButton
+                    questionId={q.id}
+                    frameworkId={framework.id}
+                    mediaType="audio"
+                    currentUrl={q.audioUrl}
+                  />
                   {!framework.isDefault && (
                     <button
                       onClick={async () => {
