@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/teachers", label: "Teachers", icon: "users" },
   { href: "/admin/staff-wellbeing", label: "Staff Wellbeing", icon: "users" },
   { href: "/admin/pulse", label: "Pulse", icon: "chart" },
+  { href: "/admin/surveys", label: "Surveys", icon: "book" },
   { href: "/admin/slt", label: "SLT Dashboard", icon: "chart" },
   { href: "/admin/framework", label: "Framework", icon: "book" },
   { href: "/admin/settings", label: "Settings", icon: "cog" },
