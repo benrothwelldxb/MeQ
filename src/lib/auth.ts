@@ -11,9 +11,6 @@ import Google from "next-auth/providers/google";
 // carrier for the verified email until we can create the real
 // iron-session.
 
-console.log("[AUTH DEBUG] AUTH_URL =", process.env.AUTH_URL);
-console.log("[AUTH DEBUG] NEXTAUTH_URL =", process.env.NEXTAUTH_URL);
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   providers: [
@@ -23,6 +20,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorization: {
         params: {
           prompt: "select_account",
+          redirect_uri: process.env.AUTH_URL
+            ? `${process.env.AUTH_URL}/api/auth/callback/google`
+            : undefined,
         },
       },
     }),
