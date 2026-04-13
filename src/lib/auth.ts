@@ -11,7 +11,11 @@ import Google from "next-auth/providers/google";
 // carrier for the verified email until we can create the real
 // iron-session.
 
+console.log("[AUTH DEBUG] AUTH_URL =", process.env.AUTH_URL);
+console.log("[AUTH DEBUG] NEXTAUTH_URL =", process.env.NEXTAUTH_URL);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
