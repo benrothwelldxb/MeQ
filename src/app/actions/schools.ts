@@ -11,8 +11,8 @@ export async function createSchool(formData: FormData) {
   const adminEmail = (formData.get("adminEmail") as string)?.trim().toLowerCase();
   const adminPassword = formData.get("adminPassword") as string;
 
-  if (!name || !slug || !adminEmail || !adminPassword) {
-    return { error: "All fields are required." };
+  if (!name || !slug || !adminEmail) {
+    return { error: "School name, slug, and admin email are required." };
   }
 
   const existingSlug = await prisma.school.findUnique({ where: { slug } });
@@ -26,7 +26,7 @@ export async function createSchool(formData: FormData) {
   const existingAdmin = await prisma.admin.findFirst({ where: { email: adminEmail } });
   const passwordHash = existingAdmin
     ? existingAdmin.passwordHash
-    : hashSync(adminPassword, 10);
+    : adminPassword ? hashSync(adminPassword, 10) : "";
 
   await prisma.admin.create({
     data: {

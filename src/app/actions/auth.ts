@@ -38,7 +38,31 @@ export async function loginStudent(
   const school = await getSchoolSettings(student.schoolId);
   const { currentTerm, academicYear } = school;
 
-  // Check for existing assessment for this term
+  // Priority 1: Check for active custom surveys the student hasn't completed.
+  // Custom surveys take priority over the framework assessment so admins
+  // can run quick targeted surveys without requiring the full assessment first.
+  const pendingSurvey = await findPendingSurvey(student);
+  if (pendingSurvey) {
+    const existingAssessment = await prisma.assessment.findUnique({
+      where: {
+        studentId_term_academicYear: {
+          studentId: student.id,
+          term: currentTerm,
+          academicYear,
+        },
+      },
+    });
+
+    const session = await getStudentSession();
+    session.studentId = student.id;
+    session.assessmentId = existingAssessment?.id || "";
+    session.firstName = student.displayName || student.firstName;
+    session.tier = student.tier;
+    await session.save();
+    redirect(`/survey/${pendingSurvey.id}`);
+  }
+
+  // Priority 2: Framework assessment
   let assessment = await prisma.assessment.findUnique({
     where: {
       studentId_term_academicYear: {
@@ -76,7 +100,6 @@ export async function loginStudent(
   } else {
     // Framework's schedule says no assessment this term.
     // Still allow login for pulse, but no assessment to complete.
-    // We'll fall through — if pulse is also not needed, login fails with a friendly message.
     if (!school.pulseEnabled) {
       return {
         error: "No assessment is scheduled for this term. Check back next term!",
@@ -108,4 +131,45 @@ export async function loginStudent(
   }
 
   redirect("/quiz");
+}
+
+/** Find an active custom survey the student hasn't completed yet. */
+async function findPendingSurvey(student: {
+  id: string;
+  schoolId: string;
+  yearGroupId: string | null;
+  classGroupId: string | null;
+}) {
+  const activeSurveys = await prisma.survey.findMany({
+    where: { schoolId: student.schoolId, status: "active" },
+    select: {
+      id: true,
+      targetType: true,
+      targetIds: true,
+      allowRetake: true,
+    },
+  });
+
+  for (const survey of activeSurveys) {
+    // Check targeting
+    const targetIds: string[] = JSON.parse(survey.targetIds);
+    if (survey.targetType === "year_group" && student.yearGroupId && !targetIds.includes(student.yearGroupId)) {
+      continue;
+    }
+    if (survey.targetType === "class" && student.classGroupId && !targetIds.includes(student.classGroupId)) {
+      continue;
+    }
+
+    // Check if already completed
+    if (!survey.allowRetake) {
+      const existing = await prisma.surveyResponse.findFirst({
+        where: { surveyId: survey.id, studentId: student.id },
+      });
+      if (existing) continue;
+    }
+
+    return survey;
+  }
+
+  return null;
 }

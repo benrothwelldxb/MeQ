@@ -66,8 +66,8 @@ export default function AddSchoolPage() {
               <input name="adminEmail" type="email" required className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Admin Password *</label>
-              <input name="adminPassword" type="password" required minLength={6} className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none" />
+              <label className="block text-sm font-medium text-gray-400 mb-1">Admin Password</label>
+              <input name="adminPassword" type="password" minLength={6} placeholder="Optional if using Google SSO" className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none placeholder:text-gray-500" />
             </div>
           </div>
         </div>
