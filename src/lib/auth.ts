@@ -20,9 +20,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorization: {
         params: {
           prompt: "select_account",
-          redirect_uri: process.env.AUTH_URL
-            ? `${process.env.AUTH_URL}/api/auth/callback/google`
-            : undefined,
         },
       },
     }),
