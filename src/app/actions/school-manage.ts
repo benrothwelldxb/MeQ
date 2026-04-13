@@ -43,3 +43,17 @@ export async function updateSchoolSettings(
   revalidatePath("/super");
   return { success: true };
 }
+
+export async function assignFrameworkToSchool(schoolId: string, frameworkId: string | null) {
+  const session = await getSuperAdminSession();
+  if (!session.superAdminId) return { error: "Unauthorized." };
+
+  await prisma.school.update({
+    where: { id: schoolId },
+    data: { frameworkId },
+  });
+
+  revalidatePath(`/super/schools/${schoolId}`);
+  revalidatePath("/super");
+  return { success: true };
+}

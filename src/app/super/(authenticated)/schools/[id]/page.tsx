@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import SchoolSettingsForm from "./SchoolSettingsForm";
+import FrameworkAssigner from "./FrameworkAssigner";
 
 export default async function ManageSchoolPage({
   params,
@@ -35,6 +36,12 @@ export default async function ManageSchoolPage({
   });
 
   if (!school) notFound();
+
+  const frameworks = await prisma.framework.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="max-w-3xl">
@@ -99,14 +106,12 @@ export default async function ManageSchoolPage({
 
       {/* Framework */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 mt-6">
-        <h2 className="font-bold text-white mb-2">Framework</h2>
-        {school.framework ? (
-          <Link href={`/super/frameworks/${school.framework.id}`} className="text-sm text-meq-sky hover:underline">
-            {school.framework.name}
-          </Link>
-        ) : (
-          <p className="text-sm text-gray-500">No framework assigned.</p>
-        )}
+        <h2 className="font-bold text-white mb-4">Framework</h2>
+        <FrameworkAssigner
+          schoolId={school.id}
+          currentFrameworkId={school.framework?.id ?? null}
+          frameworks={frameworks}
+        />
       </div>
     </div>
   );

@@ -41,8 +41,8 @@ export async function loginStudent(
   // Priority 1: Check for active custom surveys the student hasn't completed.
   // Custom surveys take priority over the framework assessment so admins
   // can run quick targeted surveys without requiring the full assessment first.
-  const pendingSurvey = await findPendingSurvey(student);
-  if (pendingSurvey) {
+  const hasPendingSurveys = await findPendingSurvey(student);
+  if (hasPendingSurveys) {
     const existingAssessment = await prisma.assessment.findUnique({
       where: {
         studentId_term_academicYear: {
@@ -59,7 +59,8 @@ export async function loginStudent(
     session.firstName = student.displayName || student.firstName;
     session.tier = student.tier;
     await session.save();
-    redirect(`/survey/${pendingSurvey.id}`);
+    // /surveys page handles single vs multiple — redirects directly if only one
+    redirect("/surveys");
   }
 
   // Priority 2: Framework assessment

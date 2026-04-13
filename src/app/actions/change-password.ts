@@ -75,13 +75,17 @@ export async function changeSuperAdminPassword(
   const newPassword = formData.get("newPassword") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
-  if (!currentPassword || !newPassword) return { error: "Please fill in all fields." };
+  if (!newPassword) return { error: "Please enter a new password." };
   const validation = validatePassword(newPassword);
   if (!validation.valid) return { error: validation.error };
   if (newPassword !== confirmPassword) return { error: "Passwords do not match." };
 
   const superAdmin = await prisma.superAdmin.findUnique({ where: { id: session.superAdminId } });
-  if (!superAdmin || !compareSync(currentPassword, superAdmin.passwordHash)) {
+  if (!superAdmin) return { error: "Account not found." };
+
+  // If the account has a password set, verify the current one.
+  // SSO-only accounts (empty passwordHash) can set a password without this check.
+  if (superAdmin.passwordHash && !compareSync(currentPassword, superAdmin.passwordHash)) {
     return { error: "Current password is incorrect." };
   }
 
