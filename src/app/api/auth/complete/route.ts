@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getAdminSession, getTeacherSession } from "@/lib/session";
+import { getAdminSession, getTeacherSession, getSuperAdminSession } from "@/lib/session";
 
 // Bridge route: runs AFTER a successful NextAuth Google OAuth flow.
 // Reads the NextAuth JWT, looks up the user by email in our own tables,
 // creates the appropriate iron-session, then clears the NextAuth JWT
 // and redirects into the app.
 //
-// Called like: /api/auth/complete?type=admin  or  /api/auth/complete?type=teacher
+// Called like: /api/auth/complete?type=admin|teacher|super
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const type = url.searchParams.get("type");
   const origin = url.origin;
 
-  if (type !== "admin" && type !== "teacher") {
+  if (type !== "admin" && type !== "teacher" && type !== "super") {
     return NextResponse.redirect(`${origin}/admin/login?error=InvalidType`);
   }
 
@@ -47,6 +47,24 @@ export async function GET(req: NextRequest) {
 
     await signOut({ redirect: false });
     return NextResponse.redirect(`${origin}/admin`);
+  }
+
+  if (type === "super") {
+    const superAdmin = await prisma.superAdmin.findUnique({ where: { email } });
+    if (!superAdmin) {
+      await signOut({ redirect: false });
+      return NextResponse.redirect(
+        `${origin}/super/login?error=NoAccount&email=${encodeURIComponent(email)}`
+      );
+    }
+
+    const ironSession = await getSuperAdminSession();
+    ironSession.superAdminId = superAdmin.id;
+    ironSession.email = superAdmin.email;
+    await ironSession.save();
+
+    await signOut({ redirect: false });
+    return NextResponse.redirect(`${origin}/super`);
   }
 
   // teacher

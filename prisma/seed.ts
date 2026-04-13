@@ -213,14 +213,14 @@ const pulseQuestions = [
 async function main() {
   // Create super admin (platform owner)
   await prisma.superAdmin.upsert({
-    where: { email: "ben@wasil.org" },
+    where: { email: "principal@vhprimarycoa.ae" },
     update: {},
     create: {
-      email: "ben@wasil.org",
+      email: "principal@vhprimarycoa.ae",
       passwordHash: hashSync("meq-super-2026", 10),
     },
   });
-  console.log("Super admin created (ben@wasil.org / meq-super-2026)");
+  console.log("Super admin created (principal@vhprimarycoa.ae)");
 
   // Create default MeQ Standard framework
   const framework = await prisma.framework.upsert({
