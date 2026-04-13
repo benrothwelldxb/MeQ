@@ -1,7 +1,7 @@
 // Google OAuth helpers — replaces NextAuth which had a bug constructing
 // redirect_uri on Railway (req.url contained localhost:8080 internally).
 
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
