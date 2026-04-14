@@ -31,11 +31,12 @@ export async function uploadFrameworkInterventions(
   const domainCol = findCol(["domain", "domain_key"]);
   const levelCol = findCol(["level"]);
   const audienceCol = findCol(["audience"]);
+  const tierCol = findCol(["tier"]);
   const titleCol = findCol(["title"]);
   const descCol = findCol(["description", "desc"]);
 
   if (!domainCol || !levelCol || !titleCol || !descCol) {
-    return { error: "CSV must have columns: domain, level, title, description (audience optional, defaults to teacher)" };
+    return { error: "CSV must have columns: domain, level, title, description (audience and tier optional — audience defaults to teacher, tier defaults to standard)" };
   }
 
   // Validate framework + build domain lookup
@@ -59,6 +60,7 @@ export async function uploadFrameworkInterventions(
 
   const VALID_LEVELS = ["Emerging", "Developing", "Secure", "Advanced"];
   const VALID_AUDIENCES = ["teacher", "student"];
+  const VALID_TIERS = ["standard", "junior"];
 
   let created = 0;
   const errors: string[] = [];
@@ -69,6 +71,7 @@ export async function uploadFrameworkInterventions(
     const domainRaw = row[domainCol]?.trim();
     const level = row[levelCol]?.trim();
     const audience = audienceCol ? (row[audienceCol]?.trim().toLowerCase() || "teacher") : "teacher";
+    const tier = tierCol ? (row[tierCol]?.trim().toLowerCase() || "standard") : "standard";
     const title = row[titleCol]?.trim();
     const description = row[descCol]?.trim();
 
@@ -93,8 +96,13 @@ export async function uploadFrameworkInterventions(
       continue;
     }
 
+    if (!VALID_TIERS.includes(tier)) {
+      errors.push(`Row ${i + 2}: Invalid tier "${tier}". Must be: ${VALID_TIERS.join(", ")}`);
+      continue;
+    }
+
     const lastIv = await prisma.intervention.findFirst({
-      where: { frameworkId, domain, level, audience },
+      where: { frameworkId, domain, level, audience, tier },
       orderBy: { sortOrder: "desc" },
     });
 
@@ -104,9 +112,9 @@ export async function uploadFrameworkInterventions(
         domain,
         level,
         audience,
+        tier,
         title,
         description,
-        tier: "standard",
         isDefault: true,
         sortOrder: (lastIv?.sortOrder ?? -1) + 1,
       },

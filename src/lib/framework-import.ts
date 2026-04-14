@@ -53,6 +53,7 @@ export interface FrameworkImportJson {
   interventions?: Array<{
     domain: string;
     level: "Emerging" | "Developing" | "Secure" | "Advanced";
+    tier?: "standard" | "junior";
     audience: "teacher" | "student";
     title: string;
     description: string;

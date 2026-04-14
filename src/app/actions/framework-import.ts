@@ -168,7 +168,8 @@ export async function importFramework(jsonText: string, schoolIdsToAssign: strin
     for (const iv of parsed.interventions) {
       const domainKey = resolveDomain(iv.domain);
       if (!domainKey) continue;
-      const groupKey = `${domainKey}-${iv.level}-${iv.audience}`;
+      const tier = iv.tier ?? "standard";
+      const groupKey = `${domainKey}-${iv.level}-${iv.audience}-${tier}`;
       ivSortByGroup[groupKey] = (ivSortByGroup[groupKey] ?? -1) + 1;
       await prisma.intervention.create({
         data: {
@@ -178,7 +179,7 @@ export async function importFramework(jsonText: string, schoolIdsToAssign: strin
           audience: iv.audience,
           title: iv.title,
           description: iv.description,
-          tier: "standard",
+          tier,
           isDefault: true,
           sortOrder: ivSortByGroup[groupKey],
         },
@@ -293,6 +294,7 @@ export async function exportFrameworkJson(frameworkId: string) {
     interventions: framework.interventions.map((iv) => ({
       domain: iv.domain,
       level: iv.level as "Emerging" | "Developing" | "Secure" | "Advanced",
+      tier: iv.tier as "standard" | "junior",
       audience: iv.audience as "teacher" | "student",
       title: iv.title,
       description: iv.description,

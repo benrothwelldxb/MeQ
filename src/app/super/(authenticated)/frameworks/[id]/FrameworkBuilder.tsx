@@ -869,7 +869,7 @@ function CSVInterventionUpload({
       <h3 className="text-sm font-medium text-gray-400 mb-2">Bulk Upload Interventions via CSV</h3>
       <div className="bg-gray-700/50 rounded-lg p-3 mb-3">
         <p className="text-xs text-gray-400 mb-1">Required columns: <code className="text-gray-300">domain</code>, <code className="text-gray-300">level</code>, <code className="text-gray-300">title</code>, <code className="text-gray-300">description</code></p>
-        <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">audience</code> (teacher/student, default: teacher)</p>
+        <p className="text-xs text-gray-400">Optional: <code className="text-gray-300">audience</code> (teacher/student, default: teacher), <code className="text-gray-300">tier</code> (standard/junior, default: standard)</p>
         <p className="text-xs text-gray-500 mt-2">Levels: Emerging, Developing, Secure, Advanced</p>
         <p className="text-xs text-gray-500">Domains: {domainKeys.join(", ")}</p>
       </div>

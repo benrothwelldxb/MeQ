@@ -52,12 +52,17 @@ export default async function InterventionsPage() {
                     {items.map((iv) => (
                       <div key={iv.id} className="flex items-start justify-between gap-4 py-1">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium text-sm text-gray-900">{iv.title}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                               iv.audience === "student" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
                             }`}>
                               {iv.audience}
+                            </span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                              iv.tier === "junior" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                            }`}>
+                              {iv.tier}
                             </span>
                             {iv.isDefault && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">default</span>
