@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { hashSync } from "bcryptjs";
 import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
-import { sendTeacherWelcomeEmail } from "@/lib/email";
+import { sendTeacherWelcomeEmail, sendTeacherResendEmail } from "@/lib/email";
 import { validatePassword } from "@/lib/security";
 import { parse } from "csv-parse/sync";
 
@@ -71,6 +71,32 @@ export async function deleteTeacher(teacherId: string) {
   await prisma.teacherAssessment.deleteMany({ where: { teacherId } });
   await prisma.teacher.delete({ where: { id: teacherId } });
   revalidatePath("/admin/teachers");
+}
+
+export async function resendTeacherWelcome(teacherId: string) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    include: { school: { select: { name: true, authMode: true } } },
+  });
+  if (!teacher || teacher.schoolId !== session.schoolId) {
+    return { error: "Teacher not found." };
+  }
+
+  try {
+    await sendTeacherResendEmail({
+      email: teacher.email,
+      firstName: teacher.firstName,
+      schoolName: teacher.school.name,
+      authMode: teacher.school.authMode,
+    });
+    return { success: true };
+  } catch (err) {
+    console.error(`Failed to resend welcome email to ${teacher.email}:`, err);
+    return { error: (err as Error).message || "Failed to send email." };
+  }
 }
 
 // === BULK CSV UPLOAD ===

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
-import { deleteTeacher } from "@/app/actions/teachers";
+import TeacherActions from "./TeacherActions";
 
 export default async function TeachersPage() {
   const session = await getAdminSession();
@@ -57,9 +57,7 @@ export default async function TeachersPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <form action={async () => { "use server"; await deleteTeacher(t.id); }}>
-                    <button type="submit" className="text-xs text-gray-400 hover:text-red-600">Delete</button>
-                  </form>
+                  <TeacherActions teacherId={t.id} teacherName={`${t.firstName} ${t.lastName}`} />
                 </td>
               </tr>
             ))}

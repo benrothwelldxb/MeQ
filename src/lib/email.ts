@@ -18,15 +18,23 @@ async function sendEmail({
 }) {
   if (!resend) {
     console.warn(`[email] RESEND_API_KEY not set. Would have sent to ${to}: ${subject}`);
-    return;
+    return { skipped: true as const };
   }
 
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM_EMAIL,
     to,
     subject,
     html,
   });
+
+  if (result.error) {
+    console.error(`[email] Resend rejected email to ${to}: ${result.error.message}`, result.error);
+    throw new Error(`Resend error: ${result.error.message}`);
+  }
+
+  console.log(`[email] Sent to ${to}: ${subject} (id: ${result.data?.id})`);
+  return { skipped: false as const, id: result.data?.id };
 }
 
 export async function sendPasswordResetEmail(email: string, token: string, userType: string) {
@@ -282,6 +290,58 @@ export async function sendAdminWelcomeEmail({
         <div style="margin: 32px 0;">
           <a href="${loginUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
             Sign In
+          </a>
+        </div>
+      </div>
+    `,
+  });
+}
+
+export async function sendTeacherResendEmail({
+  email,
+  firstName,
+  schoolName,
+  authMode,
+}: {
+  email: string;
+  firstName: string;
+  schoolName: string;
+  authMode: string;
+}) {
+  const loginUrl = `${APP_URL}/teacher/login`;
+  const forgotUrl = `${APP_URL}/teacher/forgot-password`;
+
+  const ssoBlock = `
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+      <p style="margin: 0 0 4px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
+      <p style="margin: 0; color: #64748b; font-size: 14px;">Use your ${email} account.</p>
+    </div>`;
+  const passwordBlock = `
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+      <p style="margin: 0 0 4px; color: #1e293b; font-weight: 600;">Sign in with a password</p>
+      <p style="margin: 0; color: #64748b; font-size: 14px;">Use <strong>${email}</strong> and your password. If you don't have one yet, <a href="${forgotUrl}" style="color: #3b82f6;">set a password here</a>.</p>
+    </div>`;
+
+  const options =
+    authMode === "sso"
+      ? ssoBlock
+      : authMode === "password"
+      ? passwordBlock
+      : ssoBlock + passwordBlock;
+
+  await sendEmail({
+    to: email,
+    subject: `Your MeQ access — ${schoolName}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+        <h2 style="color: #1e293b; margin-bottom: 16px;">Welcome to MeQ, ${firstName}</h2>
+        <p style="color: #64748b; line-height: 1.6;">
+          Here's how to sign in to your <strong>${schoolName}</strong> account.
+        </p>
+        ${options}
+        <div style="margin: 32px 0;">
+          <a href="${loginUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Go to login
           </a>
         </div>
       </div>
