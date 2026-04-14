@@ -79,27 +79,42 @@ export async function submitPulse(freeText?: string) {
       include: { school: true },
     });
 
-    if (student?.school.dslEmail) {
-      const { sendPulseSafeguardingAlert } = await import("@/lib/email");
+    if (student) {
+      const { sendPulseSafeguardingAlert, parseEmailList } = await import("@/lib/email");
       const { moderateText } = await import("@/lib/surveys");
 
-      // Only alert if 2+ domains low OR free text flagged
       const freeTextFlag = freeText ? moderateText(freeText) : { flagged: false };
       const shouldAlert = lowScores.length >= 2 || freeTextFlag.flagged;
 
       if (shouldAlert) {
-        try {
-          await sendPulseSafeguardingAlert({
-            dslEmail: student.school.dslEmail,
-            schoolName: student.school.name,
-            studentName: `${student.firstName} ${student.lastName}`,
-            yearGroup: student.yearGroup,
-            className: student.className,
-            flaggedDomains: lowScores,
-            freeText: freeText || null,
-          });
-        } catch (err) {
-          console.error("[safeguarding-alert] Failed to send pulse alert:", err);
+        // Record the alert regardless of email delivery so admins can action
+        // it in the dashboard even if the email fails to send.
+        await prisma.safeguardingAlert.create({
+          data: {
+            schoolId: student.schoolId,
+            type: "pulse",
+            studentId: student.id,
+            pulseCheckId: pulseCheck.id,
+            flagReason: `Low pulse scores: ${lowScores.map((s) => `${s.domain}(${s.score})`).join(", ")}${freeTextFlag.flagged ? ` · free text: ${freeTextFlag.reason}` : ""}`,
+            flaggedText: freeText || null,
+          },
+        });
+
+        const dslRecipients = parseEmailList(student.school.dslEmail);
+        if (dslRecipients.length > 0) {
+          try {
+            await sendPulseSafeguardingAlert({
+              dslEmail: dslRecipients,
+              schoolName: student.school.name,
+              studentName: `${student.firstName} ${student.lastName}`,
+              yearGroup: student.yearGroup,
+              className: student.className,
+              flaggedDomains: lowScores,
+              freeText: freeText || null,
+            });
+          } catch (err) {
+            console.error("[safeguarding-alert] Failed to send pulse alert:", err);
+          }
         }
       }
     }

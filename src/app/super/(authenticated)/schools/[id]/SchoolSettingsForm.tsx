@@ -73,14 +73,15 @@ export default function SchoolSettingsForm({ school }: { school: School }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">DSL Email</label>
+          <label className="block text-sm font-medium text-gray-400 mb-1">DSL Email(s)</label>
           <input
             name="dslEmail"
-            type="email"
+            type="text"
             defaultValue={school.dslEmail ?? ""}
-            placeholder="Safeguarding lead email"
+            placeholder="dsl@school.sch.uk, deputy-dsl@school.sch.uk"
             className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none"
           />
+          <p className="text-xs text-gray-500 mt-1">Comma-separated for multiple DSLs.</p>
         </div>
       </div>
 

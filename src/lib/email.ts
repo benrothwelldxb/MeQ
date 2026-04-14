@@ -26,12 +26,23 @@ function wrapEmail(body: string): string {
   `;
 }
 
+/** Parse a comma/semicolon-separated list of emails. Trims, lowercases, dedupes. */
+export function parseEmailList(value: string | null | undefined): string[] {
+  if (!value) return [];
+  const seen = new Set<string>();
+  for (const raw of value.split(/[,;]/)) {
+    const e = raw.trim().toLowerCase();
+    if (e && e.includes("@")) seen.add(e);
+  }
+  return Array.from(seen);
+}
+
 async function sendEmail({
   to,
   subject,
   html,
 }: {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }) {
@@ -192,7 +203,7 @@ export async function sendPulseSafeguardingAlert({
   flaggedDomains,
   freeText,
 }: {
-  dslEmail: string;
+  dslEmail: string | string[];
   schoolName: string;
   studentName: string;
   yearGroup: string;
@@ -259,7 +270,7 @@ export async function sendSurveySafeguardingAlert({
   anonymous,
   surveyId,
 }: {
-  dslEmail: string;
+  dslEmail: string | string[];
   schoolName: string;
   surveyTitle: string;
   studentName: string | null;

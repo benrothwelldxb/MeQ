@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/staff-wellbeing", label: "Staff Wellbeing", icon: "users" },
   { href: "/admin/pulse", label: "Pulse", icon: "chart" },
   { href: "/admin/surveys", label: "Surveys", icon: "book" },
+  { href: "/admin/safeguarding", label: "Safeguarding", icon: "shield", badge: "safeguarding" as const },
   { href: "/admin/slt", label: "SLT Dashboard", icon: "chart" },
   { href: "/admin/framework", label: "Framework", icon: "book" },
   { href: "/admin/settings", label: "Settings", icon: "cog" },
@@ -51,12 +52,26 @@ function NavIcon({ icon }: { icon: string }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       );
+    case "shield":
+      return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      );
     default:
       return null;
   }
 }
 
-export default function Sidebar({ schoolName, hasMultipleCampuses }: { schoolName: string; hasMultipleCampuses: boolean }) {
+export default function Sidebar({
+  schoolName,
+  hasMultipleCampuses,
+  openAlertCount = 0,
+}: {
+  schoolName: string;
+  hasMultipleCampuses: boolean;
+  openAlertCount?: number;
+}) {
   const pathname = usePathname();
 
   return (
@@ -99,7 +114,12 @@ export default function Sidebar({ schoolName, hasMultipleCampuses }: { schoolNam
               }`}
             >
               <NavIcon icon={item.icon} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badge === "safeguarding" && openAlertCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold">
+                  {openAlertCount}
+                </span>
+              )}
             </Link>
           );
         })}

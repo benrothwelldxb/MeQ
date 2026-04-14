@@ -59,18 +59,18 @@ export default async function SettingsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Safeguarding Lead Email
+              Safeguarding Lead Email(s)
             </label>
             <input
               name="dslEmail"
-              type="email"
+              type="text"
               defaultValue={school.dslEmail || ""}
-              placeholder="dsl@yourschool.sch.uk"
+              placeholder="dsl@yourschool.sch.uk, deputy-dsl@yourschool.sch.uk"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none"
             />
             <p className="text-xs text-gray-500 mt-1">
-              The Designated Safeguarding Lead receives automatic email alerts when a student&apos;s Pulse response
-              is concerning or a survey response is flagged by our keyword moderation.
+              Separate multiple DSLs with a comma. All listed addresses receive alerts, and any admin whose
+              email matches a DSL can view and action the alerts dashboard.
             </p>
           </div>
 
@@ -173,10 +173,6 @@ export default async function SettingsPage() {
         <Link href="/admin/settings/interventions" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
           <h3 className="font-bold text-gray-900 text-sm">Interventions</h3>
           <p className="text-xs text-gray-500 mt-1">Manage the intervention bank</p>
-        </Link>
-        <Link href="/admin/safeguarding" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
-          <h3 className="font-bold text-gray-900 text-sm">Safeguarding & DSL alerts</h3>
-          <p className="text-xs text-gray-500 mt-1">Keyword list, what triggers alerts, and what the DSL receives</p>
         </Link>
       </div>
     </div>

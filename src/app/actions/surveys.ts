@@ -183,7 +183,7 @@ export async function submitSurveyResponse(
     }
   }
 
-  await prisma.surveyResponse.create({
+  const surveyResponse = await prisma.surveyResponse.create({
     data: {
       surveyId,
       studentId: survey.anonymous ? null : session.studentId,
@@ -193,36 +193,50 @@ export async function submitSurveyResponse(
     },
   });
 
-  // Send safeguarding alert if flagged and school has DSL email set
+  // Record + notify safeguarding alert
   if (flagged && flaggedText && flagReason) {
     const school = await prisma.school.findUnique({
       where: { id: survey.schoolId },
     });
 
-    if (school?.dslEmail) {
-      const student = survey.anonymous
-        ? null
-        : await prisma.student.findUnique({
-            where: { id: session.studentId },
-            select: { firstName: true, lastName: true, yearGroup: true, className: true },
-          });
-
-      try {
-        const { sendSurveySafeguardingAlert } = await import("@/lib/email");
-        await sendSurveySafeguardingAlert({
-          dslEmail: school.dslEmail,
-          schoolName: school.name,
-          surveyTitle: survey.title,
-          studentName: student ? `${student.firstName} ${student.lastName}` : null,
-          yearGroup: student?.yearGroup || null,
-          className: student?.className || null,
+    if (school) {
+      await prisma.safeguardingAlert.create({
+        data: {
+          schoolId: school.id,
+          type: "survey",
+          studentId: survey.anonymous ? null : session.studentId,
+          surveyResponseId: surveyResponse.id,
           flagReason,
           flaggedText,
-          anonymous: survey.anonymous,
-          surveyId: survey.id,
-        });
-      } catch (err) {
-        console.error("[safeguarding-alert] Failed to send survey alert:", err);
+        },
+      });
+
+      const { sendSurveySafeguardingAlert, parseEmailList } = await import("@/lib/email");
+      const dslRecipients = parseEmailList(school.dslEmail);
+      if (dslRecipients.length > 0) {
+        const student = survey.anonymous
+          ? null
+          : await prisma.student.findUnique({
+              where: { id: session.studentId },
+              select: { firstName: true, lastName: true, yearGroup: true, className: true },
+            });
+
+        try {
+          await sendSurveySafeguardingAlert({
+            dslEmail: dslRecipients,
+            schoolName: school.name,
+            surveyTitle: survey.title,
+            studentName: student ? `${student.firstName} ${student.lastName}` : null,
+            yearGroup: student?.yearGroup || null,
+            className: student?.className || null,
+            flagReason,
+            flaggedText,
+            anonymous: survey.anonymous,
+            surveyId: survey.id,
+          });
+        } catch (err) {
+          console.error("[safeguarding-alert] Failed to send survey alert:", err);
+        }
       }
     }
   }

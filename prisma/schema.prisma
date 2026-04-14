@@ -520,6 +520,24 @@ model StaffWellbeingNudge {
   @@index([schoolId, term, academicYear, sentAt])
 }
 
+model SafeguardingAlert {
+  id               String   @id @default(cuid())
+  schoolId         String
+  type             String   // "pulse" | "survey"
+  studentId        String?  // null for anonymous surveys
+  pulseCheckId     String?
+  surveyResponseId String?
+  flagReason       String   // matched keywords or "Low pulse scores"
+  flaggedText      String?  // free-text excerpt when relevant
+  status           String   @default("open") // "open" | "resolved" | "dismissed"
+  notes            String?
+  resolvedAt       DateTime?
+  resolvedByAdminId String?
+  createdAt        DateTime @default(now())
+
+  @@index([schoolId, status, createdAt])
+}
+
 model StaffPulseCheck {
   id          String    @id @default(cuid())
   teacherId   String
