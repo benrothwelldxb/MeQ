@@ -280,6 +280,47 @@ export async function uploadTeachersCSV(csvText: string) {
   };
 }
 
+export async function updateTeacherDetails(
+  teacherId: string,
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData
+) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const firstName = (formData.get("firstName") as string)?.trim();
+  const lastName = (formData.get("lastName") as string)?.trim();
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+
+  if (!firstName || !lastName || !email) {
+    return { error: "First name, last name, and email are required." };
+  }
+  if (!email.includes("@")) {
+    return { error: "Please enter a valid email address." };
+  }
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: { schoolId: true, email: true },
+  });
+  if (!teacher || teacher.schoolId !== session.schoolId) {
+    return { error: "Teacher not found." };
+  }
+
+  // Check email uniqueness only if it changed
+  if (email !== teacher.email) {
+    const clash = await prisma.teacher.findUnique({ where: { email } });
+    if (clash) return { error: "Another teacher already uses this email." };
+  }
+
+  await prisma.teacher.update({
+    where: { id: teacherId },
+    data: { firstName, lastName, email },
+  });
+  revalidatePath("/admin/teachers");
+  return { success: true };
+}
+
 export async function updateTeacherTags(teacherId: string, tags: string[]) {
   const session = await getAdminSession();
   if (!session.adminId) return { error: "Unauthorized." };

@@ -97,7 +97,13 @@ export default async function TeachersPage() {
                   {t.lastLoginAt ? formatRelative(t.lastLoginAt) : <span className="text-gray-400">Never</span>}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <TeacherActions teacherId={t.id} teacherName={`${t.firstName} ${t.lastName}`} />
+                  <TeacherActions
+                    teacherId={t.id}
+                    teacherName={`${t.firstName} ${t.lastName}`}
+                    firstName={t.firstName}
+                    lastName={t.lastName}
+                    email={t.email}
+                  />
                 </td>
               </tr>
             ))}
