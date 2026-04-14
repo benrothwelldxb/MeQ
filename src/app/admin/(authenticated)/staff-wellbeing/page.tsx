@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import DeployButton from "./DeployButton";
+import NudgeButton from "./NudgeButton";
 
 const MIN_COHORT = 5;
 
@@ -52,6 +53,16 @@ export default async function AdminStaffWellbeingPage() {
       academicYear: school.academicYear,
       teacherId: { in: schoolTeacherIds.map((t) => t.id) },
     },
+  });
+
+  const lastNudge = await prisma.staffWellbeingNudge.findFirst({
+    where: {
+      schoolId: session.schoolId,
+      term: school.currentTerm,
+      academicYear: school.academicYear,
+    },
+    orderBy: { sentAt: "desc" },
+    select: { sentAt: true },
   });
 
   // Get all completed assessments this term
@@ -116,7 +127,13 @@ export default async function AdminStaffWellbeingPage() {
             {TERM_LABELS[school.currentTerm]} — {school.academicYear}
           </p>
         </div>
-        <DeployButton totalStaff={totalStaff} notifiedCount={notifiedThisTerm} />
+        <div className="flex items-center gap-2">
+          <NudgeButton
+            incompleteCount={Math.max(totalStaff - completedCount, 0)}
+            lastNudgedAt={lastNudge?.sentAt ?? null}
+          />
+          <DeployButton totalStaff={totalStaff} notifiedCount={notifiedThisTerm} />
+        </div>
       </div>
 
       {/* Privacy banner */}

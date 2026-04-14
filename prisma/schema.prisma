@@ -509,6 +509,17 @@ model StaffWellbeingNotification {
   @@index([term, academicYear])
 }
 
+model StaffWellbeingNudge {
+  id             String   @id @default(cuid())
+  schoolId       String
+  term           String
+  academicYear   String
+  sentAt         DateTime @default(now())
+  recipientCount Int
+
+  @@index([schoolId, term, academicYear, sentAt])
+}
+
 model StaffPulseCheck {
   id          String    @id @default(cuid())
   teacherId   String

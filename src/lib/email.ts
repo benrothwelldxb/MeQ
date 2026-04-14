@@ -453,6 +453,55 @@ function renderStaffWellbeingDeployEmail({
   };
 }
 
+function renderStaffWellbeingNudgeEmail({
+  email,
+  firstName,
+  schoolName,
+  termLabel,
+}: {
+  email: string;
+  firstName: string;
+  schoolName: string;
+  termLabel: string;
+}): { to: string; subject: string; html: string } {
+  const wellbeingUrl = `${APP_URL}/teacher/wellbeing`;
+  return {
+    to: email,
+    subject: `A gentle reminder — your ${termLabel} wellbeing check-in`,
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Hi ${firstName},</h2>
+        <p style="color: #64748b; line-height: 1.6;">
+          Just a gentle reminder that your <strong>${termLabel}</strong> wellbeing check-in at <strong>${schoolName}</strong> is still open.
+          It takes about 5 minutes — every voice matters, and your responses stay private.
+        </p>
+        <div style="margin: 32px 0;">
+          <a href="${wellbeingUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Complete check-in
+          </a>
+        </div>
+        <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
+          Leadership only sees aggregated, anonymised data — and only when at least 5 staff have responded.
+          If you've already completed this, please ignore this reminder.
+        </p>
+      </div>
+    `),
+  };
+}
+
+export async function sendStaffWellbeingNudgeBatch(
+  recipients: Array<{ email: string; firstName: string }>,
+  opts: { schoolName: string; termLabel: string }
+) {
+  const messages = recipients.map((r) => renderStaffWellbeingNudgeEmail({
+    email: r.email,
+    firstName: r.firstName,
+    schoolName: opts.schoolName,
+    termLabel: opts.termLabel,
+  }));
+  return sendEmailBatch(messages);
+}
+
 export async function sendStaffWellbeingDeployBatch(
   recipients: Array<{ email: string; firstName: string }>,
   opts: { schoolName: string; termLabel: string; customMessage?: string }
