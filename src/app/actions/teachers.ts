@@ -155,7 +155,7 @@ export async function uploadTeachersCSV(csvText: string) {
     const firstName = row[firstNameCol]?.trim();
     const lastName = row[lastNameCol]?.trim();
     const email = row[emailCol]?.trim().toLowerCase();
-    let password = passwordCol ? row[passwordCol]?.trim() || "" : "";
+    const password = passwordCol ? row[passwordCol]?.trim() || "" : "";
 
     if (!firstName || !lastName || !email) {
       errors.push(`Row ${i + 2}: Missing required fields`);
