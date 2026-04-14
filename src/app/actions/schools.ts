@@ -10,16 +10,23 @@ export async function createSchool(formData: FormData) {
   const slug = (formData.get("slug") as string)?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const adminEmail = (formData.get("adminEmail") as string)?.trim().toLowerCase();
   const adminPassword = formData.get("adminPassword") as string;
+  const authMode = (formData.get("authMode") as string) || "both";
 
   if (!name || !slug || !adminEmail) {
     return { error: "School name, slug, and admin email are required." };
+  }
+  if (!["password", "sso", "both"].includes(authMode)) {
+    return { error: "Invalid sign-in method." };
+  }
+  if (authMode === "password" && !adminPassword) {
+    return { error: "A password is required when sign-in method is password-only." };
   }
 
   const existingSlug = await prisma.school.findUnique({ where: { slug } });
   if (existingSlug) return { error: "A school with this slug already exists." };
 
   const school = await prisma.school.create({
-    data: { name, slug },
+    data: { name, slug, authMode },
   });
 
   // If this email already exists as an admin elsewhere, reuse their password hash
@@ -56,7 +63,7 @@ export async function createSchool(formData: FormData) {
   await sendAdminWelcomeEmail({
     email: adminEmail,
     schoolName: name,
-    hasPassword: !!adminPassword,
+    hasPassword: authMode !== "sso" && !!adminPassword,
   });
 
   revalidatePath("/super");

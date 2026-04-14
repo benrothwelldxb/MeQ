@@ -30,6 +30,7 @@ model School {
   readAloudEnabled      Boolean  @default(false)
   staffWellbeingEnabled Boolean  @default(false)
   dslEmail              String?  // Designated Safeguarding Lead — receives flagged content alerts
+  authMode              String   @default("both") // "password" | "sso" | "both"
   frameworkId      String?
   framework        Framework? @relation(fields: [frameworkId], references: [id])
   admins               Admin[]

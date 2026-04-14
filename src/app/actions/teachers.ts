@@ -19,6 +19,16 @@ export async function createTeacher(formData: FormData) {
   if (!firstName || !lastName || !email) {
     return { error: "First name, last name, and email are required." };
   }
+
+  const school = await prisma.school.findUnique({
+    where: { id: session.schoolId },
+    select: { name: true, authMode: true },
+  });
+  if (!school) return { error: "School not found." };
+
+  if (school.authMode === "password" && !password) {
+    return { error: "A password is required for this school." };
+  }
   if (password) {
     const validation = validatePassword(password);
     if (!validation.valid) {
@@ -28,8 +38,6 @@ export async function createTeacher(formData: FormData) {
 
   const existing = await prisma.teacher.findUnique({ where: { email } });
   if (existing) return { error: "A teacher with this email already exists." };
-
-  const school = await prisma.school.findUnique({ where: { id: session.schoolId }, select: { name: true } });
 
   await prisma.teacher.create({
     data: {
@@ -44,11 +52,15 @@ export async function createTeacher(formData: FormData) {
     },
   });
 
+  // Email content follows school auth mode:
+  // - sso: show Google SSO instructions (ignore any password)
+  // - password / both: show password if supplied, otherwise SSO instructions
+  const showPassword = school.authMode !== "sso" && !!password;
   await sendTeacherWelcomeEmail({
     email,
     firstName,
-    password: password || undefined,
-    schoolName: school?.name ?? "your school",
+    password: showPassword ? password : undefined,
+    schoolName: school.name,
   });
 
   revalidatePath("/admin/teachers");
@@ -121,7 +133,7 @@ export async function uploadTeachersCSV(csvText: string) {
 
   const school = await prisma.school.findUnique({
     where: { id: session.schoolId },
-    select: { name: true },
+    select: { name: true, authMode: true },
   });
 
   // Load classes for lookup
@@ -162,7 +174,11 @@ export async function uploadTeachersCSV(csvText: string) {
     }
 
     // If no password column or empty cell, leave blank for Google SSO login.
-    // If password provided, validate it.
+    // If password provided, validate it. If school is password-only, require one.
+    if (school?.authMode === "password" && !password) {
+      errors.push(`Row ${i + 2}: Password required (school is password-only)`);
+      continue;
+    }
     if (password) {
       const validation = validatePassword(password);
       if (!validation.valid) {
@@ -196,18 +212,19 @@ export async function uploadTeachersCSV(csvText: string) {
       });
 
       // Send welcome email (graceful fallback if RESEND not set)
+      const showPassword = school?.authMode !== "sso" && !!password;
       try {
         await sendTeacherWelcomeEmail({
           email,
           firstName,
-          password: password || undefined,
+          password: showPassword ? password : undefined,
           schoolName: school?.name ?? "your school",
         });
       } catch (err) {
         console.error(`Failed to send welcome email to ${email}:`, err);
       }
 
-      created.push({ name: `${firstName} ${lastName}`, email, password: password || "(SSO)" });
+      created.push({ name: `${firstName} ${lastName}`, email, password: showPassword ? password : "(SSO)" });
     } catch (err) {
       errors.push(`Row ${i + 2}: Failed to create — ${(err as Error).message}`);
     }

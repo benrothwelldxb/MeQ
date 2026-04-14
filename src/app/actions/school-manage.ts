@@ -16,6 +16,7 @@ export async function updateSchoolSettings(
   const currentTerm = formData.get("currentTerm") as string;
   const academicYear = (formData.get("academicYear") as string)?.trim();
   const dslEmail = (formData.get("dslEmail") as string)?.trim() || null;
+  const authMode = (formData.get("authMode") as string) || "both";
   const isActive = formData.get("isActive") === "on";
   const reducedQuestions = formData.get("reducedQuestions") === "on";
   const pulseEnabled = formData.get("pulseEnabled") === "on";
@@ -23,6 +24,9 @@ export async function updateSchoolSettings(
   const staffWellbeingEnabled = formData.get("staffWellbeingEnabled") === "on";
 
   if (!name) return { error: "School name is required." };
+  if (!["password", "sso", "both"].includes(authMode)) {
+    return { error: "Invalid sign-in method." };
+  }
 
   await prisma.school.update({
     where: { id: schoolId },
@@ -31,6 +35,7 @@ export async function updateSchoolSettings(
       currentTerm,
       academicYear,
       dslEmail,
+      authMode,
       isActive,
       reducedQuestions,
       pulseEnabled,

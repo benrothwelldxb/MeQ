@@ -27,6 +27,7 @@ type School = {
   readAloudEnabled: boolean;
   staffWellbeingEnabled: boolean;
   dslEmail: string | null;
+  authMode: string;
 };
 
 export default function SchoolSettingsForm({ school }: { school: School }) {
@@ -81,6 +82,22 @@ export default function SchoolSettingsForm({ school }: { school: School }) {
             className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-400 mb-1">Staff Sign-In Method</label>
+        <select
+          name="authMode"
+          defaultValue={school.authMode}
+          className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none"
+        >
+          <option value="both">Either (password or Google SSO)</option>
+          <option value="sso">Google SSO only</option>
+          <option value="password">Password only</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Controls welcome email content and whether passwords are required when adding staff.
+        </p>
       </div>
 
       {/* Toggles */}

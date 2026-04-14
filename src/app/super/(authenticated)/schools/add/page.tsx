@@ -58,6 +58,19 @@ export default function AddSchoolPage() {
           <p className="text-xs text-gray-500 mt-1">Used as a unique identifier</p>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-1">Staff Sign-In Method *</label>
+          <select
+            name="authMode"
+            defaultValue="both"
+            className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none"
+          >
+            <option value="both">Either (password or Google SSO)</option>
+            <option value="sso">Google SSO only</option>
+            <option value="password">Password only</option>
+          </select>
+        </div>
+
         <div className="border-t border-gray-700 pt-4">
           <p className="text-sm font-medium text-gray-300 mb-3">School Admin Account</p>
           <div className="space-y-3">
@@ -67,7 +80,7 @@ export default function AddSchoolPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">Admin Password</label>
-              <input name="adminPassword" type="password" minLength={6} placeholder="Optional if using Google SSO" className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none placeholder:text-gray-500" />
+              <input name="adminPassword" type="password" minLength={6} placeholder="Leave blank if using SSO" className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none placeholder:text-gray-500" />
             </div>
           </div>
         </div>
