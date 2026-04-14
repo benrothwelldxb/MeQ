@@ -3,6 +3,8 @@ import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import TeacherActions from "./TeacherActions";
 import TeacherClassesCell from "./TeacherClassesCell";
+import TeacherTagsCell from "./TeacherTagsCell";
+import { parseTags } from "@/lib/teacher-tags";
 
 function formatRelative(date: Date): string {
   const now = Date.now();
@@ -64,6 +66,7 @@ export default async function TeachersPage() {
             <tr className="border-b border-gray-100 bg-gray-50">
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+              <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tags</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Classes</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Login</th>
               <th className="px-6 py-3"></th>
@@ -74,6 +77,13 @@ export default async function TeachersPage() {
               <tr key={t.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium text-gray-900">{t.firstName} {t.lastName}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{t.email}</td>
+                <td className="px-6 py-4">
+                  <TeacherTagsCell
+                    teacherId={t.id}
+                    teacherName={`${t.firstName} ${t.lastName}`}
+                    currentTags={parseTags(t.tags)}
+                  />
+                </td>
                 <td className="px-6 py-4">
                   <TeacherClassesCell
                     teacherId={t.id}
@@ -92,7 +102,7 @@ export default async function TeachersPage() {
               </tr>
             ))}
             {teachers.length === 0 && (
-              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No teachers yet.</td></tr>
+              <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-500">No teachers yet.</td></tr>
             )}
           </tbody>
         </table>

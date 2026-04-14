@@ -3,6 +3,7 @@ import { getAdminSession } from "@/lib/session";
 import { createTeacher } from "@/app/actions/teachers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import TeacherTagsPicker from "@/components/admin/TeacherTagsPicker";
 
 export default async function AddTeacherPage() {
   const session = await getAdminSession();
@@ -45,6 +46,12 @@ export default async function AddTeacherPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
           <input name="password" type="password" minLength={6} placeholder="Leave blank for Google SSO login" className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none placeholder:text-gray-400" />
           <p className="text-xs text-gray-400 mt-1">Leave blank if the teacher will sign in with Google SSO</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Role tags</label>
+          <TeacherTagsPicker />
+          <p className="text-xs text-gray-400 mt-1">Pick one or more. Used to identify roles within school.</p>
         </div>
 
         <div>

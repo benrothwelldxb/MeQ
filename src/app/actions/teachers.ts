@@ -6,6 +6,7 @@ import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { sendTeacherWelcomeEmail, sendTeacherResendEmail } from "@/lib/email";
 import { validatePassword } from "@/lib/security";
+import { isValidTag } from "@/lib/teacher-tags";
 import { parse } from "csv-parse/sync";
 
 export async function createTeacher(formData: FormData) {
@@ -15,6 +16,7 @@ export async function createTeacher(formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
   const classGroupIds = formData.getAll("classGroupIds") as string[];
+  const tags = (formData.getAll("tags") as string[]).filter(isValidTag);
 
   if (!firstName || !lastName || !email) {
     return { error: "First name, last name, and email are required." };
@@ -46,6 +48,7 @@ export async function createTeacher(formData: FormData) {
       email,
       passwordHash: password ? hashSync(password, 10) : "",
       schoolId: session.schoolId,
+      tags: JSON.stringify(tags),
       classes: classGroupIds.length > 0
         ? { connect: classGroupIds.map((id) => ({ id })) }
         : undefined,
@@ -152,6 +155,7 @@ export async function uploadTeachersCSV(csvText: string) {
   const emailCol = findCol(["email", "email_address"]);
   const passwordCol = findCol(["password"]);
   const classCol = findCol(["class", "class_name", "classes"]);
+  const tagsCol = findCol(["tags", "role", "roles"]);
 
   if (!firstNameCol || !lastNameCol || !emailCol) {
     return { error: "CSV must have first_name, last_name, and email columns." };
@@ -223,6 +227,15 @@ export async function uploadTeachersCSV(csvText: string) {
       }
     }
 
+    // Parse tags — supports "Class Teacher, Inclusion" or "Class Teacher|PLT"
+    const tagsValue: string[] = [];
+    if (tagsCol && row[tagsCol]?.trim()) {
+      const parts = row[tagsCol].split(/[,;|]/).map((p) => p.trim()).filter(Boolean);
+      for (const p of parts) {
+        if (isValidTag(p)) tagsValue.push(p);
+      }
+    }
+
     try {
       await prisma.teacher.create({
         data: {
@@ -231,6 +244,7 @@ export async function uploadTeachersCSV(csvText: string) {
           email,
           passwordHash: password ? hashSync(password, 10) : "",
           schoolId: session.schoolId,
+          tags: JSON.stringify(tagsValue),
           classes: classGroupIds.length > 0
             ? { connect: classGroupIds.map((id) => ({ id })) }
             : undefined,
@@ -264,6 +278,27 @@ export async function uploadTeachersCSV(csvText: string) {
     errors: errors.length > 0 ? errors : undefined,
     teachers: created,
   };
+}
+
+export async function updateTeacherTags(teacherId: string, tags: string[]) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: { schoolId: true },
+  });
+  if (!teacher || teacher.schoolId !== session.schoolId) {
+    return { error: "Teacher not found." };
+  }
+
+  const valid = tags.filter(isValidTag);
+  await prisma.teacher.update({
+    where: { id: teacherId },
+    data: { tags: JSON.stringify(valid) },
+  });
+  revalidatePath("/admin/teachers");
+  return { success: true };
 }
 
 export async function updateTeacherClasses(teacherId: string, classGroupIds: string[]) {

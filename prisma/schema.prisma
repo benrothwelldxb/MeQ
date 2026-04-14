@@ -165,6 +165,7 @@ model Teacher {
   staffPulseChecks   StaffPulseCheck[]
   createdAt          DateTime            @default(now())
   lastLoginAt        DateTime?
+  tags               String              @default("[]") // JSON array of role tags
 }
 
 // ============ SCHOOL STRUCTURE ============
