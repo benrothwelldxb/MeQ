@@ -498,6 +498,17 @@ model StaffIntervention {
   updatedAt   DateTime @updatedAt
 }
 
+model StaffWellbeingNotification {
+  id           String   @id @default(cuid())
+  teacherId    String
+  term         String
+  academicYear String
+  sentAt       DateTime @default(now())
+
+  @@unique([teacherId, term, academicYear])
+  @@index([term, academicYear])
+}
+
 model StaffPulseCheck {
   id          String    @id @default(cuid())
   teacherId   String

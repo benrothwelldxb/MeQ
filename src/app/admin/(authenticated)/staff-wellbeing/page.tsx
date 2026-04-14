@@ -41,6 +41,19 @@ export default async function AdminStaffWellbeingPage() {
   // Get all staff in school
   const totalStaff = await prisma.teacher.count({ where: { schoolId: session.schoolId } });
 
+  // How many staff have been notified this term?
+  const schoolTeacherIds = await prisma.teacher.findMany({
+    where: { schoolId: session.schoolId },
+    select: { id: true },
+  });
+  const notifiedThisTerm = await prisma.staffWellbeingNotification.count({
+    where: {
+      term: school.currentTerm,
+      academicYear: school.academicYear,
+      teacherId: { in: schoolTeacherIds.map((t) => t.id) },
+    },
+  });
+
   // Get all completed assessments this term
   const assessments = await prisma.staffAssessment.findMany({
     where: {
@@ -103,7 +116,7 @@ export default async function AdminStaffWellbeingPage() {
             {TERM_LABELS[school.currentTerm]} — {school.academicYear}
           </p>
         </div>
-        <DeployButton totalStaff={totalStaff} />
+        <DeployButton totalStaff={totalStaff} notifiedCount={notifiedThisTerm} />
       </div>
 
       {/* Privacy banner */}
