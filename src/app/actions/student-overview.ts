@@ -24,22 +24,52 @@ export async function getStudentOverview(studentId: string) {
   });
   if (!student) return null;
 
-  const framework = await getSchoolFramework(student.schoolId);
-  const scoringModel =
-    framework.scoringModels[student.tier] ??
-    framework.scoringModels.standard ??
-    Object.values(framework.scoringModels)[0];
-
-  // All completed assessments (self-report)
+  // All completed assessments (self-report), newest last
   const rawAssessments = await prisma.assessment.findMany({
     where: { studentId, status: "completed" },
     orderBy: [{ academicYear: "asc" }, { term: "asc" }],
   });
 
+  // Use the framework from the most recent assessment if available, because
+  // stored domain scores are keyed by that framework's domain keys. The
+  // school's current framework may have changed since the assessment ran.
+  const latest = rawAssessments[rawAssessments.length - 1];
+  const displayFrameworkId = latest?.frameworkId ?? null;
+
+  const frameworkRecord = displayFrameworkId
+    ? await prisma.framework.findUnique({
+        where: { id: displayFrameworkId },
+        include: {
+          domains: { orderBy: { sortOrder: "asc" } },
+          scoringModels: true,
+        },
+      })
+    : null;
+
+  // Fall back to school's current framework if no assessments yet or the
+  // assessment's framework was deleted
+  const schoolFramework = frameworkRecord ? null : await getSchoolFramework(student.schoolId);
+
+  const domains = frameworkRecord
+    ? frameworkRecord.domains.map((d) => ({ key: d.key, label: d.label, color: d.color }))
+    : schoolFramework!.domains.map((d) => ({ key: d.key, label: d.label, color: d.color }));
+
+  const scoringModel = frameworkRecord
+    ? frameworkRecord.scoringModels.find((m) => m.key === student.tier) ??
+      frameworkRecord.scoringModels.find((m) => m.key === "standard") ??
+      frameworkRecord.scoringModels[0]
+    : schoolFramework!.scoringModels[student.tier] ??
+      schoolFramework!.scoringModels.standard ??
+      Object.values(schoolFramework!.scoringModels)[0];
+
+  const frameworkName = frameworkRecord?.name ?? schoolFramework!.name;
+  const frameworkId = frameworkRecord?.id ?? schoolFramework!.id;
+
   const assessments = rawAssessments.map((a) => ({
     id: a.id,
     term: a.term,
     academicYear: a.academicYear,
+    frameworkId: a.frameworkId,
     totalScore: a.totalScore ?? 0,
     overallLevel: a.overallLevel ?? "Emerging",
     reliability: a.reliabilityScore ?? "Unknown",
@@ -64,6 +94,7 @@ export async function getStudentOverview(studentId: string) {
     term: t.term,
     academicYear: t.academicYear,
     teacherName: `${t.teacher.firstName} ${t.teacher.lastName}`,
+    frameworkId: t.frameworkId,
     domainScores: t.domainScoresJson
       ? (JSON.parse(t.domainScoresJson) as Record<string, number>)
       : {},
@@ -88,7 +119,7 @@ export async function getStudentOverview(studentId: string) {
     completedAt: p.completedAt,
   }));
 
-  // Custom survey responses (only non-anonymous)
+  // Custom survey responses
   const rawSurveyResponses = await prisma.surveyResponse.findMany({
     where: { studentId },
     include: {
@@ -141,13 +172,9 @@ export async function getStudentOverview(studentId: string) {
     },
     school: student.school,
     framework: {
-      id: framework.id,
-      name: framework.name,
-      domains: framework.domains.map((d) => ({
-        key: d.key,
-        label: d.label,
-        color: d.color,
-      })),
+      id: frameworkId,
+      name: frameworkName,
+      domains,
       maxDomainScore: scoringModel?.maxDomainScore ?? 26,
       maxTotalScore: scoringModel?.maxTotalScore ?? 130,
     },
