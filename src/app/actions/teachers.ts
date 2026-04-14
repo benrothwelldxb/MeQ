@@ -267,6 +267,28 @@ export async function uploadTeachersCSV(csvText: string) {
 }
 
 export async function updateTeacherClasses(teacherId: string, classGroupIds: string[]) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  // Ensure teacher belongs to the admin's school
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: { schoolId: true },
+  });
+  if (!teacher || teacher.schoolId !== session.schoolId) {
+    return { error: "Teacher not found." };
+  }
+
+  // Ensure all class groups belong to the same school
+  if (classGroupIds.length > 0) {
+    const validClasses = await prisma.classGroup.count({
+      where: { id: { in: classGroupIds }, schoolId: session.schoolId },
+    });
+    if (validClasses !== classGroupIds.length) {
+      return { error: "Invalid class selection." };
+    }
+  }
+
   await prisma.teacher.update({
     where: { id: teacherId },
     data: {
@@ -274,4 +296,5 @@ export async function updateTeacherClasses(teacherId: string, classGroupIds: str
     },
   });
   revalidatePath("/admin/teachers");
+  return { success: true };
 }

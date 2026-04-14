@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import TeacherActions from "./TeacherActions";
+import TeacherClassesCell from "./TeacherClassesCell";
 
 function formatRelative(date: Date): string {
   const now = Date.now();
@@ -27,6 +28,18 @@ export default async function TeachersPage() {
       classes: { include: { yearGroup: true } },
     },
   });
+
+  const allClassGroups = await prisma.classGroup.findMany({
+    where: { schoolId: session.schoolId },
+    include: { yearGroup: { select: { id: true, name: true, sortOrder: true } } },
+    orderBy: [{ yearGroup: { sortOrder: "asc" } }, { name: "asc" }],
+  });
+  const classOptions = allClassGroups.map((c) => ({
+    id: c.id,
+    name: c.name,
+    yearGroupId: c.yearGroup.id,
+    yearGroupName: c.yearGroup.name,
+  }));
 
   return (
     <div>
@@ -62,14 +75,13 @@ export default async function TeachersPage() {
                 <td className="px-6 py-4 font-medium text-gray-900">{t.firstName} {t.lastName}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{t.email}</td>
                 <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {t.classes.map((c) => (
-                      <span key={c.id} className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                        {c.yearGroup.name} — {c.name}
-                      </span>
-                    ))}
-                    {t.classes.length === 0 && <span className="text-xs text-gray-400">None</span>}
-                  </div>
+                  <TeacherClassesCell
+                    teacherId={t.id}
+                    teacherName={`${t.firstName} ${t.lastName}`}
+                    assignedIds={t.classes.map((c) => c.id)}
+                    assignedLabels={t.classes.map((c) => ({ id: c.id, label: `${c.yearGroup.name} — ${c.name}` }))}
+                    allClasses={classOptions}
+                  />
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {t.lastLoginAt ? formatRelative(t.lastLoginAt) : <span className="text-gray-400">Never</span>}
