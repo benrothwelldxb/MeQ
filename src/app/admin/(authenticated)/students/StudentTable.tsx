@@ -163,6 +163,9 @@ export default function StudentTable({
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3 justify-end">
+                        <Link href={`/admin/students/${student.id}`} className="text-xs text-meq-sky hover:underline font-medium">
+                          View
+                        </Link>
                         <Link href={`/admin/students/${student.id}/edit`} className="text-xs text-meq-sky hover:underline">
                           Edit
                         </Link>

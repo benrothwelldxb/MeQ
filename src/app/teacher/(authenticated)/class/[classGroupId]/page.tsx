@@ -210,6 +210,7 @@ export default async function ClassResultsPage({
                       <th key={d.key} className="text-center px-2 py-2 text-xs font-semibold text-gray-500">{d.label}</th>
                     ))}
                     <th className="text-center px-3 py-2 text-xs font-semibold text-gray-500">Overall</th>
+                    <th className="px-3 py-2"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -225,6 +226,9 @@ export default async function ClassResultsPage({
                             </span>
                           </td>
                           <td colSpan={domains.length + 1} className="text-center text-xs">Not completed</td>
+                          <td className="px-3 py-3 text-right">
+                            <Link href={`/teacher/students/${student.id}`} className="text-xs text-meq-sky hover:underline">View</Link>
+                          </td>
                         </tr>
                       );
                     }
@@ -245,6 +249,9 @@ export default async function ClassResultsPage({
                         ))}
                         <td className="text-center px-3 py-3">
                           <LevelBadge level={(a.overallLevel as string) ?? "Emerging"} />
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <Link href={`/teacher/students/${student.id}`} className="text-xs text-meq-sky hover:underline font-medium">View</Link>
                         </td>
                       </tr>
                     );

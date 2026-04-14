@@ -72,16 +72,24 @@ export default async function AdminResultDetailPage({
     <div className="max-w-3xl">
       <Link href="/admin/results" className="text-sm text-meq-sky hover:underline">&larr; Back to Results</Link>
 
-      <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {assessment.student.firstName} {assessment.student.lastName}
-        </h1>
-        <p className="text-gray-500">
-          {assessment.student.yearGroup}
-          {assessment.student.className && ` / ${assessment.student.className}`}{" "}
-          &middot; {framework.name} &middot; Completed{" "}
-          {assessment.completedAt ? new Date(assessment.completedAt).toLocaleDateString() : "—"}
-        </p>
+      <div className="mt-4 mb-6 flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {assessment.student.firstName} {assessment.student.lastName}
+          </h1>
+          <p className="text-gray-500">
+            {assessment.student.yearGroup}
+            {assessment.student.className && ` / ${assessment.student.className}`}{" "}
+            &middot; {framework.name} &middot; Completed{" "}
+            {assessment.completedAt ? new Date(assessment.completedAt).toLocaleDateString() : "—"}
+          </p>
+        </div>
+        <Link
+          href={`/admin/students/${assessment.studentId}`}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-meq-sky border border-meq-sky hover:bg-meq-sky hover:text-white transition-all"
+        >
+          Full Profile &rarr;
+        </Link>
       </div>
 
       {/* Overview */}
