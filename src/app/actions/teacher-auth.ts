@@ -38,6 +38,11 @@ export async function loginTeacher(
 
   await clearFailedLogins(email, "teacher");
 
+  await prisma.teacher.update({
+    where: { id: teacher.id },
+    data: { lastLoginAt: new Date() },
+  });
+
   const session = await getTeacherSession();
   session.teacherId = teacher.id;
   session.schoolId = teacher.schoolId;

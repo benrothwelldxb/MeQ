@@ -164,6 +164,7 @@ model Teacher {
   staffAssessments   StaffAssessment[]
   staffPulseChecks   StaffPulseCheck[]
   createdAt          DateTime            @default(now())
+  lastLoginAt        DateTime?
 }
 
 // ============ SCHOOL STRUCTURE ============

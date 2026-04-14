@@ -3,6 +3,20 @@ import { getAdminSession } from "@/lib/session";
 import Link from "next/link";
 import TeacherActions from "./TeacherActions";
 
+function formatRelative(date: Date): string {
+  const now = Date.now();
+  const then = new Date(date).getTime();
+  const diffMs = now - then;
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
+
 export default async function TeachersPage() {
   const session = await getAdminSession();
 
@@ -38,6 +52,7 @@ export default async function TeachersPage() {
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
               <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Classes</th>
+              <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Login</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
@@ -56,13 +71,16 @@ export default async function TeachersPage() {
                     {t.classes.length === 0 && <span className="text-xs text-gray-400">None</span>}
                   </div>
                 </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {t.lastLoginAt ? formatRelative(t.lastLoginAt) : <span className="text-gray-400">Never</span>}
+                </td>
                 <td className="px-6 py-4 text-right">
                   <TeacherActions teacherId={t.id} teacherName={`${t.firstName} ${t.lastName}`} />
                 </td>
               </tr>
             ))}
             {teachers.length === 0 && (
-              <tr><td colSpan={4} className="px-6 py-12 text-center text-gray-500">No teachers yet.</td></tr>
+              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No teachers yet.</td></tr>
             )}
           </tbody>
         </table>
