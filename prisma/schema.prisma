@@ -484,6 +484,19 @@ model StaffAssessment {
   @@unique([teacherId, term, academicYear])
 }
 
+model StaffIntervention {
+  id          String   @id @default(cuid())
+  domainKey   String   // matches StaffDomain.key
+  level       String   // "Emerging" | "Developing" | "Secure" | "Advanced"
+  title       String
+  description String
+  sortOrder   Int      @default(0)
+  isDefault   Boolean  @default(true)
+  schoolId    String?  // null = system default, set = school-custom
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model StaffPulseCheck {
   id          String    @id @default(cuid())
   teacherId   String

@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/db";
+import StaffInterventionsManager from "./StaffInterventionsManager";
+
+const LEVELS = ["Emerging", "Developing", "Secure", "Advanced"];
 
 const COLOR_CLASSES: Record<string, string> = {
   blue: "bg-blue-500/20 text-blue-400",
@@ -37,6 +40,18 @@ export default async function SuperStaffWellbeingPage() {
   });
 
   const totalQuestions = domains.reduce((sum, d) => sum + d.questions.length, 0);
+
+  const interventions = await prisma.staffIntervention.findMany({
+    where: { schoolId: null },
+    orderBy: [{ domainKey: "asc" }, { level: "asc" }, { sortOrder: "asc" }],
+    select: { id: true, domainKey: true, level: true, title: true, description: true },
+  });
+  const interventionsByDomain: Record<string, Record<string, typeof interventions>> = {};
+  for (const iv of interventions) {
+    if (!interventionsByDomain[iv.domainKey]) interventionsByDomain[iv.domainKey] = {};
+    if (!interventionsByDomain[iv.domainKey][iv.level]) interventionsByDomain[iv.domainKey][iv.level] = [];
+    interventionsByDomain[iv.domainKey][iv.level].push(iv);
+  }
 
   return (
     <div>
@@ -147,9 +162,53 @@ export default async function SuperStaffWellbeingPage() {
         </div>
       )}
 
-      <p className="text-xs text-gray-500 mt-6">
-        Edit staff wellbeing content via the Prisma schema or seed file. A dedicated builder UI is planned for a future release.
-      </p>
+      {/* Staff Interventions */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 p-6 mt-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-bold text-white">Staff Interventions</h2>
+          <span className="text-xs text-gray-500">{interventions.length} total</span>
+        </div>
+        <p className="text-sm text-gray-400 mb-4">
+          Suggested strategies surfaced to staff after their wellbeing assessment, based on each domain's level.
+        </p>
+
+        {domains.map((d) => {
+          const byLevel = interventionsByDomain[d.key] || {};
+          const totalForDomain = Object.values(byLevel).reduce((s, arr) => s + arr.length, 0);
+          return (
+            <div key={d.id} className="mb-5 last:mb-0">
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${COLOR_CLASSES[d.color] || COLOR_CLASSES.blue}`}>
+                  {d.label}
+                </span>
+                <span className="text-xs text-gray-500">{totalForDomain} interventions</span>
+              </div>
+              {LEVELS.map((level) => {
+                const items = byLevel[level] || [];
+                if (items.length === 0) return null;
+                return (
+                  <div key={level} className="bg-gray-900/50 rounded-lg p-3 mb-2">
+                    <p className="text-xs font-semibold text-gray-400 mb-2">{level}</p>
+                    <div className="space-y-1.5">
+                      {items.map((iv) => (
+                        <div key={iv.id} className="text-xs text-gray-300">
+                          <span className="font-medium">{iv.title}</span>
+                          <span className="text-gray-500"> — {iv.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {totalForDomain === 0 && (
+                <p className="text-xs text-gray-500 italic">No interventions yet for this domain.</p>
+              )}
+            </div>
+          );
+        })}
+
+        <StaffInterventionsManager hasAny={interventions.length > 0} />
+      </div>
     </div>
   );
 }
