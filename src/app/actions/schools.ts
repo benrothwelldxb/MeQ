@@ -53,7 +53,11 @@ export async function createSchool(formData: FormData) {
     });
   }
 
-  await sendAdminWelcomeEmail({ email: adminEmail, schoolName: name });
+  await sendAdminWelcomeEmail({
+    email: adminEmail,
+    schoolName: name,
+    hasPassword: !!adminPassword,
+  });
 
   revalidatePath("/super");
   return { success: true, schoolId: school.id };

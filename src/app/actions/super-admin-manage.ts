@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getSuperAdminSession } from "@/lib/session";
+import { sendSuperAdminWelcomeEmail } from "@/lib/email";
 import { hashSync } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -26,6 +27,12 @@ export async function addSuperAdmin(
   await prisma.superAdmin.create({
     data: { email, passwordHash },
   });
+
+  try {
+    await sendSuperAdminWelcomeEmail({ email, hasPassword: !!password });
+  } catch (err) {
+    console.error(`Failed to send super admin welcome email to ${email}:`, err);
+  }
 
   revalidatePath("/super/settings");
   return { success: true };

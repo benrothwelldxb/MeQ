@@ -63,10 +63,30 @@ export async function sendTeacherWelcomeEmail({
 }: {
   email: string;
   firstName: string;
-  password: string;
+  password?: string;
   schoolName: string;
 }) {
   const loginUrl = `${APP_URL}/teacher/login`;
+  const ssoMode = !password;
+
+  const credentialsBlock = ssoMode
+    ? `
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
+          <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Use your school Google account:</p>
+          <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+        </div>`
+    : `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;">
+          <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Email</p>
+          <p style="margin: 0 0 16px; color: #1e293b; font-weight: 600;">${email}</p>
+          <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Password</p>
+          <p style="margin: 0; color: #1e293b; font-weight: 600;">${password}</p>
+        </div>`;
+
+  const footer = ssoMode
+    ? `<p style="color: #94a3b8; font-size: 14px;">Click "Sign in with Google" on the login page and choose your ${email} account.</p>`
+    : `<p style="color: #94a3b8; font-size: 14px;">We recommend changing your password after your first login.</p>`;
 
   await sendEmail({
     to: email,
@@ -75,22 +95,15 @@ export async function sendTeacherWelcomeEmail({
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
         <h2 style="color: #1e293b; margin-bottom: 16px;">Welcome to MeQ, ${firstName}!</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          You've been added as a teacher at <strong>${schoolName}</strong>. Here are your login details:
+          You've been added as a teacher at <strong>${schoolName}</strong>.
         </p>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;">
-          <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Email</p>
-          <p style="margin: 0 0 16px; color: #1e293b; font-weight: 600;">${email}</p>
-          <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Password</p>
-          <p style="margin: 0; color: #1e293b; font-weight: 600;">${password}</p>
-        </div>
+        ${credentialsBlock}
         <div style="margin: 32px 0;">
           <a href="${loginUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
             Sign In
           </a>
         </div>
-        <p style="color: #94a3b8; font-size: 14px;">
-          We recommend changing your password after your first login.
-        </p>
+        ${footer}
       </div>
     `,
   });
@@ -238,11 +251,23 @@ export async function sendSurveySafeguardingAlert({
 export async function sendAdminWelcomeEmail({
   email,
   schoolName,
+  hasPassword = true,
 }: {
   email: string;
   schoolName: string;
+  hasPassword?: boolean;
 }) {
   const loginUrl = `${APP_URL}/admin/login`;
+
+  const instructions = hasPassword
+    ? `<p style="color: #64748b; line-height: 1.6;">
+        Sign in with your email address (<strong>${email}</strong>) and the password provided by your platform administrator.
+      </p>`
+    : `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
+        <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
+        <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Click "Sign in with Google" on the login page and choose your account:</p>
+        <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+      </div>`;
 
   await sendEmail({
     to: email,
@@ -253,11 +278,48 @@ export async function sendAdminWelcomeEmail({
         <p style="color: #64748b; line-height: 1.6;">
           A MeQ admin account has been created for <strong>${schoolName}</strong>.
         </p>
-        <p style="color: #64748b; line-height: 1.6;">
-          Sign in with your email address (<strong>${email}</strong>) and the password provided by your platform administrator.
-        </p>
+        ${instructions}
         <div style="margin: 32px 0;">
           <a href="${loginUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Sign In
+          </a>
+        </div>
+      </div>
+    `,
+  });
+}
+
+export async function sendSuperAdminWelcomeEmail({
+  email,
+  hasPassword = true,
+}: {
+  email: string;
+  hasPassword?: boolean;
+}) {
+  const loginUrl = `${APP_URL}/super/login`;
+
+  const instructions = hasPassword
+    ? `<p style="color: #64748b; line-height: 1.6;">
+        Sign in with your email (<strong>${email}</strong>) and the password provided to you.
+      </p>`
+    : `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
+        <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
+        <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Click "Sign in with Google" on the login page and choose your account:</p>
+        <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+      </div>`;
+
+  await sendEmail({
+    to: email,
+    subject: "MeQ Platform Admin access",
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+        <h2 style="color: #1e293b; margin-bottom: 16px;">You have MeQ Platform Admin access</h2>
+        <p style="color: #64748b; line-height: 1.6;">
+          You've been granted super admin access to the MeQ platform. You can now manage schools, frameworks, and platform settings.
+        </p>
+        ${instructions}
+        <div style="margin: 32px 0;">
+          <a href="${loginUrl}" style="display: inline-block; background: #1e293b; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
             Sign In
           </a>
         </div>

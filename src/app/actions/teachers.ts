@@ -7,7 +7,6 @@ import { revalidatePath } from "next/cache";
 import { sendTeacherWelcomeEmail } from "@/lib/email";
 import { validatePassword } from "@/lib/security";
 import { parse } from "csv-parse/sync";
-import { randomBytes } from "crypto";
 
 export async function createTeacher(formData: FormData) {
   const session = await getAdminSession();
@@ -17,12 +16,14 @@ export async function createTeacher(formData: FormData) {
   const password = formData.get("password") as string;
   const classGroupIds = formData.getAll("classGroupIds") as string[];
 
-  if (!firstName || !lastName || !email || !password) {
-    return { error: "All fields are required." };
+  if (!firstName || !lastName || !email) {
+    return { error: "First name, last name, and email are required." };
   }
-  const validation = validatePassword(password);
-  if (!validation.valid) {
-    return { error: validation.error };
+  if (password) {
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      return { error: validation.error };
+    }
   }
 
   const existing = await prisma.teacher.findUnique({ where: { email } });
@@ -35,7 +36,7 @@ export async function createTeacher(formData: FormData) {
       firstName,
       lastName,
       email,
-      passwordHash: hashSync(password, 10),
+      passwordHash: password ? hashSync(password, 10) : "",
       schoolId: session.schoolId,
       classes: classGroupIds.length > 0
         ? { connect: classGroupIds.map((id) => ({ id })) }
@@ -46,7 +47,7 @@ export async function createTeacher(formData: FormData) {
   await sendTeacherWelcomeEmail({
     email,
     firstName,
-    password,
+    password: password || undefined,
     schoolName: school?.name ?? "your school",
   });
 
@@ -61,20 +62,6 @@ export async function deleteTeacher(teacherId: string) {
 }
 
 // === BULK CSV UPLOAD ===
-
-function generatePassword(): string {
-  // 10-character random password with mixed case + digits
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  const bytes = randomBytes(10);
-  let out = "";
-  for (let i = 0; i < 10; i++) {
-    out += chars[bytes[i] % chars.length];
-  }
-  // Ensure complexity: at least one letter and one digit
-  if (!/[a-zA-Z]/.test(out)) out = "a" + out.slice(1);
-  if (!/[0-9]/.test(out)) out = out.slice(0, -1) + "2";
-  return out;
-}
 
 export async function previewTeachersCSV(formData: FormData) {
   const file = formData.get("file") as File;
@@ -174,9 +161,9 @@ export async function uploadTeachersCSV(csvText: string) {
       continue;
     }
 
-    if (!password) {
-      password = generatePassword();
-    } else {
+    // If no password column or empty cell, leave blank for Google SSO login.
+    // If password provided, validate it.
+    if (password) {
       const validation = validatePassword(password);
       if (!validation.valid) {
         errors.push(`Row ${i + 2}: ${validation.error}`);
@@ -200,7 +187,7 @@ export async function uploadTeachersCSV(csvText: string) {
           firstName,
           lastName,
           email,
-          passwordHash: hashSync(password, 10),
+          passwordHash: password ? hashSync(password, 10) : "",
           schoolId: session.schoolId,
           classes: classGroupIds.length > 0
             ? { connect: classGroupIds.map((id) => ({ id })) }
@@ -213,14 +200,14 @@ export async function uploadTeachersCSV(csvText: string) {
         await sendTeacherWelcomeEmail({
           email,
           firstName,
-          password,
+          password: password || undefined,
           schoolName: school?.name ?? "your school",
         });
       } catch (err) {
         console.error(`Failed to send welcome email to ${email}:`, err);
       }
 
-      created.push({ name: `${firstName} ${lastName}`, email, password });
+      created.push({ name: `${firstName} ${lastName}`, email, password: password || "(SSO)" });
     } catch (err) {
       errors.push(`Row ${i + 2}: Failed to create — ${(err as Error).message}`);
     }

@@ -42,9 +42,9 @@ export default async function AddTeacherPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-          <input name="password" type="password" required minLength={6} className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
-          <p className="text-xs text-gray-400 mt-1">Minimum 6 characters</p>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input name="password" type="password" minLength={6} placeholder="Leave blank for Google SSO login" className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none placeholder:text-gray-400" />
+          <p className="text-xs text-gray-400 mt-1">Leave blank if the teacher will sign in with Google SSO</p>
         </div>
 
         <div>
