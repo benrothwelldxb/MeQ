@@ -56,6 +56,51 @@ async function sendEmail({
   return { skipped: false as const, id: result.data?.id };
 }
 
+/**
+ * Send many emails at once via Resend's batch API (avoids per-send rate limits).
+ * Resend accepts up to 100 messages per batch call.
+ */
+async function sendEmailBatch(
+  messages: Array<{ to: string; subject: string; html: string }>
+): Promise<{ sent: number; failed: number; skipped: boolean }> {
+  if (!resend) {
+    for (const m of messages) {
+      console.warn(`[email] RESEND_API_KEY not set. Would have sent to ${m.to}: ${m.subject}`);
+    }
+    return { sent: 0, failed: 0, skipped: true };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  const CHUNK = 100;
+
+  for (let i = 0; i < messages.length; i += CHUNK) {
+    const chunk = messages.slice(i, i + CHUNK).map((m) => ({
+      from: FROM_EMAIL,
+      to: m.to,
+      subject: m.subject,
+      html: m.html,
+    }));
+
+    try {
+      const result = await resend.batch.send(chunk);
+      if (result.error) {
+        console.error(`[email] Resend batch rejected (${chunk.length} messages):`, result.error);
+        failed += chunk.length;
+      } else {
+        const ids = result.data?.data?.length ?? chunk.length;
+        sent += ids;
+        console.log(`[email] Batch sent ${ids} messages`);
+      }
+    } catch (err) {
+      console.error(`[email] Resend batch threw for ${chunk.length} messages:`, err);
+      failed += chunk.length;
+    }
+  }
+
+  return { sent, failed, skipped: false };
+}
+
 export async function sendPasswordResetEmail(email: string, token: string, userType: string) {
   const resetPath = userType === "teacher" ? "/teacher/reset-password" : userType === "super" ? "/super/reset-password" : "/admin/reset-password";
   const resetUrl = `${APP_URL}${resetPath}?token=${token}`;
@@ -368,7 +413,7 @@ export async function sendTeacherResendEmail({
   });
 }
 
-export async function sendStaffWellbeingDeployEmail({
+function renderStaffWellbeingDeployEmail({
   email,
   firstName,
   schoolName,
@@ -380,10 +425,9 @@ export async function sendStaffWellbeingDeployEmail({
   schoolName: string;
   termLabel: string;
   customMessage?: string;
-}) {
+}): { to: string; subject: string; html: string } {
   const wellbeingUrl = `${APP_URL}/teacher/wellbeing`;
-
-  await sendEmail({
+  return {
     to: email,
     subject: `Your ${termLabel} wellbeing check-in is ready`,
     html: wrapEmail(`
@@ -406,7 +450,21 @@ export async function sendStaffWellbeingDeployEmail({
         </p>
       </div>
     `),
-  });
+  };
+}
+
+export async function sendStaffWellbeingDeployBatch(
+  recipients: Array<{ email: string; firstName: string }>,
+  opts: { schoolName: string; termLabel: string; customMessage?: string }
+) {
+  const messages = recipients.map((r) => renderStaffWellbeingDeployEmail({
+    email: r.email,
+    firstName: r.firstName,
+    schoolName: opts.schoolName,
+    termLabel: opts.termLabel,
+    customMessage: opts.customMessage,
+  }));
+  return sendEmailBatch(messages);
 }
 
 export async function sendSuperAdminWelcomeEmail({

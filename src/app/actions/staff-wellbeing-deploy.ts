@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
-import { sendStaffWellbeingDeployEmail } from "@/lib/email";
+import { sendStaffWellbeingDeployBatch } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 
 export async function deployStaffWellbeing(
@@ -30,24 +30,14 @@ export async function deployStaffWellbeing(
   }
 
   const termLabel = `${TERM_LABELS[school.currentTerm] ?? school.currentTerm} ${school.academicYear}`;
-  let sent = 0;
-  let failed = 0;
 
-  for (const teacher of teachers) {
-    try {
-      await sendStaffWellbeingDeployEmail({
-        email: teacher.email,
-        firstName: teacher.firstName,
-        schoolName: school.name,
-        termLabel,
-        customMessage,
-      });
-      sent++;
-    } catch (err) {
-      console.error(`[staff-wellbeing-deploy] failed for ${teacher.email}:`, err);
-      failed++;
-    }
-  }
+  // Use Resend's batch API — one request per 100 recipients, bypasses the
+  // 2-emails-per-second per-call rate limit.
+  const { sent, failed } = await sendStaffWellbeingDeployBatch(teachers, {
+    schoolName: school.name,
+    termLabel,
+    customMessage,
+  });
 
   revalidatePath("/admin/staff-wellbeing");
   return { success: true, sent, failed };
