@@ -7,6 +7,25 @@ const resend = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || "MeQ <noreply@wasil.org>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+// Branded email shell — MeQ logo header, Wasil footer.
+// Logos are served from /public so they're publicly reachable for email clients.
+function wrapEmail(body: string): string {
+  return `
+    <div style="background: #f9fafb; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+      <div style="max-width: 560px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb;">
+        <div style="padding: 24px 32px 0; text-align: center;">
+          <img src="${APP_URL}/meq-logo.png" alt="MeQ" width="56" height="56" style="border-radius: 12px; display: inline-block;" />
+        </div>
+        ${body}
+        <div style="padding: 24px 32px; border-top: 1px solid #f3f4f6; text-align: center;">
+          <p style="margin: 0 0 8px; color: #9ca3af; font-size: 11px; letter-spacing: 0.5px;">POWERED BY</p>
+          <img src="${APP_URL}/wasil-logo-grey.png" alt="Wasil" height="20" style="opacity: 0.7; display: inline-block;" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function sendEmail({
   to,
   subject,
@@ -44,9 +63,9 @@ export async function sendPasswordResetEmail(email: string, token: string, userT
   await sendEmail({
     to: email,
     subject: "Reset your MeQ password",
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1e293b; margin-bottom: 16px;">Reset your password</h2>
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Reset your password</h2>
         <p style="color: #64748b; line-height: 1.6;">
           We received a request to reset your MeQ password. Click the button below to choose a new one.
         </p>
@@ -59,7 +78,7 @@ export async function sendPasswordResetEmail(email: string, token: string, userT
           This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
         </p>
       </div>
-    `,
+    `),
   });
 }
 
@@ -99,9 +118,9 @@ export async function sendTeacherWelcomeEmail({
   await sendEmail({
     to: email,
     subject: `Welcome to MeQ — ${schoolName}`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1e293b; margin-bottom: 16px;">Welcome to MeQ, ${firstName}!</h2>
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${firstName}!</h2>
         <p style="color: #64748b; line-height: 1.6;">
           You've been added as a teacher at <strong>${schoolName}</strong>.
         </p>
@@ -113,7 +132,7 @@ export async function sendTeacherWelcomeEmail({
         </div>
         ${footer}
       </div>
-    `,
+    `),
   });
 }
 
@@ -141,8 +160,8 @@ export async function sendPulseSafeguardingAlert({
   await sendEmail({
     to: dslEmail,
     subject: `\u26A0\uFE0F Safeguarding alert \u2014 ${studentName} (${schoolName})`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
           <h2 style="color: #991b1b; margin: 0 0 8px; font-size: 18px;">\u26A0\uFE0F Weekly Pulse Safeguarding Alert</h2>
           <p style="color: #7f1d1d; margin: 0; font-size: 14px;">
@@ -179,7 +198,7 @@ export async function sendPulseSafeguardingAlert({
           You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
         </p>
       </div>
-    `,
+    `),
   });
 }
 
@@ -211,8 +230,8 @@ export async function sendSurveySafeguardingAlert({
   await sendEmail({
     to: dslEmail,
     subject: `\u26A0\uFE0F Safeguarding alert \u2014 "${surveyTitle}" response flagged (${schoolName})`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
           <h2 style="color: #991b1b; margin: 0 0 8px; font-size: 18px;">\u26A0\uFE0F Survey Response Flagged</h2>
           <p style="color: #7f1d1d; margin: 0; font-size: 14px;">
@@ -252,7 +271,7 @@ export async function sendSurveySafeguardingAlert({
           You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
         </p>
       </div>
-    `,
+    `),
   });
 }
 
@@ -280,9 +299,9 @@ export async function sendAdminWelcomeEmail({
   await sendEmail({
     to: email,
     subject: `MeQ Admin — ${schoolName}`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1e293b; margin-bottom: 16px;">Your MeQ admin account is ready</h2>
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Your MeQ admin account is ready</h2>
         <p style="color: #64748b; line-height: 1.6;">
           A MeQ admin account has been created for <strong>${schoolName}</strong>.
         </p>
@@ -293,7 +312,7 @@ export async function sendAdminWelcomeEmail({
           </a>
         </div>
       </div>
-    `,
+    `),
   });
 }
 
@@ -332,9 +351,9 @@ export async function sendTeacherResendEmail({
   await sendEmail({
     to: email,
     subject: `Your MeQ access — ${schoolName}`,
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1e293b; margin-bottom: 16px;">Welcome to MeQ, ${firstName}</h2>
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${firstName}</h2>
         <p style="color: #64748b; line-height: 1.6;">
           Here's how to sign in to your <strong>${schoolName}</strong> account.
         </p>
@@ -345,7 +364,7 @@ export async function sendTeacherResendEmail({
           </a>
         </div>
       </div>
-    `,
+    `),
   });
 }
 
@@ -371,9 +390,9 @@ export async function sendSuperAdminWelcomeEmail({
   await sendEmail({
     to: email,
     subject: "MeQ Platform Admin access",
-    html: `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-        <h2 style="color: #1e293b; margin-bottom: 16px;">You have MeQ Platform Admin access</h2>
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">You have MeQ Platform Admin access</h2>
         <p style="color: #64748b; line-height: 1.6;">
           You've been granted super admin access to the MeQ platform. You can now manage schools, frameworks, and platform settings.
         </p>
@@ -384,6 +403,6 @@ export async function sendSuperAdminWelcomeEmail({
           </a>
         </div>
       </div>
-    `,
+    `),
   });
 }
