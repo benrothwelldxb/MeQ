@@ -159,6 +159,62 @@ export default async function StaffWellbeingPage() {
         )}
       </div>
 
+      {/* Suggested strategies — focus on lowest-scoring domains */}
+      {assessment?.status === "completed" && assessment.domainLevelsJson && await (async () => {
+        const levels = JSON.parse(assessment.domainLevelsJson!) as Record<string, string>;
+        const scores = JSON.parse(assessment.domainScoresJson || "{}") as Record<string, number>;
+
+        // Pick up to 2 weakest domains (lowest scores)
+        const sortedDomains = staffDomains
+          .map((d) => ({ d, score: scores[d.key] ?? 0, level: levels[d.key] || "Emerging" }))
+          .sort((a, b) => a.score - b.score)
+          .slice(0, 2);
+
+        const interventions = await Promise.all(
+          sortedDomains.map(async ({ d, level }) => ({
+            domain: d,
+            level,
+            items: await prisma.staffIntervention.findMany({
+              where: { domainKey: d.key, level },
+              orderBy: { sortOrder: "asc" },
+              select: { id: true, title: true, description: true },
+            }),
+          }))
+        );
+
+        const hasAny = interventions.some((i) => i.items.length > 0);
+        if (!hasAny) return null;
+
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+            <h2 className="font-bold text-gray-900 mb-1">Suggested Strategies</h2>
+            <p className="text-sm text-gray-500 mb-4">Small, practical steps focused on your areas for growth.</p>
+            {interventions.map(({ domain, level, items }) => {
+              if (items.length === 0) return null;
+              const colorClass = COLOR_STYLES[domain.color] || COLOR_STYLES.blue;
+              return (
+                <div key={domain.key} className="mb-5 last:mb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${colorClass}`}>
+                      {domain.label}
+                    </span>
+                    <span className="text-xs text-gray-400">{level}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {items.map((iv) => (
+                      <div key={iv.id} className="border-l-2 border-gray-200 pl-3 py-1">
+                        <p className="text-sm font-medium text-gray-900">{iv.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{iv.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* History */}
       {history.length > 1 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">

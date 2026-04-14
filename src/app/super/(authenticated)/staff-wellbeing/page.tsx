@@ -169,7 +169,7 @@ export default async function SuperStaffWellbeingPage() {
           <span className="text-xs text-gray-500">{interventions.length} total</span>
         </div>
         <p className="text-sm text-gray-400 mb-4">
-          Suggested strategies surfaced to staff after their wellbeing assessment, based on each domain's level.
+          Suggested strategies surfaced to staff after their wellbeing assessment, based on each domain&apos;s level.
         </p>
 
         {domains.map((d) => {
