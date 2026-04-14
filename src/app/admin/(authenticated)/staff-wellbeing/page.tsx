@@ -55,6 +55,28 @@ export default async function AdminStaffWellbeingPage() {
     },
   });
 
+  const scoringConfig = await prisma.staffScoringConfig.findUnique({ where: { key: "default" } });
+  const maxDomainScore = scoringConfig?.maxDomainScore ?? 16;
+  const domainThresholds: Array<{ level: string; min: number }> = scoringConfig?.thresholds
+    ? JSON.parse(scoringConfig.thresholds)
+    : [];
+
+  function levelFor(score: number): string {
+    // thresholds are stored ascending ({min:0,...},{min:8,...}) — find the highest one met
+    let current = "Emerging";
+    for (const t of domainThresholds) {
+      if (score >= t.min) current = t.level;
+    }
+    return current;
+  }
+
+  const LEVEL_STYLES: Record<string, string> = {
+    Emerging: "bg-red-100 text-red-700",
+    Developing: "bg-amber-100 text-amber-700",
+    Secure: "bg-blue-100 text-blue-700",
+    Advanced: "bg-emerald-100 text-emerald-700",
+  };
+
   const lastNudge = await prisma.staffWellbeingNudge.findFirst({
     where: {
       schoolId: session.schoolId,
@@ -193,14 +215,32 @@ export default async function AdminStaffWellbeingPage() {
         <>
           {/* Domain averages */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-            <h2 className="font-bold text-gray-900 mb-4">Staff Wellbeing by Domain</h2>
+            <h2 className="font-bold text-gray-900 mb-1">Staff Wellbeing by Domain</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              Average score out of {maxDomainScore}, across {completedCount} staff responses.
+            </p>
             <div className={`grid gap-3 ${domains.length <= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"}`}>
               {domains.map((d) => {
                 const colors = COLOR_STYLES[d.color] || COLOR_STYLES.blue;
+                const score = domainAverages[d.key];
+                const level = levelFor(score);
+                const pct = Math.min(100, Math.max(0, Math.round((score / maxDomainScore) * 100)));
                 return (
-                  <div key={d.key} className={`${colors.bg} rounded-xl p-4 border ${colors.border} text-center`}>
-                    <p className={`text-xs font-semibold ${colors.text} mb-1`}>{d.label}</p>
-                    <p className={`text-2xl font-bold ${colors.text}`}>{domainAverages[d.key]}</p>
+                  <div key={d.key} className={`${colors.bg} rounded-xl p-4 border ${colors.border}`}>
+                    <p className={`text-xs font-semibold ${colors.text} mb-2`}>{d.label}</p>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span className={`text-2xl font-bold ${colors.text}`}>{score}</span>
+                      <span className={`text-xs ${colors.text} opacity-70`}>/ {maxDomainScore}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-white/60 rounded-full overflow-hidden mb-2">
+                      <div
+                        className={`h-full ${colors.text.replace("text-", "bg-")} rounded-full`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full ${LEVEL_STYLES[level]}`}>
+                      {level}
+                    </span>
                   </div>
                 );
               })}
