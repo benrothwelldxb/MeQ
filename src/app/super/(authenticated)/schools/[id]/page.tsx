@@ -43,6 +43,16 @@ export default async function ManageSchoolPage({
     orderBy: { name: "asc" },
   });
 
+  // Framework is locked if any assessment has been completed this academic year
+  const completedThisYear = await prisma.assessment.count({
+    where: {
+      status: "completed",
+      academicYear: school.academicYear,
+      student: { schoolId: school.id },
+    },
+  });
+  const frameworkLocked = completedThisYear > 0;
+
   return (
     <div className="max-w-3xl">
       <Link href="/super" className="text-sm text-meq-sky hover:underline">
@@ -111,6 +121,9 @@ export default async function ManageSchoolPage({
           schoolId={school.id}
           currentFrameworkId={school.framework?.id ?? null}
           frameworks={frameworks}
+          locked={frameworkLocked}
+          completedCount={completedThisYear}
+          academicYear={school.academicYear}
         />
       </div>
     </div>

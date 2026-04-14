@@ -48,6 +48,26 @@ export async function assignFrameworkToSchool(schoolId: string, frameworkId: str
   const session = await getSuperAdminSession();
   if (!session.superAdminId) return { error: "Unauthorized." };
 
+  const school = await prisma.school.findUnique({
+    where: { id: schoolId },
+    select: { academicYear: true },
+  });
+  if (!school) return { error: "School not found." };
+
+  // Lock framework changes if any assessment has been completed this academic year
+  const completedThisYear = await prisma.assessment.count({
+    where: {
+      status: "completed",
+      academicYear: school.academicYear,
+      student: { schoolId },
+    },
+  });
+  if (completedThisYear > 0) {
+    return {
+      error: `Framework is locked: ${completedThisYear} assessment(s) completed in ${school.academicYear}. It can be changed at the start of a new academic year.`,
+    };
+  }
+
   await prisma.school.update({
     where: { id: schoolId },
     data: { frameworkId },
