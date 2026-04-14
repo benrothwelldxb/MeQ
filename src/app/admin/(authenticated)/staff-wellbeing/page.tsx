@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
+import DeployButton from "./DeployButton";
 
 const MIN_COHORT = 5;
 
@@ -95,10 +96,15 @@ export default async function AdminStaffWellbeingPage() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Staff Wellbeing</h1>
-      <p className="text-gray-500 mb-6">
-        {TERM_LABELS[school.currentTerm]} — {school.academicYear}
-      </p>
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Staff Wellbeing</h1>
+          <p className="text-gray-500">
+            {TERM_LABELS[school.currentTerm]} — {school.academicYear}
+          </p>
+        </div>
+        <DeployButton totalStaff={totalStaff} />
+      </div>
 
       {/* Privacy banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">

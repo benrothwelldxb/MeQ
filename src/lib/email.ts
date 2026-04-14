@@ -368,6 +368,47 @@ export async function sendTeacherResendEmail({
   });
 }
 
+export async function sendStaffWellbeingDeployEmail({
+  email,
+  firstName,
+  schoolName,
+  termLabel,
+  customMessage,
+}: {
+  email: string;
+  firstName: string;
+  schoolName: string;
+  termLabel: string;
+  customMessage?: string;
+}) {
+  const wellbeingUrl = `${APP_URL}/teacher/wellbeing`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your ${termLabel} wellbeing check-in is ready`,
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Hi ${firstName},</h2>
+        <p style="color: #64748b; line-height: 1.6;">
+          Your <strong>${termLabel}</strong> staff wellbeing check-in is now available at <strong>${schoolName}</strong>.
+          It takes about 5 minutes and your individual responses are kept private.
+        </p>
+        ${customMessage
+          ? `<div style="background: #f8fafc; border-left: 3px solid #93b5cf; padding: 12px 16px; margin: 20px 0; color: #1e293b; font-style: italic;">${customMessage}</div>`
+          : ""}
+        <div style="margin: 32px 0;">
+          <a href="${wellbeingUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Start Check-In
+          </a>
+        </div>
+        <p style="color: #94a3b8; font-size: 13px; line-height: 1.6;">
+          Leadership only sees aggregated, anonymised data — and only when at least 5 staff have responded.
+        </p>
+      </div>
+    `),
+  });
+}
+
 export async function sendSuperAdminWelcomeEmail({
   email,
   hasPassword = true,
