@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { parseEmailList } from "@/lib/email";
-import { TERM_LABELS } from "@/lib/school";
 import Link from "next/link";
 import AlertCard from "./AlertCard";
 
@@ -125,8 +124,6 @@ export default async function SafeguardingPage({
   const surveyMap = new Map(surveyResps.map((r) => [r.id, r]));
   const resolverMap = new Map(resolvers.map((r) => [r.id, r.email]));
 
-  const TERMS = TERM_LABELS; // re-export for card
-
   return (
     <div className="max-w-4xl">
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
@@ -201,7 +198,6 @@ export default async function SafeguardingPage({
                 student={student}
                 pulse={pulse ? { answers: pulse.answers, weekOf: pulse.weekOf } : null}
                 survey={surveyResp ? { title: surveyResp.survey.title, anonymous: surveyResp.survey.anonymous, surveyId: surveyResp.surveyId } : null}
-                termLabels={TERMS}
               />
             );
           })}

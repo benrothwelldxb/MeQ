@@ -42,13 +42,11 @@ export default function AlertCard({
   student,
   pulse,
   survey,
-  termLabels: _termLabels,
 }: {
   alert: Alert;
   student: Student | null;
   pulse: { answers: string; weekOf: Date } | null;
   survey: { title: string; anonymous: boolean; surveyId: string } | null;
-  termLabels: Record<string, string>;
 }) {
   const [actionOpen, setActionOpen] = useState<"resolve" | "dismiss" | null>(null);
   const bound = resolveSafeguardingAlert.bind(null, alert.id);
