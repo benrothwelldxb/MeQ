@@ -6,12 +6,18 @@ import { getYearGroups } from "@/app/actions/year-groups";
 import { changeAdminPassword } from "@/app/actions/change-password";
 import SettingsForm from "@/components/admin/SettingsForm";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
+import AdminManager from "@/components/admin/AdminManager";
 import Link from "next/link";
 
 export default async function SettingsPage() {
   const session = await getAdminSession();
   const school = await getSchoolSettings(session.schoolId);
   const yearGroups = await getYearGroups(session.schoolId);
+  const admins = await prisma.admin.findMany({
+    where: { schoolId: session.schoolId },
+    select: { id: true, email: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
   // Show only: public frameworks (no assignments) + frameworks assigned to this school
   const frameworks = await prisma.framework.findMany({
     where: {
@@ -141,6 +147,15 @@ export default async function SettingsPage() {
             <p className="text-sm text-gray-500">No year groups set up yet.</p>
           )}
         </div>
+      </div>
+
+      {/* School Admins */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 className="font-bold text-gray-900 mb-1">School Admins</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Admins can manage all classes, students, teachers, and settings for this school.
+        </p>
+        <AdminManager admins={admins} currentAdminId={session.adminId} authMode={school.authMode} />
       </div>
 
       {/* Change Password */}
