@@ -62,12 +62,13 @@ export default async function AdminStaffWellbeingPage() {
     : [];
 
   function levelFor(score: number): string {
-    // thresholds are stored ascending ({min:0,...},{min:8,...}) — find the highest one met
-    let current = "Emerging";
-    for (const t of domainThresholds) {
-      if (score >= t.min) current = t.level;
+    // Sort descending by min and return the first threshold the score meets.
+    // Thresholds may be seeded in any order.
+    const sorted = [...domainThresholds].sort((a, b) => b.min - a.min);
+    for (const t of sorted) {
+      if (score >= t.min) return t.level;
     }
-    return current;
+    return "Emerging";
   }
 
   const LEVEL_STYLES: Record<string, string> = {
