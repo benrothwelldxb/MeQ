@@ -520,6 +520,17 @@ model StaffWellbeingNudge {
   @@index([schoolId, term, academicYear, sentAt])
 }
 
+model SchoolSafeguardingKeyword {
+  id             String   @id @default(cuid())
+  schoolId       String
+  keyword        String
+  addedAt        DateTime @default(now())
+  addedByAdminId String?
+
+  @@unique([schoolId, keyword])
+  @@index([schoolId])
+}
+
 model SafeguardingAlert {
   id               String   @id @default(cuid())
   schoolId         String

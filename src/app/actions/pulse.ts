@@ -83,7 +83,13 @@ export async function submitPulse(freeText?: string) {
       const { sendPulseSafeguardingAlert, parseEmailList } = await import("@/lib/email");
       const { moderateText } = await import("@/lib/surveys");
 
-      const freeTextFlag = freeText ? moderateText(freeText) : { flagged: false };
+      const customKeywords = await prisma.schoolSafeguardingKeyword.findMany({
+        where: { schoolId: student.schoolId },
+        select: { keyword: true },
+      });
+      const freeTextFlag = freeText
+        ? moderateText(freeText, customKeywords.map((k) => k.keyword))
+        : { flagged: false };
       const shouldAlert = lowScores.length >= 2 || freeTextFlag.flagged;
 
       if (shouldAlert) {

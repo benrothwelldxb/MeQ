@@ -164,7 +164,13 @@ export async function submitSurveyResponse(
     if (existing) return { error: "You have already completed this survey" };
   }
 
-  // Moderate free text answers
+  // Moderate free text answers (including any school custom keywords)
+  const customKeywords = await prisma.schoolSafeguardingKeyword.findMany({
+    where: { schoolId: survey.schoolId },
+    select: { keyword: true },
+  });
+  const customKeywordList = customKeywords.map((k) => k.keyword);
+
   let flagged = false;
   let flagReason: string | null = null;
   let flaggedText: string | null = null;
@@ -172,7 +178,7 @@ export async function submitSurveyResponse(
     if (q.questionType === "free_text") {
       const val = answers[q.id];
       if (typeof val === "string") {
-        const mod = moderateText(val);
+        const mod = moderateText(val, customKeywordList);
         if (mod.flagged) {
           flagged = true;
           flagReason = mod.reason || null;

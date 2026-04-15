@@ -167,11 +167,15 @@ export const MODERATION_KEYWORDS = [
   "run away", "running away", "starving", "not eating",
 ];
 
-export function moderateText(text: string): { flagged: boolean; reason?: string } {
+export function moderateText(
+  text: string,
+  extraKeywords: string[] = []
+): { flagged: boolean; reason?: string } {
   if (!text) return { flagged: false };
   const lower = text.toLowerCase();
   const matched: string[] = [];
-  for (const keyword of MODERATION_KEYWORDS) {
+  const all = [...MODERATION_KEYWORDS, ...extraKeywords.map((k) => k.toLowerCase().trim()).filter(Boolean)];
+  for (const keyword of all) {
     if (lower.includes(keyword)) {
       matched.push(keyword);
     }

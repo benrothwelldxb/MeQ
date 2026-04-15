@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
 import { MODERATION_KEYWORDS } from "@/lib/surveys";
+import { prisma } from "@/lib/db";
+import { parseEmailList } from "@/lib/email";
+import CustomKeywordManager from "./CustomKeywordManager";
 
 // Group keywords by category for display
 const KEYWORD_GROUPS: { title: string; description: string; words: string[] }[] = [
@@ -40,6 +43,18 @@ const KEYWORD_GROUPS: { title: string; description: string; words: string[] }[] 
 export default async function SafeguardingDocsPage() {
   const session = await getAdminSession();
   const school = await getSchoolSettings(session.schoolId);
+  const admin = await prisma.admin.findUnique({
+    where: { id: session.adminId },
+    select: { email: true },
+  });
+  const dslEmails = parseEmailList(school.dslEmail);
+  const isDsl = !!admin && dslEmails.includes(admin.email.toLowerCase());
+
+  const customKeywords = await prisma.schoolSafeguardingKeyword.findMany({
+    where: { schoolId: session.schoolId },
+    orderBy: { addedAt: "asc" },
+    select: { id: true, keyword: true, addedAt: true },
+  });
 
   // Sanity check that every documented keyword is actually in the live list.
   // (If someone adds to MODERATION_KEYWORDS without updating this page, the
@@ -142,6 +157,10 @@ export default async function SafeguardingDocsPage() {
             <p className="mt-1">{undocumented.join(", ")}</p>
           </div>
         )}
+
+        <div className="mt-4">
+          <CustomKeywordManager keywords={customKeywords} isDsl={isDsl} />
+        </div>
 
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-600">
           <strong>Important:</strong> Keyword matching is a safety net, not a substitute for professional
