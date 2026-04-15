@@ -7,6 +7,7 @@ import { changeAdminPassword } from "@/app/actions/change-password";
 import SettingsForm from "@/components/admin/SettingsForm";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import AdminManager from "@/components/admin/AdminManager";
+import AcademicYearRollover from "@/components/admin/AcademicYearRollover";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -17,6 +18,13 @@ export default async function SettingsPage() {
     where: { schoolId: session.schoolId },
     select: { id: true, email: true, createdAt: true },
     orderBy: { createdAt: "asc" },
+  });
+  const completedThisYear = await prisma.assessment.count({
+    where: {
+      status: "completed",
+      academicYear: school.academicYear,
+      student: { schoolId: session.schoolId },
+    },
   });
   // Show only: public frameworks (no assignments) + frameworks assigned to this school
   const frameworks = await prisma.framework.findMany({
@@ -162,6 +170,19 @@ export default async function SettingsPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-4">Change Password</h2>
         <ChangePasswordForm action={changeAdminPassword} />
+      </div>
+
+      {/* Academic year rollover */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 className="font-bold text-gray-900 mb-1">Academic year rollover</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Move your school into a new academic year. Use this at the start of a new school year.
+        </p>
+        <AcademicYearRollover
+          schoolName={school.name}
+          currentYear={school.academicYear}
+          completedThisYear={completedThisYear}
+        />
       </div>
 
       {/* Quick Links */}

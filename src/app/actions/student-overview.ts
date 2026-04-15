@@ -142,6 +142,40 @@ export async function getStudentOverview(studentId: string) {
     orderBy: { completedAt: "desc" },
   });
 
+  // Intervention application history
+  const rawInterventionLogs = await prisma.interventionLog.findMany({
+    where: { studentId },
+    orderBy: { appliedAt: "desc" },
+    take: 50,
+  });
+  // Hydrate teacher / admin who logged each one
+  const adminIds = Array.from(new Set(rawInterventionLogs.map((l) => l.adminId).filter(Boolean) as string[]));
+  const teacherIds = Array.from(new Set(rawInterventionLogs.map((l) => l.teacherId).filter(Boolean) as string[]));
+  const [adminMap, teacherMap] = await Promise.all([
+    adminIds.length > 0
+      ? prisma.admin.findMany({ where: { id: { in: adminIds } }, select: { id: true, email: true } })
+      : Promise.resolve([]),
+    teacherIds.length > 0
+      ? prisma.teacher.findMany({ where: { id: { in: teacherIds } }, select: { id: true, firstName: true, lastName: true } })
+      : Promise.resolve([]),
+  ]);
+  const adminById = new Map(adminMap.map((a) => [a.id, a.email]));
+  const teacherById = new Map(teacherMap.map((t) => [t.id, `${t.firstName} ${t.lastName}`]));
+
+  const interventionLogs = rawInterventionLogs.map((l) => ({
+    id: l.id,
+    domainKey: l.domainKey,
+    level: l.level,
+    title: l.title,
+    notes: l.notes,
+    appliedAt: l.appliedAt,
+    appliedBy: l.teacherId
+      ? teacherById.get(l.teacherId) ?? "Teacher"
+      : l.adminId
+      ? adminById.get(l.adminId) ?? "Admin"
+      : "Unknown",
+  }));
+
   const surveyResponses = rawSurveyResponses.map((r) => ({
     id: r.id,
     surveyTitle: r.survey.title,
@@ -182,5 +216,6 @@ export async function getStudentOverview(studentId: string) {
     teacherAssessments,
     pulseChecks,
     surveyResponses,
+    interventionLogs,
   };
 }

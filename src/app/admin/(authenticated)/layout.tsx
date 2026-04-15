@@ -3,6 +3,9 @@ import { getAdminSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import { parseEmailList } from "@/lib/email";
 import Sidebar from "@/components/admin/Sidebar";
+import SessionExpiryWarning from "@/components/SessionExpiryWarning";
+
+const ADMIN_TTL_SECONDS = 60 * 60 * 8;
 
 export default async function AuthenticatedAdminLayout({
   children,
@@ -46,6 +49,7 @@ export default async function AuthenticatedAdminLayout({
         openAlertCount={openAlertCount}
       />
       <main className="flex-1 p-8">{children}</main>
+      <SessionExpiryWarning ttlSeconds={ADMIN_TTL_SECONDS} refreshUrl="/api/session/refresh?type=admin" />
     </div>
   );
 }

@@ -92,8 +92,12 @@ export default function UploadTeachersPage() {
               <code className="bg-blue-100 px-1 rounded">email</code>
             </p>
             <p className="text-xs text-blue-700 mt-1">
-              Optional: <code className="bg-blue-100 px-1 rounded">password</code> (auto-generated if blank),{" "}
-              <code className="bg-blue-100 px-1 rounded">class</code> (class name or &quot;Year 5 5A&quot;, comma-separated for multiple)
+              Optional: <code className="bg-blue-100 px-1 rounded">password</code> (leave blank for Google SSO),{" "}
+              <code className="bg-blue-100 px-1 rounded">class</code> (e.g. &quot;Year 5 5A&quot;; comma-separated for multiple),{" "}
+              <code className="bg-blue-100 px-1 rounded">tags</code> (Class Teacher, Inclusion, Specialist, Assistant, PLT)
+            </p>
+            <p className="text-xs text-blue-600 mt-2">
+              Alternative header names are accepted (firstname, surname, email_address, classes, roles).
             </p>
           </div>
 

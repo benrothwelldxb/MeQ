@@ -587,6 +587,27 @@ model PasswordResetToken {
 
 // ============ INTERVENTIONS ============
 
+model InterventionLog {
+  id             String   @id @default(cuid())
+  studentId      String
+  teacherId      String?  // null if logged by an admin
+  adminId        String?
+  schoolId       String
+  // We don't FK to Intervention or StaffIntervention because either could be
+  // referenced; store the source ("intervention" | "staff_intervention") and id.
+  source         String   @default("intervention")
+  interventionId String?
+  domainKey      String
+  level          String
+  title          String
+  notes          String?
+  appliedAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  @@index([studentId, appliedAt])
+  @@index([schoolId, appliedAt])
+}
+
 model Intervention {
   id          String     @id @default(cuid())
   domain      String     // domain key (matches FrameworkDomain.key)

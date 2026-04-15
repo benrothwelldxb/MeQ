@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getTeacherSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import TeacherSidebar from "@/components/teacher/TeacherSidebar";
+import SessionExpiryWarning from "@/components/SessionExpiryWarning";
+
+const TEACHER_TTL_SECONDS = 60 * 60 * 8;
 
 export default async function AuthenticatedTeacherLayout({
   children,
@@ -29,6 +32,7 @@ export default async function AuthenticatedTeacherLayout({
         staffWellbeingEnabled={teacher.school.staffWellbeingEnabled}
       />
       <main className="flex-1 p-8">{children}</main>
+      <SessionExpiryWarning ttlSeconds={TEACHER_TTL_SECONDS} refreshUrl="/api/session/refresh?type=teacher" />
     </div>
   );
 }

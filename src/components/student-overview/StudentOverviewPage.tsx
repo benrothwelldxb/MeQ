@@ -8,6 +8,7 @@ import PulseTrendChart from "./PulseTrendChart";
 import SelfVsTeacherChart from "./SelfVsTeacherChart";
 import SurveyResponseCard from "./SurveyResponseCard";
 import PrintButton from "./PrintButton";
+import InterventionLogPanel from "./InterventionLogPanel";
 
 const TERM_LABELS: Record<string, string> = {
   term1: "Term 1",
@@ -27,7 +28,7 @@ export default async function StudentOverviewPage({
   const data = await getStudentOverview(studentId);
   if (!data) notFound();
 
-  const { student, school, framework, assessments, teacherAssessments, pulseChecks, surveyResponses } = data;
+  const { student, school, framework, assessments, teacherAssessments, pulseChecks, surveyResponses, interventionLogs } = data;
 
   const latestAssessment = assessments[assessments.length - 1];
   const latestTeacherAssessment = teacherAssessments[teacherAssessments.length - 1];
@@ -215,6 +216,13 @@ export default async function StudentOverviewPage({
           />
         </Section>
       )}
+
+      {/* Intervention log */}
+      <InterventionLogPanel
+        studentId={student.id}
+        domains={framework.domains}
+        logs={interventionLogs}
+      />
 
       {/* Survey responses */}
       {surveyResponses.length > 0 && (

@@ -513,6 +513,69 @@ export async function sendStaffWellbeingNudgeBatch(
   return sendEmailBatch(messages);
 }
 
+export async function sendSLTDigest({
+  to,
+  schoolName,
+  termLabel,
+  stats,
+}: {
+  to: string | string[];
+  schoolName: string;
+  termLabel: string;
+  stats: {
+    totalStudents: number;
+    completedThisTerm: number;
+    avgScore: number | null;
+    openSafeguardingAlerts: number;
+    pulseCompletedThisWeek: number;
+    flaggedThisWeek: number;
+  };
+}) {
+  const adminUrl = `${APP_URL}/admin`;
+  const safeguardingUrl = `${APP_URL}/admin/safeguarding`;
+  const completionPct =
+    stats.totalStudents > 0
+      ? Math.round((stats.completedThisTerm / stats.totalStudents) * 100)
+      : 0;
+
+  const statRow = (label: string, value: string, accent?: string) => `
+    <tr>
+      <td style="padding: 8px 0; color: #64748b; font-size: 14px;">${label}</td>
+      <td style="padding: 8px 0; text-align: right; font-weight: 600; color: ${accent || "#1e293b"}; font-size: 16px;">${value}</td>
+    </tr>`;
+
+  await sendEmail({
+    to,
+    subject: `MeQ weekly digest — ${schoolName}`,
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <h2 style="color: #1e293b; margin: 0 0 4px;">Weekly digest</h2>
+        <p style="color: #64748b; margin: 0 0 20px; font-size: 14px;">${schoolName} · ${termLabel}</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
+          ${statRow("Total students", String(stats.totalStudents))}
+          ${statRow("Completed this term", `${stats.completedThisTerm} (${completionPct}%)`)}
+          ${statRow("Average MeQ score", stats.avgScore != null ? String(stats.avgScore) : "—")}
+          ${statRow("Pulse responses this week", String(stats.pulseCompletedThisWeek))}
+          ${statRow("Flagged responses this week", String(stats.flaggedThisWeek), stats.flaggedThisWeek > 0 ? "#dc2626" : undefined)}
+          ${statRow("Open safeguarding alerts", String(stats.openSafeguardingAlerts), stats.openSafeguardingAlerts > 0 ? "#dc2626" : undefined)}
+        </table>
+
+        <div style="margin: 28px 0 8px;">
+          <a href="${adminUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; margin-right: 8px;">
+            Open dashboard
+          </a>
+          ${stats.openSafeguardingAlerts > 0
+            ? `<a href="${safeguardingUrl}" style="display: inline-block; background: #fef2f2; color: #991b1b; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; border: 1px solid #fecaca;">
+                 Review ${stats.openSafeguardingAlerts} alert${stats.openSafeguardingAlerts === 1 ? "" : "s"}
+               </a>`
+            : ""}
+        </div>
+      </div>
+    `),
+  });
+}
+
 export async function sendStaffWellbeingDeployBatch(
   recipients: Array<{ email: string; firstName: string }>,
   opts: { schoolName: string; termLabel: string; customMessage?: string }
