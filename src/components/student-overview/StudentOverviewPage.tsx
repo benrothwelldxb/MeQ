@@ -7,6 +7,7 @@ import ScoreTrendChart from "./ScoreTrendChart";
 import PulseTrendChart from "./PulseTrendChart";
 import SelfVsTeacherChart from "./SelfVsTeacherChart";
 import SurveyResponseCard from "./SurveyResponseCard";
+import PrintButton from "./PrintButton";
 
 const TERM_LABELS: Record<string, string> = {
   term1: "Term 1",
@@ -54,8 +55,8 @@ export default async function StudentOverviewPage({
   const displayName = student.displayName || `${student.firstName} ${student.lastName}`;
 
   return (
-    <div>
-      <Link href={backHref} className="text-sm text-meq-sky hover:underline">
+    <div className="student-360">
+      <Link href={backHref} className="text-sm text-meq-sky hover:underline print:hidden">
         &larr; {backLabel}
       </Link>
 
@@ -80,6 +81,7 @@ export default async function StudentOverviewPage({
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
               {student.tier} tier
             </span>
+            <PrintButton />
           </div>
         </div>
       </div>

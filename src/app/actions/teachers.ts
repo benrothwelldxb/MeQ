@@ -1,11 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { hashSync } from "bcryptjs";
 import { getAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { sendTeacherWelcomeEmail, sendTeacherResendEmail } from "@/lib/email";
-import { validatePassword } from "@/lib/security";
+import { validatePassword, hashPassword } from "@/lib/security";
 import { isValidTag } from "@/lib/teacher-tags";
 import { parse } from "csv-parse/sync";
 
@@ -46,7 +45,7 @@ export async function createTeacher(formData: FormData) {
       firstName,
       lastName,
       email,
-      passwordHash: password ? hashSync(password, 10) : "",
+      passwordHash: password ? hashPassword(password) : "",
       schoolId: session.schoolId,
       tags: JSON.stringify(tags),
       classes: classGroupIds.length > 0
@@ -97,7 +96,7 @@ export async function resendTeacherWelcome(teacherId: string) {
     });
     return { success: true };
   } catch (err) {
-    console.error(`Failed to resend welcome email to ${teacher.email}:`, err);
+    console.error(`[teachers] Failed to resend welcome email:`, err);
     return { error: (err as Error).message || "Failed to send email." };
   }
 }
@@ -242,7 +241,7 @@ export async function uploadTeachersCSV(csvText: string) {
           firstName,
           lastName,
           email,
-          passwordHash: password ? hashSync(password, 10) : "",
+          passwordHash: password ? hashPassword(password) : "",
           schoolId: session.schoolId,
           tags: JSON.stringify(tagsValue),
           classes: classGroupIds.length > 0
@@ -261,7 +260,7 @@ export async function uploadTeachersCSV(csvText: string) {
           schoolName: school?.name ?? "your school",
         });
       } catch (err) {
-        console.error(`Failed to send welcome email to ${email}:`, err);
+        console.error(`[teachers] Failed to send welcome email:`, err);
       }
 
       created.push({ name: `${firstName} ${lastName}`, email, password: showPassword ? password : "(SSO)" });

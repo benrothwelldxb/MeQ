@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { hashSync } from "bcryptjs";
+import { hashPassword } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 import { sendAdminWelcomeEmail } from "@/lib/email";
 
@@ -33,7 +33,7 @@ export async function createSchool(formData: FormData) {
   const existingAdmin = await prisma.admin.findFirst({ where: { email: adminEmail } });
   const passwordHash = existingAdmin
     ? existingAdmin.passwordHash
-    : adminPassword ? hashSync(adminPassword, 10) : "";
+    : adminPassword ? hashPassword(adminPassword) : "";
 
   await prisma.admin.create({
     data: {

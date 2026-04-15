@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
 import { loginCodeSchema } from "@/lib/validation";
+import { isLockedOut, recordFailedLogin, clearFailedLogins, formatLockoutMessage } from "@/lib/security";
 import { redirect } from "next/navigation";
 
 function getMonday(date: Date): Date {
@@ -26,13 +27,23 @@ export async function loginStudent(
     return { error: "Please enter a valid 8-character code." };
   }
 
+  // Rate limit: 5 failed attempts per code within 15 minutes locks it out for 15 minutes.
+  // Keyed by the code (not an email) so an attacker can't tie up a different student.
+  const lockout = await isLockedOut(parsed.data, "student");
+  if (lockout.locked && lockout.unlocksAt) {
+    return { error: formatLockoutMessage(lockout.unlocksAt) };
+  }
+
   const student = await prisma.student.findUnique({
     where: { loginCode: parsed.data },
   });
 
   if (!student) {
+    await recordFailedLogin(parsed.data, "student");
     return { error: "We couldn't find that code. Please check and try again." };
   }
+
+  await clearFailedLogins(parsed.data, "student");
 
   // Get current term from student's school settings
   const school = await getSchoolSettings(student.schoolId);

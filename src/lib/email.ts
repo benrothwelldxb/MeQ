@@ -47,7 +47,7 @@ async function sendEmail({
   html: string;
 }) {
   if (!resend) {
-    console.warn(`[email] RESEND_API_KEY not set. Would have sent to ${to}: ${subject}`);
+    console.warn(`[email] RESEND_API_KEY not set. Would have sent: ${subject}`);
     return { skipped: true as const };
   }
 
@@ -59,11 +59,11 @@ async function sendEmail({
   });
 
   if (result.error) {
-    console.error(`[email] Resend rejected email to ${to}: ${result.error.message}`, result.error);
+    console.error(`[email] Resend rejected email: ${result.error.message}`, result.error);
     throw new Error(`Resend error: ${result.error.message}`);
   }
 
-  console.log(`[email] Sent to ${to}: ${subject} (id: ${result.data?.id})`);
+  console.log(`[email] Sent: ${subject} (id: ${result.data?.id})`);
   return { skipped: false as const, id: result.data?.id };
 }
 

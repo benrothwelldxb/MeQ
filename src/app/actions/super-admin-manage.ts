@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getSuperAdminSession } from "@/lib/session";
 import { sendSuperAdminWelcomeEmail } from "@/lib/email";
-import { hashSync } from "bcryptjs";
+import { hashPassword } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 
 export async function addSuperAdmin(
@@ -22,7 +22,7 @@ export async function addSuperAdmin(
   // Create with empty password hash — they can sign in via Google SSO
   // or set a password later
   const password = formData.get("password") as string;
-  const passwordHash = password ? hashSync(password, 10) : "";
+  const passwordHash = password ? hashPassword(password) : "";
 
   await prisma.superAdmin.create({
     data: { email, passwordHash },
@@ -31,7 +31,7 @@ export async function addSuperAdmin(
   try {
     await sendSuperAdminWelcomeEmail({ email, hasPassword: !!password });
   } catch (err) {
-    console.error(`Failed to send super admin welcome email to ${email}:`, err);
+    console.error(`[super-admin-manage] Failed to send welcome email:`, err);
   }
 
   revalidatePath("/super/settings");

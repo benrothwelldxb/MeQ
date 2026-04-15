@@ -33,8 +33,20 @@ const ADMIN_SESSION_TTL = 60 * 60 * 8;             // 8 hours — a school worki
 const TEACHER_SESSION_TTL = 60 * 60 * 8;           // 8 hours — a school working day
 const SUPER_ADMIN_SESSION_TTL = 60 * 60 * 2;       // 2 hours — shorter for platform admin
 
+function getSessionPassword(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (secret && secret.length >= 32) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET environment variable must be set to a string of at least 32 characters in production."
+    );
+  }
+  // Dev-only fallback. Never reached in production because of the throw above.
+  return "meq-session-secret-change-in-production-32chars!";
+}
+
 const sessionOptions = {
-  password: process.env.SESSION_SECRET || "meq-session-secret-change-in-production-32chars!",
+  password: getSessionPassword(),
   cookieName: "meq-session",
   cookieOptions: {
     secure: process.env.NODE_ENV === "production",

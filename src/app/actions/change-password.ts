@@ -2,8 +2,8 @@
 
 import { prisma } from "@/lib/db";
 import { getAdminSession, getTeacherSession, getSuperAdminSession } from "@/lib/session";
-import { validatePassword } from "@/lib/security";
-import { compareSync, hashSync } from "bcryptjs";
+import { validatePassword, hashPassword } from "@/lib/security";
+import { compareSync } from "bcryptjs";
 
 export async function changeAdminPassword(
   _prevState: { error?: string; success?: boolean } | null,
@@ -29,7 +29,7 @@ export async function changeAdminPassword(
   // Update ALL admin records for this email (multi-campus sync)
   await prisma.admin.updateMany({
     where: { email: admin.email },
-    data: { passwordHash: hashSync(newPassword, 10) },
+    data: { passwordHash: hashPassword(newPassword) },
   });
 
   return { success: true };
@@ -58,7 +58,7 @@ export async function changeTeacherPassword(
 
   await prisma.teacher.update({
     where: { id: session.teacherId },
-    data: { passwordHash: hashSync(newPassword, 10) },
+    data: { passwordHash: hashPassword(newPassword) },
   });
 
   return { success: true };
@@ -91,7 +91,7 @@ export async function changeSuperAdminPassword(
 
   await prisma.superAdmin.update({
     where: { id: session.superAdminId },
-    data: { passwordHash: hashSync(newPassword, 10) },
+    data: { passwordHash: hashPassword(newPassword) },
   });
 
   return { success: true };

@@ -194,10 +194,22 @@ export async function uploadStudentsCSV(
 }
 
 export async function deleteStudent(studentId: string) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { schoolId: true },
+  });
+  if (!student || student.schoolId !== session.schoolId) {
+    return { error: "Student not found." };
+  }
+
   await prisma.assessment.deleteMany({ where: { studentId } });
   await prisma.student.delete({ where: { id: studentId } });
   revalidatePath("/admin/students");
   revalidatePath("/admin");
+  return { success: true };
 }
 
 export async function addStudent(formData: FormData) {
@@ -224,12 +236,15 @@ export async function addStudent(formData: FormData) {
   }
 
   if (!loginCode) {
-    const existingCodes = new Set(
-      (await prisma.student.findMany({ select: { loginCode: true } })).map((s) => s.loginCode)
-    );
+    // loginCode is globally unique — only probe for collisions, never scan the full table.
+    let attempts = 0;
     do {
       loginCode = generateLoginCode();
-    } while (existingCodes.has(loginCode));
+      attempts++;
+      if (attempts > 50) throw new Error("Unable to generate a unique login code.");
+      const clash = await prisma.student.findUnique({ where: { loginCode }, select: { id: true } });
+      if (!clash) break;
+    } while (true);
   } else {
     const codePattern = new RegExp(`^[${LOGIN_CODE_CHARSET}]{${LOGIN_CODE_LENGTH}}$`);
     if (!codePattern.test(loginCode)) {
@@ -262,6 +277,17 @@ export async function addStudent(formData: FormData) {
 }
 
 export async function updateStudent(studentId: string, formData: FormData) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const existingStudent = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { schoolId: true },
+  });
+  if (!existingStudent || existingStudent.schoolId !== session.schoolId) {
+    return { error: "Student not found." };
+  }
+
   const firstName = (formData.get("firstName") as string)?.trim();
   const lastName = (formData.get("lastName") as string)?.trim();
   const yearGroupId = formData.get("yearGroupId") as string;
@@ -275,12 +301,17 @@ export async function updateStudent(studentId: string, formData: FormData) {
   }
 
   const yearGroup = await prisma.yearGroup.findUnique({ where: { id: yearGroupId } });
-  if (!yearGroup) return { error: "Year group not found." };
+  if (!yearGroup || yearGroup.schoolId !== session.schoolId) {
+    return { error: "Year group not found." };
+  }
 
   let className: string | null = null;
   if (classGroupId) {
     const classGroup = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
-    className = classGroup?.name || null;
+    if (!classGroup || classGroup.schoolId !== session.schoolId) {
+      return { error: "Class not found." };
+    }
+    className = classGroup.name;
   }
 
   await prisma.student.update({
@@ -304,26 +335,39 @@ export async function updateStudent(studentId: string, formData: FormData) {
 }
 
 export async function bulkDeleteStudents(studentIds: string[]) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
   if (studentIds.length === 0) return { error: "No students selected." };
 
-  await prisma.teacherAssessment.deleteMany({ where: { studentId: { in: studentIds } } });
-  await prisma.assessment.deleteMany({ where: { studentId: { in: studentIds } } });
-  await prisma.student.deleteMany({ where: { id: { in: studentIds } } });
+  // Restrict all operations to students at this school to prevent cross-school deletes
+  const scoped = { where: { studentId: { in: studentIds }, student: { schoolId: session.schoolId } } };
+  const studentWhere = { id: { in: studentIds }, schoolId: session.schoolId };
+
+  await prisma.teacherAssessment.deleteMany(scoped);
+  await prisma.assessment.deleteMany(scoped);
+  const result = await prisma.student.deleteMany({ where: studentWhere });
 
   revalidatePath("/admin/students");
   revalidatePath("/admin");
-  return { success: true, count: studentIds.length };
+  return { success: true, count: result.count };
 }
 
 export async function bulkReassignClass(studentIds: string[], classGroupId: string) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
   if (studentIds.length === 0) return { error: "No students selected." };
 
-  const classGroup = classGroupId
-    ? await prisma.classGroup.findUnique({ where: { id: classGroupId }, include: { yearGroup: true } })
-    : null;
+  let classGroup: { id: string; name: string } | null = null;
+  if (classGroupId) {
+    const cg = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
+    if (!cg || cg.schoolId !== session.schoolId) {
+      return { error: "Class not found." };
+    }
+    classGroup = { id: cg.id, name: cg.name };
+  }
 
-  await prisma.student.updateMany({
-    where: { id: { in: studentIds } },
+  const result = await prisma.student.updateMany({
+    where: { id: { in: studentIds }, schoolId: session.schoolId },
     data: {
       classGroupId: classGroup?.id || null,
       className: classGroup?.name || null,
@@ -331,10 +375,21 @@ export async function bulkReassignClass(studentIds: string[], classGroupId: stri
   });
 
   revalidatePath("/admin/students");
-  return { success: true, count: studentIds.length };
+  return { success: true, count: result.count };
 }
 
 export async function resetAssessment(assessmentId: string) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." };
+
+  const assessment = await prisma.assessment.findUnique({
+    where: { id: assessmentId },
+    select: { student: { select: { schoolId: true } } },
+  });
+  if (!assessment || assessment.student.schoolId !== session.schoolId) {
+    return { error: "Assessment not found." };
+  }
+
   await prisma.assessment.delete({ where: { id: assessmentId } });
   revalidatePath("/admin/students");
   revalidatePath("/admin/results");

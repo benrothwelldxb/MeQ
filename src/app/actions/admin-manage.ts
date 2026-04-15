@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { sendAdminWelcomeEmail } from "@/lib/email";
-import { hashSync } from "bcryptjs";
+import { hashPassword } from "@/lib/security";
 import { revalidatePath } from "next/cache";
 
 export async function addSchoolAdmin(
@@ -39,7 +39,7 @@ export async function addSchoolAdmin(
   const elsewhere = await prisma.admin.findFirst({ where: { email } });
   const passwordHash = elsewhere
     ? elsewhere.passwordHash
-    : password ? hashSync(password, 10) : "";
+    : password ? hashPassword(password) : "";
 
   await prisma.admin.create({
     data: { email, passwordHash, schoolId: session.schoolId },
@@ -52,7 +52,7 @@ export async function addSchoolAdmin(
       hasPassword: school.authMode !== "sso" && !!password,
     });
   } catch (err) {
-    console.error(`Failed to send admin welcome email to ${email}:`, err);
+    console.error(`[admin-manage] Failed to send admin welcome email:`, err);
   }
 
   revalidatePath("/admin/settings");

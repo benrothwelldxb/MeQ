@@ -1,4 +1,17 @@
 import { prisma } from "./db";
+import { hashSync as bcryptHashSync } from "bcryptjs";
+
+/**
+ * Bcrypt cost factor — controls how slow password hashing is.
+ * Higher is slower (more resistant to brute force) at the cost of CPU.
+ * 12 ≈ 250ms per hash on modern servers. Modern OWASP recommendation.
+ */
+export const BCRYPT_COST = 12;
+
+/** Hash a password using the platform-wide bcrypt cost factor. */
+export function hashPassword(password: string): string {
+  return bcryptHashSync(password, BCRYPT_COST);
+}
 
 /**
  * Validate password complexity.

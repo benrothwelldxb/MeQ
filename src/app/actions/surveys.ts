@@ -5,6 +5,20 @@ import { getAdminSession, getStudentSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { SURVEY_TEMPLATES, moderateText } from "@/lib/surveys";
 
+/** Fetch a survey and verify it belongs to the admin's school. */
+async function requireOwnedSurvey(surveyId: string) {
+  const session = await getAdminSession();
+  if (!session.adminId) return { error: "Unauthorized." as const };
+  const survey = await prisma.survey.findUnique({
+    where: { id: surveyId },
+    select: { id: true, schoolId: true },
+  });
+  if (!survey || survey.schoolId !== session.schoolId) {
+    return { error: "Survey not found." as const };
+  }
+  return { session, surveyId: survey.id };
+}
+
 export async function createSurveyFromTemplate(templateKey: string) {
   const session = await getAdminSession();
   if (!session.schoolId) return { error: "Not authenticated" };
@@ -61,8 +75,8 @@ export async function updateSurvey(
     targetIds?: string[];
   }
 ) {
-  const session = await getAdminSession();
-  if (!session.schoolId) return;
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
 
   await prisma.survey.update({
     where: { id: surveyId },
@@ -77,12 +91,16 @@ export async function updateSurvey(
   });
 
   revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
 }
 
 export async function addSurveyQuestion(
   surveyId: string,
   data: { prompt: string; questionType: string; options?: string[]; required?: boolean }
 ) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
   const lastQ = await prisma.surveyQuestion.findFirst({
     where: { surveyId },
     orderBy: { orderIndex: "desc" },
@@ -101,44 +119,80 @@ export async function addSurveyQuestion(
   });
 
   revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
 }
 
 export async function deleteSurveyQuestion(questionId: string, surveyId: string) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  // Ensure the question actually belongs to this survey
+  const question = await prisma.surveyQuestion.findUnique({
+    where: { id: questionId },
+    select: { surveyId: true },
+  });
+  if (!question || question.surveyId !== surveyId) {
+    return { error: "Question not found." };
+  }
+
   await prisma.surveyQuestion.delete({ where: { id: questionId } });
   revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
 }
 
 export async function activateSurvey(surveyId: string) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
   await prisma.survey.update({
     where: { id: surveyId },
     data: { status: "active", openAt: new Date() },
   });
   revalidatePath(`/admin/surveys/${surveyId}`);
   revalidatePath("/admin/surveys");
+  return { success: true };
 }
 
 export async function closeSurvey(surveyId: string) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
   await prisma.survey.update({
     where: { id: surveyId },
     data: { status: "closed", closeAt: new Date() },
   });
   revalidatePath(`/admin/surveys/${surveyId}`);
   revalidatePath("/admin/surveys");
+  return { success: true };
 }
 
 export async function deleteSurvey(surveyId: string) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
   await prisma.survey.delete({ where: { id: surveyId } });
   revalidatePath("/admin/surveys");
+  return { success: true };
 }
 
 export async function resetSurveyForStudent(surveyId: string, studentId: string) {
-  const session = await getAdminSession();
-  if (!session.schoolId) return;
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  // Ensure student also belongs to the same school
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { schoolId: true },
+  });
+  if (!student || student.schoolId !== auth.session.schoolId) {
+    return { error: "Student not found." };
+  }
 
   await prisma.surveyResponse.deleteMany({
     where: { surveyId, studentId },
   });
   revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
 }
 
 // === Student-facing ===
