@@ -564,6 +564,20 @@ model Notification {
   @@index([userType, userId, createdAt])
 }
 
+model StaffWellbeingInsight {
+  id            String   @id @default(cuid())
+  schoolId      String
+  term          String
+  academicYear  String
+  narrativeJson String   // JSON: { summary, strengths[], developmentAreas[], nextSteps[] }
+  modelUsed     String?
+  cohortSize    Int
+  generatedAt   DateTime @default(now())
+
+  @@unique([schoolId, term, academicYear])
+  @@index([schoolId])
+}
+
 model SafeguardingAlert {
   id               String   @id @default(cuid())
   schoolId         String

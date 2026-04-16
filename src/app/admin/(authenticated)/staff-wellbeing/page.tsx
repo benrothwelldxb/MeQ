@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
+import { parseEmailList } from "@/lib/email";
 import DeployButton from "./DeployButton";
 import NudgeButton from "./NudgeButton";
+import InsightsPanel from "./InsightsPanel";
+import type { InsightNarrative } from "@/app/actions/staff-wellbeing-insight";
 
 const MIN_COHORT = 5;
 
@@ -87,6 +90,31 @@ export default async function AdminStaffWellbeingPage() {
     orderBy: { sentAt: "desc" },
     select: { sentAt: true },
   });
+
+  // Insight: cached narrative + DSL gate
+  const admin = await prisma.admin.findUnique({
+    where: { id: session.adminId },
+    select: { email: true },
+  });
+  const schoolDsl = await prisma.school.findUnique({
+    where: { id: session.schoolId },
+    select: { dslEmail: true },
+  });
+  const dslEmails = parseEmailList(schoolDsl?.dslEmail);
+  const isDsl = !!admin && dslEmails.includes(admin.email.toLowerCase());
+
+  const cachedInsight = await prisma.staffWellbeingInsight.findUnique({
+    where: {
+      schoolId_term_academicYear: {
+        schoolId: session.schoolId,
+        term: school.currentTerm,
+        academicYear: school.academicYear,
+      },
+    },
+  });
+  const insightNarrative: InsightNarrative | null = cachedInsight
+    ? (JSON.parse(cachedInsight.narrativeJson) as InsightNarrative)
+    : null;
 
   // Get all completed assessments this term
   const assessments = await prisma.staffAssessment.findMany({
@@ -247,6 +275,14 @@ export default async function AdminStaffWellbeingPage() {
               })}
             </div>
           </div>
+
+          {/* AI commentary — DSL-gated */}
+          <InsightsPanel
+            isDsl={isDsl}
+            cohortReady={cohortReady}
+            initialNarrative={insightNarrative}
+            initialGeneratedAt={cachedInsight?.generatedAt ?? null}
+          />
 
           {/* Level distribution */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
