@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
+import { parseNumberRecord } from "@/lib/json";
 import { redirect } from "next/navigation";
 
 function getMonday(date: Date): Date {
@@ -42,7 +43,7 @@ export async function savePulseAnswer(domain: string, value: number) {
     where: { studentId_weekOf: { studentId: session.studentId, weekOf } },
   });
 
-  const answers = existing ? JSON.parse(existing.answers) as Record<string, number> : {};
+  const answers = existing ? parseNumberRecord(existing.answers) : {};
   answers[domain] = value;
 
   await prisma.pulseCheck.upsert({
@@ -68,7 +69,7 @@ export async function submitPulse(freeText?: string) {
   });
 
   // Check for safeguarding concerns and email DSL
-  const answers = JSON.parse(pulseCheck.answers) as Record<string, number>;
+  const answers = parseNumberRecord(pulseCheck.answers);
   const lowScores = Object.entries(answers)
     .filter(([, score]) => score <= 2)
     .map(([domain, score]) => ({ domain, score }));

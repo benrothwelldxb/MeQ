@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
+import { parseNumberRecord } from "@/lib/json";
 import { redirect } from "next/navigation";
 
 function getMonday(date: Date): Date {
@@ -73,7 +74,7 @@ export async function saveStaffAnswer(assessmentId: string, questionNum: number,
     return { error: "Assessment already completed" };
   }
 
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
+  const answers = parseNumberRecord(assessment.answers);
   answers[String(questionNum)] = value;
 
   await prisma.staffAssessment.update({
@@ -100,7 +101,7 @@ export async function submitStaffAssessment(assessmentId: string) {
     orderBy: { orderIndex: "asc" },
   });
 
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
+  const answers = parseNumberRecord(assessment.answers);
 
   // Calculate per-domain scores
   const domainScores: Record<string, number> = {};
@@ -112,7 +113,7 @@ export async function submitStaffAssessment(assessmentId: string) {
     }
     const answer = answers[String(q.orderIndex)];
     if (answer === undefined) continue;
-    const scoreMap = JSON.parse(q.scoreMap) as Record<string, number>;
+    const scoreMap = parseNumberRecord(q.scoreMap);
     const mapped = scoreMap[String(answer)] ?? answer;
     domainScores[q.domain.key] += mapped * q.weight;
   }
@@ -162,7 +163,7 @@ export async function saveStaffPulseAnswer(domain: string, value: number) {
     where: { teacherId_weekOf: { teacherId: session.teacherId, weekOf } },
   });
 
-  const answers = existing ? JSON.parse(existing.answers) as Record<string, number> : {};
+  const answers = existing ? parseNumberRecord(existing.answers) : {};
   answers[domain] = value;
 
   await prisma.staffPulseCheck.upsert({

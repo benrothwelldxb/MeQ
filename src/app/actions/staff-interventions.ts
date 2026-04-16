@@ -74,40 +74,41 @@ export async function seedDefaultStaffInterventions() {
   const session = await getSuperAdminSession();
   if (!session.superAdminId) return { error: "Unauthorized." };
 
-  let created = 0;
-  let skipped = 0;
-  const sortByGroup: Record<string, number> = {};
+  // Fetch existing defaults once, then do all creates in parallel.
+  const existing = await prisma.staffIntervention.findMany({
+    where: { schoolId: null },
+    select: { domainKey: true, level: true, title: true },
+  });
+  const existingKeys = new Set(
+    existing.map((e) => `${e.domainKey}|${e.level}|${e.title}`)
+  );
 
+  const sortByGroup: Record<string, number> = {};
+  const payloads: Parameters<typeof prisma.staffIntervention.create>[0]["data"][] = [];
+  let skipped = 0;
   for (const iv of DEFAULT_STAFF_INTERVENTIONS) {
-    const exists = await prisma.staffIntervention.findFirst({
-      where: {
-        domainKey: iv.domainKey,
-        level: iv.level,
-        title: iv.title,
-        schoolId: null,
-      },
-    });
-    if (exists) {
+    if (existingKeys.has(`${iv.domainKey}|${iv.level}|${iv.title}`)) {
       skipped++;
       continue;
     }
     const groupKey = `${iv.domainKey}-${iv.level}`;
     sortByGroup[groupKey] = (sortByGroup[groupKey] ?? -1) + 1;
-    await prisma.staffIntervention.create({
-      data: {
-        domainKey: iv.domainKey,
-        level: iv.level,
-        title: iv.title,
-        description: iv.description,
-        sortOrder: sortByGroup[groupKey],
-        isDefault: true,
-      },
+    payloads.push({
+      domainKey: iv.domainKey,
+      level: iv.level,
+      title: iv.title,
+      description: iv.description,
+      sortOrder: sortByGroup[groupKey],
+      isDefault: true,
     });
-    created++;
+  }
+
+  if (payloads.length > 0) {
+    await prisma.staffIntervention.createMany({ data: payloads });
   }
 
   revalidatePath("/super/staff-wellbeing");
-  return { success: true, created, skipped };
+  return { success: true, created: payloads.length, skipped };
 }
 
 /** Bulk upload staff interventions via CSV. Columns: domain, level, title, description */

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getSchoolFramework } from "@/lib/framework";
+import { parseNumberRecord, parseStringRecord, parseAnswerRecord, parseStringArray } from "@/lib/json";
 
 export type StudentOverview = Awaited<ReturnType<typeof getStudentOverview>>;
 
@@ -73,12 +74,8 @@ export async function getStudentOverview(studentId: string) {
     totalScore: a.totalScore ?? 0,
     overallLevel: a.overallLevel ?? "Emerging",
     reliability: a.reliabilityScore ?? "Unknown",
-    domainScores: a.domainScoresJson
-      ? (JSON.parse(a.domainScoresJson) as Record<string, number>)
-      : {},
-    domainLevels: a.domainLevelsJson
-      ? (JSON.parse(a.domainLevelsJson) as Record<string, string>)
-      : {},
+    domainScores: parseNumberRecord(a.domainScoresJson),
+    domainLevels: parseStringRecord(a.domainLevelsJson),
     completedAt: a.completedAt,
   }));
 
@@ -95,12 +92,8 @@ export async function getStudentOverview(studentId: string) {
     academicYear: t.academicYear,
     teacherName: `${t.teacher.firstName} ${t.teacher.lastName}`,
     frameworkId: t.frameworkId,
-    domainScores: t.domainScoresJson
-      ? (JSON.parse(t.domainScoresJson) as Record<string, number>)
-      : {},
-    domainLevels: t.domainLevelsJson
-      ? (JSON.parse(t.domainLevelsJson) as Record<string, string>)
-      : {},
+    domainScores: parseNumberRecord(t.domainScoresJson),
+    domainLevels: parseStringRecord(t.domainLevelsJson),
     completedAt: t.completedAt,
   }));
 
@@ -114,7 +107,7 @@ export async function getStudentOverview(studentId: string) {
 
   const pulseChecks = rawPulseChecks.map((p) => ({
     weekOf: p.weekOf,
-    answers: JSON.parse(p.answers) as Record<string, number>,
+    answers: parseNumberRecord(p.answers),
     freeText: p.freeText,
     completedAt: p.completedAt,
   }));
@@ -180,12 +173,12 @@ export async function getStudentOverview(studentId: string) {
     id: r.id,
     surveyTitle: r.survey.title,
     surveyDescription: r.survey.description,
-    answers: JSON.parse(r.answers) as Record<string, string | number>,
+    answers: parseAnswerRecord(r.answers),
     questions: r.survey.questions.map((q) => ({
       id: q.id,
       prompt: q.prompt,
       questionType: q.questionType,
-      options: q.options ? (JSON.parse(q.options) as string[]) : null,
+      options: q.options ? parseStringArray(q.options) : null,
     })),
     flagged: r.flagged,
     flagReason: r.flagReason,

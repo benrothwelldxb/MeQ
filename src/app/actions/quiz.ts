@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
 import { getSchoolFramework, getFrameworkQuestions, getLevelFromThresholds } from "@/lib/framework";
 import { calculateFrameworkDomainScores } from "@/lib/scoring";
+import { parseNumberRecord } from "@/lib/json";
 import { redirect } from "next/navigation";
 
 export async function saveAnswer(questionNum: number, value: number) {
@@ -17,7 +18,7 @@ export async function saveAnswer(questionNum: number, value: number) {
     return { error: "No active assessment" };
   }
 
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
+  const answers = parseNumberRecord(assessment.answers);
   answers[String(questionNum)] = value;
 
   await prisma.assessment.update({
@@ -68,7 +69,7 @@ export async function submitQuiz() {
     }));
   }
 
-  const answers = JSON.parse(assessment.answers) as Record<string, number>;
+  const answers = parseNumberRecord(assessment.answers);
   const domainKeys = framework.domains.map((d) => d.key);
 
   // Calculate domain scores
@@ -161,19 +162,21 @@ export async function submitQuiz() {
     },
   });
 
-  // Write domain score records (queryable)
-  for (const key of domainKeys) {
-    await prisma.assessmentDomainScore.upsert({
-      where: { assessmentId_domainKey: { assessmentId: assessment.id, domainKey: key } },
-      update: { score: domainScores[key] || 0, level: domainLevels[key] || "Emerging" },
-      create: {
-        assessmentId: assessment.id,
-        domainKey: key,
-        score: domainScores[key] || 0,
-        level: domainLevels[key] || "Emerging",
-      },
-    });
-  }
+  // Write domain score records (queryable) — run in parallel since they're independent
+  await Promise.all(
+    domainKeys.map((key) =>
+      prisma.assessmentDomainScore.upsert({
+        where: { assessmentId_domainKey: { assessmentId: assessment.id, domainKey: key } },
+        update: { score: domainScores[key] || 0, level: domainLevels[key] || "Emerging" },
+        create: {
+          assessmentId: assessment.id,
+          domainKey: key,
+          score: domainScores[key] || 0,
+          level: domainLevels[key] || "Emerging",
+        },
+      })
+    )
+  );
 
   redirect("/results");
 }

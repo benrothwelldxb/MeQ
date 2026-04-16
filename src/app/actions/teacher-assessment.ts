@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
 import { calculateTeacherDomainScores, getTeacherLevel } from "@/lib/teacher-scoring";
+import { parseNumberRecord } from "@/lib/json";
 
 export async function saveTeacherAnswers(
   studentId: string,
@@ -68,7 +69,7 @@ export async function submitTeacherAssessments(classGroupId: string) {
   });
 
   for (const ta of assessments) {
-    const answers = JSON.parse(ta.answers) as Record<string, number>;
+    const answers = parseNumberRecord(ta.answers);
     const answeredCount = Object.keys(answers).length;
 
     // Only submit if all 10 questions answered

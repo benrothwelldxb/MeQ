@@ -71,143 +71,161 @@ export async function importFramework(jsonText: string, schoolIdsToAssign: strin
     },
   });
 
-  // Create domains
+  // Create domains — independent rows, run in parallel
   const domainIdByKey: Record<string, string> = {};
   const domainKeyByLabel: Record<string, string> = {};
-  for (let i = 0; i < parsed.domains.length; i++) {
+  const createdDomains = await Promise.all(
+    parsed.domains.map((d, i) =>
+      prisma.frameworkDomain.create({
+        data: {
+          frameworkId: framework.id,
+          key: d.key,
+          label: d.label,
+          description: d.description || null,
+          color: d.color || "blue",
+          sortOrder: d.sortOrder ?? i,
+        },
+      })
+    )
+  );
+  createdDomains.forEach((rec, i) => {
     const d = parsed.domains[i];
-    const created = await prisma.frameworkDomain.create({
-      data: {
-        frameworkId: framework.id,
-        key: d.key,
-        label: d.label,
-        description: d.description || null,
-        color: d.color || "blue",
-        sortOrder: d.sortOrder ?? i,
-      },
-    });
-    domainIdByKey[d.key] = created.id;
+    domainIdByKey[d.key] = rec.id;
     domainKeyByLabel[d.label.toLowerCase()] = d.key;
-  }
+  });
 
   const resolveDomain = (input: string): string | null => {
     if (domainIdByKey[input]) return input;
     return domainKeyByLabel[input.toLowerCase()] || null;
   };
 
-  // Create scoring models
+  // Create scoring models — independent rows
   if (parsed.scoring) {
-    for (const [tierKey, tierConfig] of Object.entries(parsed.scoring)) {
-      if (!tierConfig) continue;
-      await prisma.frameworkScoringModel.create({
+    await Promise.all(
+      Object.entries(parsed.scoring)
+        .filter(([, tierConfig]) => !!tierConfig)
+        .map(([tierKey, tierConfig]) =>
+          prisma.frameworkScoringModel.create({
+            data: {
+              frameworkId: framework.id,
+              key: tierKey,
+              name: tierKey === "standard" ? "Standard (8-11)" : "Junior (5-7)",
+              thresholds: JSON.stringify(tierConfig!.levelThresholds),
+              overallThresholds: JSON.stringify(tierConfig!.overallThresholds),
+              maxDomainScore: tierConfig!.maxDomainScore,
+              maxTotalScore: tierConfig!.maxTotalScore,
+            },
+          })
+        )
+    );
+  }
+
+  // Create questions — precompute orderIndex per tier so we can parallelize
+  const orderIndexByTier: Record<string, number> = { standard: 0, junior: 0 };
+  const questionPayloads = parsed.questions
+    .map((q) => {
+      const domainKey = resolveDomain(q.domain);
+      if (!domainKey) return null;
+      orderIndexByTier[q.tier] = (orderIndexByTier[q.tier] ?? 0) + 1;
+      return {
         data: {
           frameworkId: framework.id,
-          key: tierKey,
-          name: tierKey === "standard" ? "Standard (8-11)" : "Junior (5-7)",
-          thresholds: JSON.stringify(tierConfig.levelThresholds),
-          overallThresholds: JSON.stringify(tierConfig.overallThresholds),
-          maxDomainScore: tierConfig.maxDomainScore,
-          maxTotalScore: tierConfig.maxTotalScore,
+          domainKey,
+          tier: q.tier,
+          orderIndex: q.orderIndex ?? orderIndexByTier[q.tier],
+          prompt: q.prompt,
+          type: q.type || "core",
+          questionFormat: q.questionFormat || "self-report",
+          answerOptions: q.answerOptions ? JSON.stringify(q.answerOptions) : DEFAULT_ANSWER_OPTIONS,
+          scoreMap: q.scoreMap
+            ? JSON.stringify(q.scoreMap)
+            : q.reverse
+            ? REVERSE_SCORE_MAP
+            : DEFAULT_SCORE_MAP,
+          weight: q.weight ?? 1.0,
+          isValidation: q.isValidation ?? q.type === "validation",
+          isTrap: q.isTrap ?? q.type === "trap",
+          validationPair: q.validationPair ?? null,
         },
-      });
-    }
-  }
+      };
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+  await Promise.all(questionPayloads.map((p) => prisma.frameworkQuestion.create(p)));
 
-  // Create questions
-  const orderIndexByTier: Record<string, number> = { standard: 0, junior: 0 };
-  for (const q of parsed.questions) {
-    const domainKey = resolveDomain(q.domain);
-    if (!domainKey) continue;
-    orderIndexByTier[q.tier] = (orderIndexByTier[q.tier] ?? 0) + 1;
-    await prisma.frameworkQuestion.create({
-      data: {
-        frameworkId: framework.id,
-        domainKey,
-        tier: q.tier,
-        orderIndex: q.orderIndex ?? orderIndexByTier[q.tier],
-        prompt: q.prompt,
-        type: q.type || "core",
-        questionFormat: q.questionFormat || "self-report",
-        answerOptions: q.answerOptions ? JSON.stringify(q.answerOptions) : DEFAULT_ANSWER_OPTIONS,
-        scoreMap: q.scoreMap
-          ? JSON.stringify(q.scoreMap)
-          : q.reverse
-          ? REVERSE_SCORE_MAP
-          : DEFAULT_SCORE_MAP,
-        weight: q.weight ?? 1.0,
-        isValidation: q.isValidation ?? q.type === "validation",
-        isTrap: q.isTrap ?? q.type === "trap",
-        validationPair: q.validationPair ?? null,
-      },
-    });
-  }
-
-  // Create pulse questions
+  // Create pulse questions — precompute orderIndex and parallelize
   if (parsed.pulseQuestions) {
     const pulseOrderByTier: Record<string, number> = { standard: 0, junior: 0 };
-    for (const pq of parsed.pulseQuestions) {
-      const domainKey = resolveDomain(pq.domain);
-      if (!domainKey) continue;
-      pulseOrderByTier[pq.tier] = (pulseOrderByTier[pq.tier] ?? 0) + 1;
-      await prisma.pulseQuestion.create({
-        data: {
-          frameworkId: framework.id,
-          tier: pq.tier,
-          domain: domainKey,
-          prompt: pq.prompt,
-          emoji: pq.emoji || null,
-          orderIndex: pulseOrderByTier[pq.tier],
-        },
-      });
-    }
+    const pulsePayloads = parsed.pulseQuestions
+      .map((pq) => {
+        const domainKey = resolveDomain(pq.domain);
+        if (!domainKey) return null;
+        pulseOrderByTier[pq.tier] = (pulseOrderByTier[pq.tier] ?? 0) + 1;
+        return {
+          data: {
+            frameworkId: framework.id,
+            tier: pq.tier,
+            domain: domainKey,
+            prompt: pq.prompt,
+            emoji: pq.emoji || null,
+            orderIndex: pulseOrderByTier[pq.tier],
+          },
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+    await Promise.all(pulsePayloads.map((p) => prisma.pulseQuestion.create(p)));
   }
 
-  // Create interventions
+  // Create interventions — precompute sortOrder then parallelize
   if (parsed.interventions) {
     const ivSortByGroup: Record<string, number> = {};
-    for (const iv of parsed.interventions) {
-      const domainKey = resolveDomain(iv.domain);
-      if (!domainKey) continue;
-      const tier = iv.tier ?? "standard";
-      const groupKey = `${domainKey}-${iv.level}-${iv.audience}-${tier}`;
-      ivSortByGroup[groupKey] = (ivSortByGroup[groupKey] ?? -1) + 1;
-      await prisma.intervention.create({
-        data: {
-          frameworkId: framework.id,
-          domain: domainKey,
-          level: iv.level,
-          audience: iv.audience,
-          title: iv.title,
-          description: iv.description,
-          tier,
-          isDefault: true,
-          sortOrder: ivSortByGroup[groupKey],
-        },
-      });
-    }
+    const ivPayloads = parsed.interventions
+      .map((iv) => {
+        const domainKey = resolveDomain(iv.domain);
+        if (!domainKey) return null;
+        const tier = iv.tier ?? "standard";
+        const groupKey = `${domainKey}-${iv.level}-${iv.audience}-${tier}`;
+        ivSortByGroup[groupKey] = (ivSortByGroup[groupKey] ?? -1) + 1;
+        return {
+          data: {
+            frameworkId: framework.id,
+            domain: domainKey,
+            level: iv.level,
+            audience: iv.audience,
+            title: iv.title,
+            description: iv.description,
+            tier,
+            isDefault: true,
+            sortOrder: ivSortByGroup[groupKey],
+          },
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+    await Promise.all(ivPayloads.map((p) => prisma.intervention.create(p)));
   }
 
-  // Create domain messages
+  // Create domain messages — reuse the domainIdByKey map we already built
+  // to avoid re-querying each domain inside the loop.
   if (parsed.messages) {
     const msgSortByDomain: Record<string, number> = {};
-    for (const m of parsed.messages) {
-      const domainKey = resolveDomain(m.domain);
-      if (!domainKey) continue;
-      const domainRecord = await prisma.frameworkDomain.findUnique({
-        where: { frameworkId_key: { frameworkId: framework.id, key: domainKey } },
-      });
-      if (!domainRecord) continue;
-      const sortKey = `${domainKey}-${m.type}`;
-      msgSortByDomain[sortKey] = (msgSortByDomain[sortKey] ?? -1) + 1;
-      await prisma.frameworkDomainMessage.create({
-        data: {
-          frameworkDomainId: domainRecord.id,
-          messageType: m.type,
-          content: m.content,
-          sortOrder: msgSortByDomain[sortKey],
-        },
-      });
-    }
+    const msgPayloads = parsed.messages
+      .map((m) => {
+        const domainKey = resolveDomain(m.domain);
+        if (!domainKey) return null;
+        const frameworkDomainId = domainIdByKey[domainKey];
+        if (!frameworkDomainId) return null;
+        const sortKey = `${domainKey}-${m.type}`;
+        msgSortByDomain[sortKey] = (msgSortByDomain[sortKey] ?? -1) + 1;
+        return {
+          data: {
+            frameworkDomainId,
+            messageType: m.type,
+            content: m.content,
+            sortOrder: msgSortByDomain[sortKey],
+          },
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+    await Promise.all(msgPayloads.map((p) => prisma.frameworkDomainMessage.create(p)));
   }
 
   // Assign to schools (if specified)
