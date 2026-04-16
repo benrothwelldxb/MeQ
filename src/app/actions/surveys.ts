@@ -283,6 +283,30 @@ export async function submitSurveyResponse(
 
       const { sendSurveySafeguardingAlert, parseEmailList } = await import("@/lib/email");
       const dslRecipients = parseEmailList(school.dslEmail);
+
+      // In-app notification to DSL-matched admins
+      if (dslRecipients.length > 0) {
+        const { createNotificationsForMany } = await import("@/lib/notifications");
+        const dslAdmins = await prisma.admin.findMany({
+          where: {
+            schoolId: school.id,
+            email: { in: dslRecipients.map((e) => e.toLowerCase()) },
+          },
+          select: { id: true },
+        });
+        if (dslAdmins.length > 0) {
+          await createNotificationsForMany({
+            userType: "admin",
+            userIds: dslAdmins.map((a) => a.id),
+            schoolId: school.id,
+            category: "safeguarding",
+            title: `Survey response flagged: "${survey.title}"`,
+            body: survey.anonymous ? "Anonymous response" : "Review in the safeguarding dashboard",
+            href: "/admin/safeguarding",
+          });
+        }
+      }
+
       if (dslRecipients.length > 0) {
         const student = survey.anonymous
           ? null

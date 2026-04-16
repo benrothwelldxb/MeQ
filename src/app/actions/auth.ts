@@ -92,9 +92,16 @@ export async function loginStudent(
 
   if (assessment) {
     if (assessment.status === "completed") {
-      return {
-        error: "You've already completed your assessment for this term. Thank you!",
-      };
+      // Student has finished this term — let them back in to view their own
+      // history. The dashboard is read-only; their individual data stays
+      // scoped to their session.
+      const session = await getStudentSession();
+      session.studentId = student.id;
+      session.assessmentId = assessment.id;
+      session.firstName = student.displayName || student.firstName;
+      session.tier = student.tier;
+      await session.save();
+      redirect("/my-wellbeing");
     }
     // Resume in-progress assessment
   } else if (assessmentActive) {

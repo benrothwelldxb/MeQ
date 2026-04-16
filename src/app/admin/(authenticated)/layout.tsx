@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { parseEmailList } from "@/lib/email";
 import Sidebar from "@/components/admin/Sidebar";
 import SessionExpiryWarning from "@/components/SessionExpiryWarning";
+import NotificationBell from "@/components/NotificationBell";
 
 const ADMIN_TTL_SECONDS = 60 * 60 * 8;
 
@@ -48,7 +49,12 @@ export default async function AuthenticatedAdminLayout({
         hasMultipleCampuses={campusCount > 1}
         openAlertCount={openAlertCount}
       />
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1 p-8 relative">
+        <div className="absolute top-4 right-4 z-20">
+          <NotificationBell />
+        </div>
+        {children}
+      </main>
       <SessionExpiryWarning ttlSeconds={ADMIN_TTL_SECONDS} refreshUrl="/api/session/refresh?type=admin" />
     </div>
   );

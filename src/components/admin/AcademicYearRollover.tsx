@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { rolloverAcademicYear, nextAcademicYear } from "@/app/actions/academic-year";
+import { rolloverAcademicYear } from "@/app/actions/academic-year";
+import { nextAcademicYear } from "@/lib/academic-year";
 
 function ConfirmButton() {
   const { pending } = useFormStatus();

@@ -107,6 +107,28 @@ export async function submitPulse(freeText?: string) {
         });
 
         const dslRecipients = parseEmailList(student.school.dslEmail);
+        // In-app notification to DSL-matched admins at this school
+        if (dslRecipients.length > 0) {
+          const { createNotificationsForMany } = await import("@/lib/notifications");
+          const dslAdmins = await prisma.admin.findMany({
+            where: {
+              schoolId: student.schoolId,
+              email: { in: dslRecipients.map((e) => e.toLowerCase()) },
+            },
+            select: { id: true },
+          });
+          if (dslAdmins.length > 0) {
+            await createNotificationsForMany({
+              userType: "admin",
+              userIds: dslAdmins.map((a) => a.id),
+              schoolId: student.schoolId,
+              category: "safeguarding",
+              title: `Safeguarding alert: ${student.firstName} ${student.lastName}`,
+              body: `Pulse check-in flagged — ${lowScores.length} low score${lowScores.length === 1 ? "" : "s"}.`,
+              href: "/admin/safeguarding",
+            });
+          }
+        }
         if (dslRecipients.length > 0) {
           try {
             await sendPulseSafeguardingAlert({
