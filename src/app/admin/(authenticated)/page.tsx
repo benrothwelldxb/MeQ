@@ -95,6 +95,17 @@ export default async function AdminDashboard() {
             See scores, levels, and detailed breakdowns
           </p>
         </Link>
+        <Link
+          href="/admin/inspector-summary"
+          className="bg-white rounded-xl border border-gray-200 p-6 hover:border-meq-sky hover:shadow-sm transition-all group"
+        >
+          <h3 className="font-bold text-gray-900 group-hover:text-meq-sky transition-colors">
+            Inspector summary
+          </h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Printable 1-page report aligned to your inspectorate
+          </p>
+        </Link>
       </div>
     </div>
   );

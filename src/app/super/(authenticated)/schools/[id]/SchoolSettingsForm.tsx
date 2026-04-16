@@ -28,6 +28,7 @@ type School = {
   staffWellbeingEnabled: boolean;
   dslEmail: string | null;
   authMode: string;
+  inspectorate: string;
 };
 
 export default function SchoolSettingsForm({ school }: { school: School }) {
@@ -83,6 +84,24 @@ export default function SchoolSettingsForm({ school }: { school: School }) {
           />
           <p className="text-xs text-gray-500 mt-1">Comma-separated for multiple DSLs.</p>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-400 mb-1">Inspectorate</label>
+        <select
+          name="inspectorate"
+          defaultValue={school.inspectorate}
+          className="w-full px-4 py-2.5 rounded-lg bg-gray-700 border border-gray-600 text-white focus:border-meq-sky focus:outline-none"
+        >
+          <option value="generic">Generic (no inspectorate framing)</option>
+          <option value="ofsted">Ofsted (England)</option>
+          <option value="estyn">Estyn (Wales)</option>
+          <option value="khda">KHDA (Dubai)</option>
+          <option value="adek">ADEK (Abu Dhabi)</option>
+        </select>
+        <p className="text-xs text-gray-500 mt-1">
+          Controls the framing and terminology of the Inspector Summary report.
+        </p>
       </div>
 
       <div>

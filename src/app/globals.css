@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lexend — evidence-based readable typeface used for dyslexia-friendly mode.
+   Loaded lazily via Google Fonts so it only costs bytes when the toggle is on
+   (browser caches the file). */
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap");
+
 :root {
   --background: #F7F8FA;
   --foreground: #3D4F5F;
@@ -39,6 +44,37 @@ input {
   }
 }
 
+/* === Accessibility modes (toggled by AccessibilityToggles component) === */
+
+/* Dyslexia-friendly: Lexend font, looser tracking, slightly taller line-height */
+html.a11y-dyslexia,
+html.a11y-dyslexia body {
+  font-family: "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.02em;
+}
+html.a11y-dyslexia body {
+  line-height: 1.8;
+}
+
+/* High-contrast: stronger text colours, bolder borders.
+   Keeps brand accents but nudges neutrals towards true black/white. */
+html.a11y-high-contrast {
+  --foreground: #000000;
+}
+html.a11y-high-contrast body { background: #ffffff; }
+html.a11y-high-contrast .text-gray-400,
+html.a11y-high-contrast .text-gray-500,
+html.a11y-high-contrast .text-gray-600 {
+  color: #1f2937 !important;
+}
+html.a11y-high-contrast .border-gray-100,
+html.a11y-high-contrast .border-gray-200 {
+  border-color: #1f2937 !important;
+}
+html.a11y-high-contrast .bg-gray-50 {
+  background-color: #ffffff !important;
+}
+
 /* Print styles */
 @media print {
   body { background: white !important; }
@@ -51,6 +87,11 @@ input {
   body:has(.student-360) main { padding: 0 !important; max-width: 100% !important; }
   body:has(.student-360) .student-360 { max-width: 100% !important; }
 
+  body:has(.inspector-summary) aside { display: none !important; }
+  body:has(.inspector-summary) main { padding: 0 !important; max-width: 100% !important; }
+  body:has(.inspector-summary) .inspector-summary { max-width: 100% !important; }
+
   /* Avoid awkward page breaks inside each section card */
-  .student-360 .bg-white { break-inside: avoid; page-break-inside: avoid; }
+  .student-360 .bg-white,
+  .inspector-summary .bg-white { break-inside: avoid; page-break-inside: avoid; }
 }

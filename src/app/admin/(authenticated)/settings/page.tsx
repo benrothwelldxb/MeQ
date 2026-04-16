@@ -195,6 +195,10 @@ export default async function SettingsPage() {
           <h3 className="font-bold text-gray-900 text-sm">Interventions</h3>
           <p className="text-xs text-gray-500 mt-1">Manage the intervention bank</p>
         </Link>
+        <Link href="/admin/settings/audit-log" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
+          <h3 className="font-bold text-gray-900 text-sm">Audit log</h3>
+          <p className="text-xs text-gray-500 mt-1">See recent destructive actions at your school</p>
+        </Link>
       </div>
     </div>
   );

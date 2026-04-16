@@ -17,6 +17,7 @@ export async function updateSchoolSettings(
   const academicYear = (formData.get("academicYear") as string)?.trim();
   const dslEmail = (formData.get("dslEmail") as string)?.trim() || null;
   const authMode = (formData.get("authMode") as string) || "both";
+  const inspectorate = (formData.get("inspectorate") as string) || "generic";
   const isActive = formData.get("isActive") === "on";
   const reducedQuestions = formData.get("reducedQuestions") === "on";
   const pulseEnabled = formData.get("pulseEnabled") === "on";
@@ -36,6 +37,7 @@ export async function updateSchoolSettings(
       academicYear,
       dslEmail,
       authMode,
+      inspectorate,
       isActive,
       reducedQuestions,
       pulseEnabled,

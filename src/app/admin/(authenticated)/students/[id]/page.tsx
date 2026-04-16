@@ -27,6 +27,7 @@ export default async function AdminStudentOverview({
       studentId={id}
       backHref="/admin/students"
       backLabel="Back to Students"
+      isAdmin
     />
   );
 }

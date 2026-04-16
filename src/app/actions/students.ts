@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { generateLoginCode } from "@/lib/codes";
 import { getTierFromYearGroup, LOGIN_CODE_CHARSET, LOGIN_CODE_LENGTH } from "@/lib/constants";
 import { getAdminSession } from "@/lib/session";
+import { recordAudit } from "@/lib/audit";
 import { parse } from "csv-parse/sync";
 import { revalidatePath } from "next/cache";
 
@@ -207,6 +208,15 @@ export async function deleteStudent(studentId: string) {
 
   await prisma.assessment.deleteMany({ where: { studentId } });
   await prisma.student.delete({ where: { id: studentId } });
+  await recordAudit({
+    schoolId: session.schoolId,
+    actorType: "admin",
+    actorId: session.adminId,
+    actorLabel: session.email,
+    action: "student.delete",
+    entityType: "student",
+    entityId: studentId,
+  });
   revalidatePath("/admin/students");
   revalidatePath("/admin");
   return { success: true };
@@ -346,6 +356,15 @@ export async function bulkDeleteStudents(studentIds: string[]) {
   await prisma.teacherAssessment.deleteMany(scoped);
   await prisma.assessment.deleteMany(scoped);
   const result = await prisma.student.deleteMany({ where: studentWhere });
+
+  await recordAudit({
+    schoolId: session.schoolId,
+    actorType: "admin",
+    actorId: session.adminId,
+    actorLabel: session.email,
+    action: "student.bulk_delete",
+    meta: { requested: studentIds.length, deleted: result.count },
+  });
 
   revalidatePath("/admin/students");
   revalidatePath("/admin");

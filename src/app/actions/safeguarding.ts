@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { parseEmailList } from "@/lib/email";
+import { recordAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 
 /** Returns the logged-in admin and confirms they're a DSL for their school. */
@@ -51,6 +52,17 @@ export async function resolveSafeguardingAlert(
       resolvedAt: new Date(),
       resolvedByAdminId: auth.session.adminId,
     },
+  });
+
+  await recordAudit({
+    schoolId: auth.session.schoolId,
+    actorType: "admin",
+    actorId: auth.session.adminId,
+    actorLabel: auth.adminEmail,
+    action: status === "resolved" ? "alert.resolve" : "alert.dismiss",
+    entityType: "safeguarding_alert",
+    entityId: alertId,
+    meta: notes ? { notes } : undefined,
   });
 
   revalidatePath("/admin/safeguarding");

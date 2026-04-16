@@ -4,6 +4,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { loginStudent } from "./actions/auth";
 import { useState } from "react";
 import Image from "next/image";
+import AccessibilityToggles from "@/components/AccessibilityToggles";
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
@@ -32,6 +33,9 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-meq-cloud p-4">
+      <div className="fixed top-4 right-4 z-30">
+        <AccessibilityToggles />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Image src="/meq-logo.png" alt="MeQ" width={80} height={80} className="rounded-2xl mb-4 mx-auto" />

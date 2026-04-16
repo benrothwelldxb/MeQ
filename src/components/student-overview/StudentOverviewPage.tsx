@@ -9,6 +9,7 @@ import SelfVsTeacherChart from "./SelfVsTeacherChart";
 import SurveyResponseCard from "./SurveyResponseCard";
 import PrintButton from "./PrintButton";
 import InterventionLogPanel from "./InterventionLogPanel";
+import ExportDataButton from "./ExportDataButton";
 
 const TERM_LABELS: Record<string, string> = {
   term1: "Term 1",
@@ -20,10 +21,12 @@ export default async function StudentOverviewPage({
   studentId,
   backHref,
   backLabel,
+  isAdmin = false,
 }: {
   studentId: string;
   backHref: string;
   backLabel: string;
+  isAdmin?: boolean;
 }) {
   const data = await getStudentOverview(studentId);
   if (!data) notFound();
@@ -83,6 +86,7 @@ export default async function StudentOverviewPage({
               {student.tier} tier
             </span>
             <PrintButton />
+            {isAdmin && <ExportDataButton studentId={student.id} studentName={displayName} />}
           </div>
         </div>
       </div>

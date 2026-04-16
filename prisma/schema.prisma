@@ -31,6 +31,7 @@ model School {
   staffWellbeingEnabled Boolean  @default(false)
   dslEmail              String?  // Designated Safeguarding Lead — receives flagged content alerts
   authMode              String   @default("both") // "password" | "sso" | "both"
+  inspectorate          String   @default("generic") // "ofsted" | "khda" | "adek" | "estyn" | "generic"
   frameworkId      String?
   framework        Framework? @relation(fields: [frameworkId], references: [id])
   admins               Admin[]
@@ -529,6 +530,22 @@ model SchoolSafeguardingKeyword {
 
   @@unique([schoolId, keyword])
   @@index([schoolId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  schoolId   String?
+  actorType  String   // "admin" | "teacher" | "super" | "system"
+  actorId    String?
+  actorLabel String?  // denormalised email or name for display
+  action     String   // e.g. "student.delete", "survey.delete", "alert.resolve"
+  entityType String?
+  entityId   String?
+  meta       String?  // optional JSON string with extra context
+  createdAt  DateTime @default(now())
+
+  @@index([schoolId, createdAt])
+  @@index([action, createdAt])
 }
 
 model SafeguardingAlert {

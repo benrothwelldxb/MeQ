@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getAdminSession, getStudentSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { SURVEY_TEMPLATES, moderateText } from "@/lib/surveys";
+import { recordAudit } from "@/lib/audit";
 
 /** Fetch a survey and verify it belongs to the admin's school. */
 async function requireOwnedSurvey(surveyId: string) {
@@ -171,6 +172,15 @@ export async function deleteSurvey(surveyId: string) {
   if ("error" in auth) return { error: auth.error };
 
   await prisma.survey.delete({ where: { id: surveyId } });
+  await recordAudit({
+    schoolId: auth.session.schoolId,
+    actorType: "admin",
+    actorId: auth.session.adminId,
+    actorLabel: auth.session.email,
+    action: "survey.delete",
+    entityType: "survey",
+    entityId: surveyId,
+  });
   revalidatePath("/admin/surveys");
   return { success: true };
 }
