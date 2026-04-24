@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============ SUPER ADMIN (platform owner) ============
@@ -259,20 +258,10 @@ model Assessment {
   answers               String    @default("{}")
   totalScore            Float?
   overallLevel          String?
-  knowMeScore           Float?
-  manageMeScore         Float?
-  understandOthersScore Float?
-  workWithOthersScore   Float?
-  chooseWellScore       Float?
-  knowMeLevel           String?
-  manageMeLevel         String?
-  understandOthersLevel String?
-  workWithOthersLevel   String?
-  chooseWellLevel       String?
   reliabilityScore      String?
   rawResponseJson       String?
-  domainScoresJson      String?   // JSON: { "KnowMe": 15.5, ... } — for framework-based scoring
-  domainLevelsJson      String?   // JSON: { "KnowMe": "Secure", ... }
+  domainScoresJson      String?   // JSON: { "domain": score, ... }
+  domainLevelsJson      String?   // JSON: { "domain": "Secure", ... }
   frameworkId           String?
   lastQuestionNum       Int       @default(0)
   startedAt             DateTime  @default(now())
@@ -315,16 +304,6 @@ model TeacherAssessment {
   academicYear          String    @default("2025-2026")
   status                String    @default("in_progress")
   answers               String    @default("{}")
-  knowMeScore           Float?
-  manageMeScore         Float?
-  understandOthersScore Float?
-  workWithOthersScore   Float?
-  chooseWellScore       Float?
-  knowMeLevel           String?
-  manageMeLevel         String?
-  understandOthersLevel String?
-  workWithOthersLevel   String?
-  chooseWellLevel       String?
   domainScoresJson      String?
   domainLevelsJson      String?
   frameworkId                  String?

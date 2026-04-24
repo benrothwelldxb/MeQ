@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
-import { DOMAIN_LABELS } from "@/lib/constants";
+import { getSchoolFramework } from "@/lib/framework";
+import { parseNumberRecord, parseStringRecord } from "@/lib/json";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export async function GET(request: Request) {
   const term = searchParams.get("term") || undefined;
   const academicYear = searchParams.get("academicYear") || undefined;
 
+  const framework = await getSchoolFramework(session.schoolId);
+
   const assessments = await prisma.assessment.findMany({
     where: {
       status: "completed",
@@ -26,6 +29,8 @@ export async function GET(request: Request) {
     orderBy: [{ student: { yearGroup: "asc" } }, { student: { lastName: "asc" } }],
   });
 
+  // Build headers dynamically from the school's framework domains
+  const domainHeaders = framework.domains.flatMap((d) => [d.label, `${d.label} Level`]);
   const headers = [
     "First Name",
     "Last Name",
@@ -34,45 +39,35 @@ export async function GET(request: Request) {
     "Tier",
     "Term",
     "Academic Year",
-    DOMAIN_LABELS.KnowMe,
-    `${DOMAIN_LABELS.KnowMe} Level`,
-    DOMAIN_LABELS.ManageMe,
-    `${DOMAIN_LABELS.ManageMe} Level`,
-    DOMAIN_LABELS.UnderstandOthers,
-    `${DOMAIN_LABELS.UnderstandOthers} Level`,
-    DOMAIN_LABELS.WorkWithOthers,
-    `${DOMAIN_LABELS.WorkWithOthers} Level`,
-    DOMAIN_LABELS.ChooseWell,
-    `${DOMAIN_LABELS.ChooseWell} Level`,
+    ...domainHeaders,
     "Total Score",
     "Overall Level",
     "Reliability",
     "Completed",
   ];
 
-  const rows = assessments.map((a) => [
-    a.student.firstName,
-    a.student.lastName,
-    a.student.yearGroup,
-    a.student.className || "",
-    a.student.tier,
-    a.term.replace("term", "Term "),
-    a.academicYear,
-    a.knowMeScore ?? "",
-    a.knowMeLevel ?? "",
-    a.manageMeScore ?? "",
-    a.manageMeLevel ?? "",
-    a.understandOthersScore ?? "",
-    a.understandOthersLevel ?? "",
-    a.workWithOthersScore ?? "",
-    a.workWithOthersLevel ?? "",
-    a.chooseWellScore ?? "",
-    a.chooseWellLevel ?? "",
-    a.totalScore ?? "",
-    a.overallLevel ?? "",
-    a.reliabilityScore ?? "",
-    a.completedAt ? new Date(a.completedAt).toISOString().split("T")[0] : "",
-  ]);
+  const rows = assessments.map((a) => {
+    const scores = parseNumberRecord(a.domainScoresJson);
+    const levels = parseStringRecord(a.domainLevelsJson);
+    const domainCells = framework.domains.flatMap((d) => [
+      scores[d.key] ?? "",
+      levels[d.key] ?? "",
+    ]);
+    return [
+      a.student.firstName,
+      a.student.lastName,
+      a.student.yearGroup,
+      a.student.className || "",
+      a.student.tier,
+      a.term.replace("term", "Term "),
+      a.academicYear,
+      ...domainCells,
+      a.totalScore ?? "",
+      a.overallLevel ?? "",
+      a.reliabilityScore ?? "",
+      a.completedAt ? new Date(a.completedAt).toISOString().split("T")[0] : "",
+    ];
+  });
 
   const csvContent = [
     headers.join(","),

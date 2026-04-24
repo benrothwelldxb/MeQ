@@ -77,21 +77,18 @@ export async function submitTeacherAssessments(classGroupId: string) {
 
     const domainScores = calculateTeacherDomainScores(answers, questions);
 
+    const domainLevels: Record<string, string> = {};
+    for (const [key, score] of Object.entries(domainScores)) {
+      domainLevels[key] = getTeacherLevel(score);
+    }
+
     await prisma.teacherAssessment.update({
       where: { id: ta.id },
       data: {
         status: "completed",
         completedAt: new Date(),
-        knowMeScore: domainScores.KnowMe,
-        manageMeScore: domainScores.ManageMe,
-        understandOthersScore: domainScores.UnderstandOthers,
-        workWithOthersScore: domainScores.WorkWithOthers,
-        chooseWellScore: domainScores.ChooseWell,
-        knowMeLevel: getTeacherLevel(domainScores.KnowMe),
-        manageMeLevel: getTeacherLevel(domainScores.ManageMe),
-        understandOthersLevel: getTeacherLevel(domainScores.UnderstandOthers),
-        workWithOthersLevel: getTeacherLevel(domainScores.WorkWithOthers),
-        chooseWellLevel: getTeacherLevel(domainScores.ChooseWell),
+        domainScoresJson: JSON.stringify(domainScores),
+        domainLevelsJson: JSON.stringify(domainLevels),
       },
     });
   }

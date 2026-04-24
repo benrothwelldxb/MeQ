@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { DOMAINS, type Domain, type Level } from "./constants";
+import { parseNumberRecord, parseStringRecord } from "./json";
 
 export interface TermResult {
   term: string;
@@ -30,26 +31,30 @@ export async function getStudentTermHistory(
     orderBy: { term: "asc" },
   });
 
-  return assessments.map((a) => ({
-    term: a.term,
-    totalScore: a.totalScore,
-    overallLevel: a.overallLevel,
-    domainScores: {
-      KnowMe: a.knowMeScore ?? 0,
-      ManageMe: a.manageMeScore ?? 0,
-      UnderstandOthers: a.understandOthersScore ?? 0,
-      WorkWithOthers: a.workWithOthersScore ?? 0,
-      ChooseWell: a.chooseWellScore ?? 0,
-    },
-    domainLevels: {
-      KnowMe: (a.knowMeLevel as Level) ?? "Emerging",
-      ManageMe: (a.manageMeLevel as Level) ?? "Emerging",
-      UnderstandOthers: (a.understandOthersLevel as Level) ?? "Emerging",
-      WorkWithOthers: (a.workWithOthersLevel as Level) ?? "Emerging",
-      ChooseWell: (a.chooseWellLevel as Level) ?? "Emerging",
-    },
-    completedAt: a.completedAt,
-  }));
+  return assessments.map((a) => {
+    const scores = parseNumberRecord(a.domainScoresJson);
+    const levels = parseStringRecord(a.domainLevelsJson);
+    return {
+      term: a.term,
+      totalScore: a.totalScore,
+      overallLevel: a.overallLevel,
+      domainScores: {
+        KnowMe: scores.KnowMe ?? 0,
+        ManageMe: scores.ManageMe ?? 0,
+        UnderstandOthers: scores.UnderstandOthers ?? 0,
+        WorkWithOthers: scores.WorkWithOthers ?? 0,
+        ChooseWell: scores.ChooseWell ?? 0,
+      },
+      domainLevels: {
+        KnowMe: (levels.KnowMe as Level) ?? "Emerging",
+        ManageMe: (levels.ManageMe as Level) ?? "Emerging",
+        UnderstandOthers: (levels.UnderstandOthers as Level) ?? "Emerging",
+        WorkWithOthers: (levels.WorkWithOthers as Level) ?? "Emerging",
+        ChooseWell: (levels.ChooseWell as Level) ?? "Emerging",
+      },
+      completedAt: a.completedAt,
+    };
+  });
 }
 
 export function calculateLevelChanges(

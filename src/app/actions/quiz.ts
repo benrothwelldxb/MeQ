@@ -148,17 +148,6 @@ export async function submitQuiz() {
       frameworkId: framework.id,
       reliabilityScore: reliability,
       rawResponseJson: JSON.stringify(answers),
-      // Legacy columns — write for backwards compat with existing reports
-      knowMeScore: domainScores["KnowMe"] ?? null,
-      manageMeScore: domainScores["ManageMe"] ?? null,
-      understandOthersScore: domainScores["UnderstandOthers"] ?? null,
-      workWithOthersScore: domainScores["WorkWithOthers"] ?? null,
-      chooseWellScore: domainScores["ChooseWell"] ?? null,
-      knowMeLevel: domainLevels["KnowMe"] ?? null,
-      manageMeLevel: domainLevels["ManageMe"] ?? null,
-      understandOthersLevel: domainLevels["UnderstandOthers"] ?? null,
-      workWithOthersLevel: domainLevels["WorkWithOthers"] ?? null,
-      chooseWellLevel: domainLevels["ChooseWell"] ?? null,
     },
   });
 
