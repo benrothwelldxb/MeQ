@@ -66,13 +66,14 @@ export default function PulseAudioButton({
       />
       {url ? (
         <>
-          <a href={url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-emerald-300" title="Play audio">
+          <a href={url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:text-emerald-300" title="Play audio" aria-label="Play audio">
             {icon}
           </a>
           <button
             onClick={handleRemove}
             className="text-xs text-red-400 hover:text-red-300"
             title="Remove audio"
+            aria-label="Remove audio"
           >
             ×
           </button>
@@ -82,6 +83,7 @@ export default function PulseAudioButton({
           htmlFor={`pulse-audio-${pulseQuestionId}`}
           className={`inline-flex items-center gap-1 text-xs cursor-pointer ${uploading ? "text-gray-500" : "text-gray-400 hover:text-gray-200"}`}
           title="Upload audio"
+          aria-label="Upload audio"
         >
           {uploading ? <span>...</span> : icon}
         </label>

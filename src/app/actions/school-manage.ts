@@ -19,7 +19,8 @@ export async function updateSchoolSettings(
   const authMode = (formData.get("authMode") as string) || "both";
   const inspectorate = (formData.get("inspectorate") as string) || "generic";
   const isActive = formData.get("isActive") === "on";
-  const reducedQuestions = formData.get("reducedQuestions") === "on";
+  const reducedJunior = formData.get("reducedJunior") === "on";
+  const reducedStandard = formData.get("reducedStandard") === "on";
   const pulseEnabled = formData.get("pulseEnabled") === "on";
   const readAloudEnabled = formData.get("readAloudEnabled") === "on";
   const staffWellbeingEnabled = formData.get("staffWellbeingEnabled") === "on";
@@ -39,7 +40,8 @@ export async function updateSchoolSettings(
       authMode,
       inspectorate,
       isActive,
-      reducedQuestions,
+      reducedJunior,
+      reducedStandard,
       pulseEnabled,
       readAloudEnabled,
       staffWellbeingEnabled,

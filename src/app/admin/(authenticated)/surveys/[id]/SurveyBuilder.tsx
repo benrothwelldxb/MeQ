@@ -427,8 +427,11 @@ function BankPicker({
     });
   }, [bankQuestions, search, filterCategory, filterAge]);
 
+  // Cap the pane height only on lg+ where it sits beside the draft. On mobile
+  // we let it grow naturally — the draft questions sit beneath rather than
+  // beside, so a fixed-height scroll-trap would hide the draft.
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col max-h-[80vh]">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col lg:max-h-[80vh]">
       <div className="p-4 border-b border-gray-100">
         <h3 className="font-bold text-gray-900 mb-1">Question library</h3>
         <p className="text-xs text-gray-500">Click + to add to your survey, or write a custom question.</p>
@@ -489,7 +492,8 @@ function BankPicker({
                 type="button"
                 onClick={() => onPick(bq)}
                 disabled={!isDraft || pending}
-                className="w-7 h-7 rounded-full bg-meq-sky text-white flex items-center justify-center text-lg font-bold hover:bg-meq-sky/90 disabled:opacity-30 flex-shrink-0"
+                className="w-9 h-9 rounded-full bg-meq-sky text-white flex items-center justify-center text-lg font-bold hover:bg-meq-sky/90 disabled:opacity-30 flex-shrink-0"
+                aria-label={`Add ${bq.prompt.slice(0, 60)} to survey`}
                 title="Add to survey"
               >
                 +
@@ -738,7 +742,8 @@ function DraftQuestionRow({
                 type="button"
                 onClick={onMoveUp}
                 disabled={isFirst}
-                className="w-6 h-6 rounded text-gray-400 hover:text-meq-sky hover:bg-meq-sky-light disabled:opacity-20 disabled:hover:bg-transparent text-sm"
+                className="w-8 h-8 rounded text-gray-400 hover:text-meq-sky hover:bg-meq-sky-light disabled:opacity-20 disabled:hover:bg-transparent text-base"
+                aria-label="Move question up"
                 title="Move up"
               >
                 ↑
@@ -747,7 +752,8 @@ function DraftQuestionRow({
                 type="button"
                 onClick={onMoveDown}
                 disabled={isLast}
-                className="w-6 h-6 rounded text-gray-400 hover:text-meq-sky hover:bg-meq-sky-light disabled:opacity-20 disabled:hover:bg-transparent text-sm"
+                className="w-8 h-8 rounded text-gray-400 hover:text-meq-sky hover:bg-meq-sky-light disabled:opacity-20 disabled:hover:bg-transparent text-base"
+                aria-label="Move question down"
                 title="Move down"
               >
                 ↓
@@ -755,7 +761,8 @@ function DraftQuestionRow({
               <button
                 type="button"
                 onClick={onRemove}
-                className="w-6 h-6 rounded text-red-400 hover:text-red-600 hover:bg-red-50 text-sm"
+                className="w-8 h-8 rounded text-red-400 hover:text-red-600 hover:bg-red-50 text-base"
+                aria-label="Remove question"
                 title="Remove"
               >
                 ×
@@ -801,8 +808,9 @@ function SaveToBankButton({ question }: { question: { prompt: string; questionTy
       type="button"
       onClick={handleSave}
       disabled={saving || saved}
+      aria-label={saved ? "Saved to your school's bank" : "Save question to your school's bank for reuse"}
       title={saved ? "Saved to your bank" : error ? error : "Save to your school's bank"}
-      className={`w-6 h-6 rounded text-sm ${
+      className={`w-8 h-8 rounded text-base ${
         saved ? "text-emerald-500" : "text-gray-300 hover:text-meq-sky hover:bg-meq-sky-light"
       }`}
     >

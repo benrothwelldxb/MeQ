@@ -105,14 +105,17 @@ export async function loginStudent(
     }
     // Resume in-progress assessment
   } else if (assessmentActive) {
-    // Create new assessment for current term
+    // Create new assessment for current term. Reduced mode is now per-tier
+    // so a school can shorten the junior version while keeping the full set
+    // for standard tier (or vice versa).
+    const isReduced = student.tier === "junior" ? school.reducedJunior : school.reducedStandard;
     assessment = await prisma.assessment.create({
       data: {
         studentId: student.id,
         tier: student.tier,
         term: currentTerm,
         academicYear,
-        isReduced: school.reducedQuestions,
+        isReduced,
         frameworkId: fw.id,
       },
     });

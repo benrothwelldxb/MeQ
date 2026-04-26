@@ -12,7 +12,8 @@ export async function updateSchoolSettings(formData: FormData) {
   const currentTerm = (formData.get("currentTerm") as string) || school.currentTerm;
   const academicYear = (formData.get("academicYear") as string)?.trim() || school.academicYear;
 
-  const reducedQuestions = formData.get("reducedQuestions") === "on";
+  const reducedJunior = formData.get("reducedJunior") === "on";
+  const reducedStandard = formData.get("reducedStandard") === "on";
   const pulseEnabled = formData.get("pulseEnabled") === "on";
   const readAloudEnabled = formData.get("readAloudEnabled") === "on";
   const staffWellbeingEnabled = formData.get("staffWellbeingEnabled") === "on";
@@ -21,7 +22,7 @@ export async function updateSchoolSettings(formData: FormData) {
 
   await prisma.school.update({
     where: { id: school.id },
-    data: { name, currentTerm, academicYear, reducedQuestions, pulseEnabled, readAloudEnabled, staffWellbeingEnabled, frameworkId, dslEmail },
+    data: { name, currentTerm, academicYear, reducedJunior, reducedStandard, pulseEnabled, readAloudEnabled, staffWellbeingEnabled, frameworkId, dslEmail },
   });
 
   revalidatePath("/admin");

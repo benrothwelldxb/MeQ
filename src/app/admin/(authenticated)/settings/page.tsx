@@ -8,6 +8,7 @@ import SettingsForm from "@/components/admin/SettingsForm";
 import ChangePasswordForm from "@/components/shared/ChangePasswordForm";
 import AdminManager from "@/components/admin/AdminManager";
 import AcademicYearRollover from "@/components/admin/AcademicYearRollover";
+import EmailChipsInput from "@/components/EmailChipsInput";
 import Link from "next/link";
 
 export default async function SettingsPage() {
@@ -69,16 +70,15 @@ export default async function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Safeguarding Lead Email(s)
             </label>
-            <input
+            <EmailChipsInput
               name="dslEmail"
-              type="text"
               defaultValue={school.dslEmail || ""}
-              placeholder="dsl@yourschool.sch.uk, deputy-dsl@yourschool.sch.uk"
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none"
+              placeholder="dsl@yourschool.sch.uk"
+              ariaLabel="Add a safeguarding lead email address"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Separate multiple DSLs with a comma. All listed addresses receive alerts, and any admin whose
-              email matches a DSL can view and action the alerts dashboard.
+              Type each email and press <kbd className="px-1 py-0.5 rounded bg-gray-100 text-[10px] font-mono">Enter</kbd> or <kbd className="px-1 py-0.5 rounded bg-gray-100 text-[10px] font-mono">,</kbd> to add it.
+              All listed addresses receive alerts, and any admin whose email matches a DSL can view and action the alerts dashboard.
             </p>
           </div>
 
@@ -95,13 +95,21 @@ export default async function SettingsPage() {
           </div>
           <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700">Assessment Options</h3>
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="reducedQuestions" name="reducedQuestions" defaultChecked={school.reducedQuestions} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
-              <label htmlFor="reducedQuestions" className="text-sm text-gray-700">
-                <span className="font-medium">Reduced question mode</span>
-                <span className="text-gray-500 block text-xs">Junior: 10 questions, Standard: 20 questions (core only, no validation)</span>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-gray-700">Reduced question mode</legend>
+              <p className="text-xs text-gray-500 -mt-1">
+                Shorter assessment (core questions only, no validation). Set per tier so a school
+                can shorten one age group without affecting the other.
+              </p>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" id="reducedJunior" name="reducedJunior" defaultChecked={school.reducedJunior} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+                <span className="text-sm text-gray-700">Junior tier (5-7) — about 10 questions instead of 20</span>
               </label>
-            </div>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" id="reducedStandard" name="reducedStandard" defaultChecked={school.reducedStandard} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+                <span className="text-sm text-gray-700">Standard tier (8-11) — about 20 questions instead of 40</span>
+              </label>
+            </fieldset>
             <div className="flex items-center gap-3">
               <input type="checkbox" id="pulseEnabled" name="pulseEnabled" defaultChecked={school.pulseEnabled} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
               <label htmlFor="pulseEnabled" className="text-sm text-gray-700">
@@ -194,10 +202,6 @@ export default async function SettingsPage() {
         <Link href="/admin/settings/interventions" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
           <h3 className="font-bold text-gray-900 text-sm">Interventions</h3>
           <p className="text-xs text-gray-500 mt-1">Manage the intervention bank</p>
-        </Link>
-        <Link href="/admin/settings/groups" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
-          <h3 className="font-bold text-gray-900 text-sm">Smart groups</h3>
-          <p className="text-xs text-gray-500 mt-1">Cross-class cohorts for nurture, social skills, MAGT or EAL</p>
         </Link>
         <Link href="/admin/settings/question-bank" className="bg-white rounded-xl border border-gray-200 p-4 hover:border-meq-sky transition-all">
           <h3 className="font-bold text-gray-900 text-sm">Question bank</h3>

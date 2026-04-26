@@ -12,8 +12,8 @@ export default async function TeacherGroupDetailPage({
   const session = await getTeacherSession();
   if (!(await canViewSmartGroup(params.id))) notFound();
 
-  const data = await loadSmartGroupViewData(params.id);
-  if (!data || data.group.schoolId !== session.schoolId) notFound();
+  const data = await loadSmartGroupViewData(params.id, session.schoolId);
+  if (!data) notFound();
 
   // Edit gate: teacher only edits their own groups; shared teachers are
   // view-only. Admins can edit anything but they don't view via this route.

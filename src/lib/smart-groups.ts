@@ -1,15 +1,20 @@
 import { prisma } from "./db";
 import { getSchoolFramework } from "./framework";
 import { getSchoolSettings } from "./school";
+import { parseNumberRecord } from "./json";
 
 /**
  * Load the full display payload for a single smart group — members, latest
  * assessment-level-per-student, and a simple latest-pulse average per domain
  * for the whole group. Server-only.
+ *
+ * `schoolId` is required and used as part of the lookup so a misuse from a
+ * future caller (e.g. forgetting to verify the group belongs to the actor's
+ * school) fails closed — returns null rather than leaking data across schools.
  */
-export async function loadSmartGroupViewData(groupId: string) {
-  const group = await prisma.smartGroup.findUnique({
-    where: { id: groupId },
+export async function loadSmartGroupViewData(groupId: string, schoolId: string) {
+  const group = await prisma.smartGroup.findFirst({
+    where: { id: groupId, schoolId },
     include: {
       createdByTeacher: { select: { firstName: true, lastName: true } },
       members: {
@@ -80,19 +85,16 @@ export async function loadSmartGroupViewData(groupId: string) {
       })
     : [];
 
-  // Aggregate pulse by domain. `answers` is JSON like { "KnowMe": 4, ... }
+  // Aggregate pulse by domain. `answers` is JSON like { "KnowMe": 4, ... }.
+  // parseNumberRecord soft-fails to {} on bad JSON / wrong shape so a single
+  // corrupt row can't crash the page.
   const pulseTotals: Record<string, { sum: number; n: number }> = {};
   for (const p of pulses) {
-    try {
-      const answers = JSON.parse(p.answers) as Record<string, number>;
-      for (const [domain, value] of Object.entries(answers)) {
-        if (typeof value !== "number") continue;
-        if (!pulseTotals[domain]) pulseTotals[domain] = { sum: 0, n: 0 };
-        pulseTotals[domain].sum += value;
-        pulseTotals[domain].n += 1;
-      }
-    } catch {
-      // ignore bad JSON
+    const answers = parseNumberRecord(p.answers);
+    for (const [domain, value] of Object.entries(answers)) {
+      if (!pulseTotals[domain]) pulseTotals[domain] = { sum: 0, n: 0 };
+      pulseTotals[domain].sum += value;
+      pulseTotals[domain].n += 1;
     }
   }
 
@@ -106,14 +108,8 @@ export async function loadSmartGroupViewData(groupId: string) {
 
   const students = group.members.map((m) => {
     const latest = latestByStudent.get(m.student.id);
-    let domainScores: Record<string, number> | null = null;
-    if (latest?.domainScoresJson) {
-      try {
-        domainScores = JSON.parse(latest.domainScoresJson) as Record<string, number>;
-      } catch {
-        domainScores = null;
-      }
-    }
+    const parsed = latest?.domainScoresJson ? parseNumberRecord(latest.domainScoresJson) : null;
+    const domainScores: Record<string, number> | null = parsed && Object.keys(parsed).length > 0 ? parsed : null;
     return {
       id: m.student.id,
       firstName: m.student.firstName,

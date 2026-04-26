@@ -247,12 +247,17 @@ export async function addStudent(formData: FormData) {
   }
 
   const yearGroup = await prisma.yearGroup.findUnique({ where: { id: yearGroupId } });
-  if (!yearGroup) return { error: "Year group not found." };
+  if (!yearGroup || yearGroup.schoolId !== session.schoolId) {
+    return { error: "Year group not found." };
+  }
 
   let className: string | null = null;
   if (classGroupId) {
     const classGroup = await prisma.classGroup.findUnique({ where: { id: classGroupId } });
-    className = classGroup?.name || null;
+    if (!classGroup || classGroup.schoolId !== session.schoolId) {
+      return { error: "Class not found." };
+    }
+    className = classGroup.name;
   }
 
   if (!loginCode) {

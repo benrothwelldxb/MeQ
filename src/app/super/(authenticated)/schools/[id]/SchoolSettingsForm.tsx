@@ -22,7 +22,8 @@ type School = {
   currentTerm: string;
   academicYear: string;
   isActive: boolean;
-  reducedQuestions: boolean;
+  reducedJunior: boolean;
+  reducedStandard: boolean;
   pulseEnabled: boolean;
   readAloudEnabled: boolean;
   staffWellbeingEnabled: boolean;
@@ -125,7 +126,8 @@ export default function SchoolSettingsForm({ school }: { school: School }) {
         <p className="text-sm font-medium text-gray-300 mb-1">Features</p>
         {[
           { name: "isActive", label: "School Active", checked: school.isActive },
-          { name: "reducedQuestions", label: "Reduced Questions", checked: school.reducedQuestions },
+          { name: "reducedJunior", label: "Reduced Questions — Junior (5-7)", checked: school.reducedJunior },
+          { name: "reducedStandard", label: "Reduced Questions — Standard (8-11)", checked: school.reducedStandard },
           { name: "pulseEnabled", label: "Pulse Check-ins", checked: school.pulseEnabled },
           { name: "readAloudEnabled", label: "Read Aloud", checked: school.readAloudEnabled },
           { name: "staffWellbeingEnabled", label: "Staff Wellbeing", checked: school.staffWellbeingEnabled },

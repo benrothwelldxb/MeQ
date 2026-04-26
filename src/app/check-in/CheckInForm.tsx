@@ -96,7 +96,9 @@ export default function CheckInForm({
         onChange={(e) => setTargetTeacherId(e.target.value)}
         className="w-full px-3 py-2 mb-4 rounded-lg border border-meq-mist focus:border-meq-sky focus:outline-none text-sm bg-white"
       >
-        {teachers.length === 0 && <option value="">No teachers available</option>}
+        {/* Always show a placeholder so a student can't accidentally submit
+            with the first teacher in the list — they have to actively pick. */}
+        <option value="">{teachers.length === 0 ? "No teachers available" : (isJunior ? "Choose a grown-up..." : "Choose a teacher...")}</option>
         {teachers.map((t) => (
           <option key={t.id} value={t.id}>
             {t.name}{t.isClassTeacher ? " (your teacher)" : ""}
@@ -123,7 +125,7 @@ export default function CheckInForm({
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={pending || teachers.length === 0}
+        disabled={pending || teachers.length === 0 || !targetTeacherId}
         className="w-full py-3 rounded-xl text-base font-bold text-white bg-meq-sky hover:bg-meq-sky/90 disabled:opacity-50 transition-all"
       >
         {pending ? "Sending..." : isJunior ? "Send my message" : "Request check-in"}

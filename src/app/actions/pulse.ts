@@ -68,82 +68,104 @@ export async function submitPulse(freeText?: string) {
     data: { completedAt: new Date(), freeText: freeText || null },
   });
 
-  // Check for safeguarding concerns and email DSL
+  // Safeguarding triage. Two independent triggers:
+  //   1. Two or more pulse domains scored 1-2 (sustained low mood).
+  //   2. Free-text matched a moderation keyword (suicidal ideation, abuse,
+  //      severe distress, school-custom keywords).
+  // Either fires an alert. Free-text moderation MUST run even when all the
+  // pulse scores are positive — a child can answer pulses positively and
+  // still disclose serious harm in the comment box.
   const answers = parseNumberRecord(pulseCheck.answers);
   const lowScores = Object.entries(answers)
     .filter(([, score]) => score <= 2)
     .map(([domain, score]) => ({ domain, score }));
 
-  if (lowScores.length > 0) {
-    const student = await prisma.student.findUnique({
-      where: { id: session.studentId },
-      include: { school: true },
-    });
+  const student = await prisma.student.findUnique({
+    where: { id: session.studentId },
+    include: { school: true },
+  });
 
-    if (student) {
-      const { sendPulseSafeguardingAlert, parseEmailList } = await import("@/lib/email");
-      const { moderateText } = await import("@/lib/surveys");
+  if (student) {
+    const { sendPulseSafeguardingAlert, parseEmailList } = await import("@/lib/email");
+    const { moderateText } = await import("@/lib/surveys");
 
-      const customKeywords = await prisma.schoolSafeguardingKeyword.findMany({
-        where: { schoolId: student.schoolId },
-        select: { keyword: true },
+    const trimmedFreeText = freeText?.trim() ?? "";
+    const customKeywords = trimmedFreeText
+      ? await prisma.schoolSafeguardingKeyword.findMany({
+          where: { schoolId: student.schoolId },
+          select: { keyword: true },
+        })
+      : [];
+    const freeTextFlag = trimmedFreeText
+      ? moderateText(trimmedFreeText, customKeywords.map((k) => k.keyword))
+      : { flagged: false as const };
+
+    const shouldAlert = lowScores.length >= 2 || freeTextFlag.flagged;
+
+    if (shouldAlert) {
+      // Compose a flag reason that reflects whichever trigger(s) fired,
+      // including the case where the only signal is free text on otherwise
+      // positive scores.
+      const reasonParts: string[] = [];
+      if (lowScores.length > 0) {
+        reasonParts.push(
+          `Low pulse scores: ${lowScores.map((s) => `${s.domain}(${s.score})`).join(", ")}`
+        );
+      }
+      if (freeTextFlag.flagged) {
+        reasonParts.push(`Free text matched: ${freeTextFlag.reason}`);
+      }
+      const flagReason = reasonParts.join(" · ") || "Safeguarding concern";
+
+      // Record the alert regardless of email delivery so admins can action
+      // it in the dashboard even if the email fails to send.
+      await prisma.safeguardingAlert.create({
+        data: {
+          schoolId: student.schoolId,
+          type: "pulse",
+          studentId: student.id,
+          pulseCheckId: pulseCheck.id,
+          flagReason,
+          flaggedText: trimmedFreeText || null,
+        },
       });
-      const freeTextFlag = freeText
-        ? moderateText(freeText, customKeywords.map((k) => k.keyword))
-        : { flagged: false };
-      const shouldAlert = lowScores.length >= 2 || freeTextFlag.flagged;
 
-      if (shouldAlert) {
-        // Record the alert regardless of email delivery so admins can action
-        // it in the dashboard even if the email fails to send.
-        await prisma.safeguardingAlert.create({
-          data: {
+      const dslRecipients = parseEmailList(student.school.dslEmail);
+      if (dslRecipients.length > 0) {
+        const { createNotificationsForMany } = await import("@/lib/notifications");
+        const dslAdmins = await prisma.admin.findMany({
+          where: {
             schoolId: student.schoolId,
-            type: "pulse",
-            studentId: student.id,
-            pulseCheckId: pulseCheck.id,
-            flagReason: `Low pulse scores: ${lowScores.map((s) => `${s.domain}(${s.score})`).join(", ")}${freeTextFlag.flagged ? ` · free text: ${freeTextFlag.reason}` : ""}`,
-            flaggedText: freeText || null,
+            email: { in: dslRecipients.map((e) => e.toLowerCase()) },
           },
+          select: { id: true },
         });
-
-        const dslRecipients = parseEmailList(student.school.dslEmail);
-        // In-app notification to DSL-matched admins at this school
-        if (dslRecipients.length > 0) {
-          const { createNotificationsForMany } = await import("@/lib/notifications");
-          const dslAdmins = await prisma.admin.findMany({
-            where: {
-              schoolId: student.schoolId,
-              email: { in: dslRecipients.map((e) => e.toLowerCase()) },
-            },
-            select: { id: true },
+        if (dslAdmins.length > 0) {
+          await createNotificationsForMany({
+            userType: "admin",
+            userIds: dslAdmins.map((a) => a.id),
+            schoolId: student.schoolId,
+            category: "safeguarding",
+            title: `Safeguarding alert: ${student.firstName} ${student.lastName}`,
+            body: freeTextFlag.flagged
+              ? `Pulse free-text flagged${lowScores.length > 0 ? ` and ${lowScores.length} low score${lowScores.length === 1 ? "" : "s"}` : ""}.`
+              : `Pulse check-in flagged — ${lowScores.length} low score${lowScores.length === 1 ? "" : "s"}.`,
+            href: "/admin/safeguarding",
           });
-          if (dslAdmins.length > 0) {
-            await createNotificationsForMany({
-              userType: "admin",
-              userIds: dslAdmins.map((a) => a.id),
-              schoolId: student.schoolId,
-              category: "safeguarding",
-              title: `Safeguarding alert: ${student.firstName} ${student.lastName}`,
-              body: `Pulse check-in flagged — ${lowScores.length} low score${lowScores.length === 1 ? "" : "s"}.`,
-              href: "/admin/safeguarding",
-            });
-          }
         }
-        if (dslRecipients.length > 0) {
-          try {
-            await sendPulseSafeguardingAlert({
-              dslEmail: dslRecipients,
-              schoolName: student.school.name,
-              studentName: `${student.firstName} ${student.lastName}`,
-              yearGroup: student.yearGroup,
-              className: student.className,
-              flaggedDomains: lowScores,
-              freeText: freeText || null,
-            });
-          } catch (err) {
-            console.error("[safeguarding-alert] Failed to send pulse alert:", err);
-          }
+
+        try {
+          await sendPulseSafeguardingAlert({
+            dslEmail: dslRecipients,
+            schoolName: student.school.name,
+            studentName: `${student.firstName} ${student.lastName}`,
+            yearGroup: student.yearGroup,
+            className: student.className,
+            flaggedDomains: lowScores,
+            freeText: trimmedFreeText || null,
+          });
+        } catch (err) {
+          console.error("[safeguarding-alert] Failed to send pulse alert:", err);
         }
       }
     }

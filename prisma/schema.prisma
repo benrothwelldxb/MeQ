@@ -24,7 +24,11 @@ model School {
   currentTerm  String   @default("term1")
   academicYear String   @default("2025-2026")
   isActive              Boolean  @default(true)
-  reducedQuestions      Boolean  @default(false)
+  // Reduced-question mode is set per tier so a school running the full
+  // assessment for older students can still use the shorter version for
+  // junior — common when juniors fatigue faster.
+  reducedJunior         Boolean  @default(false)
+  reducedStandard       Boolean  @default(false)
   pulseEnabled          Boolean  @default(false)
   readAloudEnabled      Boolean  @default(false)
   staffWellbeingEnabled Boolean  @default(false)
@@ -40,6 +44,12 @@ model School {
   students             Student[]
   surveys              Survey[]
   frameworkAssignments FrameworkAssignment[]
+  smartGroups          SmartGroup[]
+  checkInRequests      CheckInRequest[]
+  bankQuestions        SurveyBankQuestion[]
+  terms                Term[]
+  assessmentWindows    AssessmentWindow[]
+  pulseSchedules       PulseSchedule[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -421,6 +431,7 @@ model SurveyBankQuestion {
   source         String?  // attribution: "PERMA", "EPOCH", "MeQ", etc.
   isDefault      Boolean  @default(true)
   schoolId       String?
+  school         School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -604,6 +615,7 @@ model StaffWellbeingInsight {
 model SmartGroup {
   id              String              @id @default(cuid())
   schoolId        String
+  school          School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   name            String
   description     String?
   purpose         String?             // free-form tag, e.g. "Nurture", "Social skills", "MAGT"
@@ -641,9 +653,90 @@ model SmartGroupTeacher {
   @@index([teacherId])
 }
 
+// ============ SCHEDULING / CALENDAR ============
+//
+// Replaces the older single-school-currentTerm + framework activeTerms +
+// pulseEnabled boolean model. Calendar is the source of truth: terms have
+// real start/end dates, half-term breaks are explicit exclusion windows,
+// assessment windows define when the framework full-survey runs (1-3 per
+// year — schools choose which terms), and pulse schedules generate
+// occurrence dates that automatically skip half-terms and respect the
+// "no pulse on assessment day, min 1 week post-assessment" rules.
+
+model Term {
+  id           String          @id @default(cuid())
+  schoolId     String
+  school       School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear String          // e.g. "2025-2026"
+  key          String          // "term1" | "term2" | "term3" — stable identifier
+  name         String          // "Autumn", "Spring", "Summer" — display label
+  startDate    DateTime        @db.Date
+  endDate      DateTime        @db.Date
+  sortOrder    Int             @default(0)
+  halfTerms    HalfTermBreak[]
+
+  @@unique([schoolId, academicYear, key])
+  @@index([schoolId, academicYear, startDate])
+}
+
+model HalfTermBreak {
+  id        String   @id @default(cuid())
+  termId    String
+  term      Term     @relation(fields: [termId], references: [id], onDelete: Cascade)
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  label     String?  // e.g. "October half-term"
+
+  @@index([termId])
+}
+
+model AssessmentWindow {
+  id           String   @id @default(cuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear String
+  termKey      String   // matches Term.key
+  openAt       DateTime
+  closeAt      DateTime
+
+  @@unique([schoolId, academicYear, termKey])
+  @@index([schoolId, openAt, closeAt])
+}
+
+model PulseSchedule {
+  id           String           @id @default(cuid())
+  schoolId     String
+  school       School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  academicYear String
+  cadence      String           // "weekly" | "biweekly" | "monthly" | "custom"
+  dayOfWeek    Int              @default(1) // 1=Mon..5=Fri (0/6 allowed but unusual)
+  startDate    DateTime         @db.Date
+  endDate      DateTime?        @db.Date
+  active       Boolean          @default(true)
+  occurrences  PulseOccurrence[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([schoolId, academicYear])
+  @@index([schoolId, active])
+}
+
+model PulseOccurrence {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  schedule    PulseSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  status      String   @default("scheduled") // "scheduled" | "skipped" | "ad_hoc"
+  skipReason  String?
+
+  @@unique([scheduleId, date])
+  @@index([date, status])
+}
+
 model CheckInRequest {
   id              String    @id @default(cuid())
   schoolId        String
+  school          School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   studentId       String
   student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   targetTeacherId String?
@@ -658,6 +751,7 @@ model CheckInRequest {
 
   @@index([schoolId, status, createdAt])
   @@index([targetTeacherId, status])
+  @@index([studentId, createdAt])
 }
 
 model SafeguardingAlert {

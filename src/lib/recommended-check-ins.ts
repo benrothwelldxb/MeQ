@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { parseNumberRecord } from "./json";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -80,13 +81,8 @@ export async function getRecommendedCheckIns(
   // 2) Low pulse scores this week (medium)
   for (const pulse of thisWeekPulses) {
     if (seen.has(pulse.studentId)) continue;
-    let answers: Record<string, number>;
-    try {
-      answers = JSON.parse(pulse.answers) as Record<string, number>;
-    } catch {
-      continue;
-    }
-    const lows = Object.entries(answers).filter(([, v]) => typeof v === "number" && v <= 2);
+    const answers = parseNumberRecord(pulse.answers);
+    const lows = Object.entries(answers).filter(([, v]) => v <= 2);
     if (lows.length === 0) continue;
     const s = studentMap.get(pulse.studentId);
     if (!s) continue;

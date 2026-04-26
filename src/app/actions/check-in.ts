@@ -47,12 +47,30 @@ export async function getCheckInTargets() {
   };
 }
 
+// Cap how often a student can request a check-in. Stops a misused account
+// (or a kiosk where a kid was left logged in) from flooding teacher inboxes
+// and the DSL safeguarding queue. Genuine recurring need is rare; this is
+// generous enough that any honest student will never hit it.
+const CHECK_IN_RATE_LIMIT_PER_HOUR = 5;
+
 export async function createCheckInRequest(params: {
   targetTeacherId?: string | null;
   freeText?: string | null;
 }) {
   const session = await getStudentSession();
   if (!session.studentId) return { error: "Not signed in" as const };
+
+  // Rate-limit before any expensive work.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentCount = await prisma.checkInRequest.count({
+    where: { studentId: session.studentId, createdAt: { gte: oneHourAgo } },
+  });
+  if (recentCount >= CHECK_IN_RATE_LIMIT_PER_HOUR) {
+    return {
+      error:
+        "You've already asked to check in a few times in the last hour. Please wait — your teacher will see your earlier message." as const,
+    };
+  }
 
   const student = await prisma.student.findUnique({
     where: { id: session.studentId },

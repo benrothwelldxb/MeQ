@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { recordAudit } from "@/lib/audit";
+import { parseStringArray } from "@/lib/json";
 import { revalidatePath } from "next/cache";
 
 export interface BankQuestionView {
@@ -38,19 +39,22 @@ export async function listBankQuestions(): Promise<BankQuestionView[]> {
     orderBy: [{ category: "asc" }, { prompt: "asc" }],
   });
 
-  return rows.map((r) => ({
-    id: r.id,
-    prompt: r.prompt,
-    description: r.description,
-    questionType: r.questionType,
-    defaultOptions: r.defaultOptions ? (JSON.parse(r.defaultOptions) as string[]) : null,
-    category: r.category,
-    subcategory: r.subcategory,
-    domainKey: r.domainKey,
-    ageTags: r.ageTags ? (JSON.parse(r.ageTags) as string[]) : ["junior", "standard"],
-    source: r.source,
-    isSchoolCustom: r.schoolId === session.schoolId,
-  }));
+  return rows.map((r) => {
+    const ageTags = parseStringArray(r.ageTags);
+    return {
+      id: r.id,
+      prompt: r.prompt,
+      description: r.description,
+      questionType: r.questionType,
+      defaultOptions: r.defaultOptions ? parseStringArray(r.defaultOptions) : null,
+      category: r.category,
+      subcategory: r.subcategory,
+      domainKey: r.domainKey,
+      ageTags: ageTags.length > 0 ? ageTags : ["junior", "standard"],
+      source: r.source,
+      isSchoolCustom: r.schoolId === session.schoolId,
+    };
+  });
 }
 
 /**

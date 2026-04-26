@@ -9,8 +9,8 @@ export default async function AdminGroupDetailPage({
   params: { id: string };
 }) {
   const session = await getAdminSession();
-  const data = await loadSmartGroupViewData(params.id);
-  if (!data || data.group.schoolId !== session.schoolId) notFound();
+  const data = await loadSmartGroupViewData(params.id, session.schoolId);
+  if (!data) notFound();
 
   return (
     <SmartGroupDetail
