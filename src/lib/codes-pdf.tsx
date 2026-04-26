@@ -3,7 +3,9 @@
 // inconsistent across devices.
 //
 // Layout: A4 portrait with a 3-column grid (or 4-column for code-only).
-// Slips wrap onto new pages automatically via React PDF's flow layout.
+// Each class group renders as its own <Page> so admins can separate the
+// printout cleanly and hand the right pages to each teacher. Within a class,
+// slips overflow onto continuation pages automatically.
 //
 // Why server-side rather than client html2canvas: real vector PDFs, smaller
 // downloads, consistent output regardless of printer/browser, QR images stay
@@ -113,6 +115,15 @@ const styles = StyleSheet.create({
     color: "#94a3b8",
     marginTop: 4,
   },
+  pageFooter: {
+    position: "absolute",
+    bottom: 14,
+    left: 28,
+    right: 28,
+    textAlign: "center",
+    fontSize: 8,
+    color: "#cbd5e1",
+  },
 });
 
 export function CodesPdfDocument({
@@ -139,43 +150,55 @@ export function CodesPdfDocument({
   const slipStyle = isCompact ? [styles.slip, styles.slipCompact] : styles.slip;
   const qrStyle = view === "qr" ? [styles.qr, styles.qrLarge] : styles.qr;
 
+  const groupEntries = Array.from(grouped.entries());
+
   return (
     <Document title={`MeQ login codes — ${schoolName}`}>
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header} fixed>
-          <Text style={styles.headerTitle}>MeQ login codes</Text>
-          <Text style={styles.headerMeta}>
-            {schoolName} · {filterLabel} · {students.length} student{students.length === 1 ? "" : "s"}
-          </Text>
-        </View>
-
-        {Array.from(grouped.entries()).map(([groupName, groupStudents]) => (
-          <View key={groupName} wrap>
-            <Text style={styles.groupTitle}>{groupName}</Text>
-            <View style={styles.grid}>
-              {groupStudents.map((student: CodesPdfStudent) => (
-                <View key={student.id} style={slipStyle} wrap={false}>
-                  <Text style={styles.slipKicker}>MeQ Login</Text>
-                  <Text style={styles.slipName}>
-                    {student.firstName} {student.lastName}
-                  </Text>
-                  {view !== "code" && student.qrDataUrl && (
-                    <Image src={student.qrDataUrl} style={qrStyle} />
-                  )}
-                  {view !== "qr" && (
-                    <View style={styles.codeBox}>
-                      <Text style={styles.codeText}>{student.loginCode}</Text>
-                    </View>
-                  )}
-                  <Text style={styles.classFooter}>
-                    {student.yearGroup}{student.className ? ` / ${student.className}` : ""}
-                  </Text>
-                </View>
-              ))}
-            </View>
+      {groupEntries.map(([groupName, groupStudents]) => (
+        <Page key={groupName} size="A4" style={styles.page}>
+          {/* Per-class header — repeats on continuation pages if the class
+              spills over. School name + class name + count up top so a
+              teacher can identify their pack at a glance. */}
+          <View style={styles.header} fixed>
+            <Text style={styles.headerTitle}>{groupName}</Text>
+            <Text style={styles.headerMeta}>
+              {schoolName} · {groupStudents.length} student{groupStudents.length === 1 ? "" : "s"}
+            </Text>
           </View>
-        ))}
-      </Page>
+
+          <View style={styles.grid}>
+            {groupStudents.map((student: CodesPdfStudent) => (
+              <View key={student.id} style={slipStyle} wrap={false}>
+                <Text style={styles.slipKicker}>MeQ Login</Text>
+                <Text style={styles.slipName}>
+                  {student.firstName} {student.lastName}
+                </Text>
+                {view !== "code" && student.qrDataUrl && (
+                  <Image src={student.qrDataUrl} style={qrStyle} />
+                )}
+                {view !== "qr" && (
+                  <View style={styles.codeBox}>
+                    <Text style={styles.codeText}>{student.loginCode}</Text>
+                  </View>
+                )}
+                <Text style={styles.classFooter}>
+                  {student.yearGroup}{student.className ? ` / ${student.className}` : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Page footer with the original filter scope so admins reviewing a
+              loose page can trace which export it came from. */}
+          <Text
+            style={styles.pageFooter}
+            render={({ pageNumber, totalPages }) =>
+              `${filterLabel} · Page ${pageNumber} of ${totalPages}`
+            }
+            fixed
+          />
+        </Page>
+      ))}
     </Document>
   );
 }
