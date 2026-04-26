@@ -127,8 +127,8 @@ export default async function SurveyCalendarPage({
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Survey Schedule</h1>
-          <p className="text-gray-500 mt-1">When surveys open and close — visualised by month.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Custom survey schedule</h1>
+          <p className="text-gray-500 mt-1">When custom surveys open and close — visualised by month. The full overview lives in the <Link href="/admin/calendar" className="text-meq-sky hover:underline">main calendar</Link>.</p>
         </div>
         <div className="flex gap-3">
           <Link href="/admin/surveys" className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200">

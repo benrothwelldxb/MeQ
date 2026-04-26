@@ -14,8 +14,22 @@ function getMonday(date: Date): Date {
 }
 
 function ScoreDot({ value }: { value: number }) {
-  const color = value >= 4 ? "bg-emerald-400" : value >= 3 ? "bg-amber-300" : "bg-red-400";
-  return <span className={`inline-block w-3 h-3 rounded-full ${color}`} title={String(value)} />;
+  // Colour conveys severity at a glance; the number inside makes the score
+  // accessible to colour-blind readers and prints legibly in greyscale.
+  const styles = value >= 4
+    ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+    : value >= 3
+    ? "bg-amber-100 text-amber-800 ring-amber-300"
+    : "bg-red-100 text-red-800 ring-red-300";
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ring-1 ${styles}`}
+      aria-label={`Score ${value} of 5`}
+      title={`${value} / 5`}
+    >
+      {value}
+    </span>
+  );
 }
 
 export default async function AdminPulsePage() {

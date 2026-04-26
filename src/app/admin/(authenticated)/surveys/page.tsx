@@ -21,8 +21,8 @@ export default async function SurveysPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Surveys</h1>
-          <p className="text-gray-500 mt-1">One-off surveys for your school — wellbeing, transitions, climate, and more.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Custom surveys</h1>
+          <p className="text-gray-500 mt-1">One-off surveys for your school — wellbeing, transitions, climate, and more. Plotted alongside the full survey and pulse on the <Link href="/admin/calendar" className="text-meq-sky hover:underline">calendar</Link>.</p>
         </div>
         <div className="flex gap-3">
           <Link

@@ -13,6 +13,7 @@ import {
   activateSurvey,
   closeSurvey,
   deleteSurvey,
+  duplicateSurvey,
 } from "@/app/actions/surveys";
 import { saveQuestionToSchoolBank } from "@/app/actions/survey-bank";
 import type { BankQuestionView } from "@/app/actions/survey-bank";
@@ -101,6 +102,17 @@ export default function SurveyBuilder({
     router.push("/admin/surveys");
   };
 
+  const handleDuplicate = async () => {
+    const res = await duplicateSurvey(survey.id);
+    if ("error" in res && res.error) {
+      alert(res.error);
+      return;
+    }
+    if ("newSurveyId" in res && res.newSurveyId) {
+      router.push(`/admin/surveys/${res.newSurveyId}`);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Status + actions header */}
@@ -128,6 +140,14 @@ export default function SurveyBuilder({
           >
             Preview
           </Link>
+          <button
+            type="button"
+            onClick={handleDuplicate}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100"
+            title="Create a draft copy of this survey to edit and re-run"
+          >
+            Duplicate
+          </button>
           {isDraft && (
             <button
               onClick={handleActivate}
@@ -201,11 +221,29 @@ export default function SurveyBuilder({
 // ============================================================================
 
 function SaveIndicator({ state, savedAt }: { state: SaveState; savedAt: Date | null }) {
-  if (state === "saving") return <span className="text-xs text-gray-500">Saving…</span>;
-  if (state === "error") return <span className="text-xs text-red-600">Save failed</span>;
+  // Pair colour with a glyph + role="status" so screen readers announce
+  // state changes and colour-blind readers don't miss the error case.
+  if (state === "saving") {
+    return (
+      <span role="status" aria-live="polite" className="text-xs text-gray-500 inline-flex items-center gap-1">
+        <span aria-hidden="true">⟳</span>Saving…
+      </span>
+    );
+  }
+  if (state === "error") {
+    return (
+      <span role="status" aria-live="assertive" className="text-xs text-red-600 inline-flex items-center gap-1 font-medium">
+        <span aria-hidden="true">⚠</span>Save failed
+      </span>
+    );
+  }
   if (state === "saved" && savedAt) {
     const secs = Math.max(0, Math.floor((Date.now() - savedAt.getTime()) / 1000));
-    return <span className="text-xs text-emerald-600">Saved {secs < 5 ? "just now" : `${secs}s ago`}</span>;
+    return (
+      <span role="status" aria-live="polite" className="text-xs text-emerald-600 inline-flex items-center gap-1">
+        <span aria-hidden="true">✓</span>Saved {secs < 5 ? "just now" : `${secs}s ago`}
+      </span>
+    );
   }
   return null;
 }

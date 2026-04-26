@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import StudentTagPills from "@/components/StudentTagPills";
 import StudentAvatarRing from "@/components/StudentAvatarRing";
+import LevelBadge from "@/components/LevelBadge";
 
 const COLOR_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   blue: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -20,20 +21,6 @@ const COLOR_STYLES: Record<string, { bg: string; text: string; border: string }>
   pink: { bg: "bg-pink-50", text: "text-pink-700", border: "border-pink-200" },
   teal: { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
 };
-
-function LevelBadge({ level }: { level: string }) {
-  const colors: Record<string, string> = {
-    Advanced: "bg-emerald-100 text-emerald-700",
-    Secure: "bg-blue-100 text-blue-700",
-    Developing: "bg-amber-100 text-amber-700",
-    Emerging: "bg-red-100 text-red-700",
-  };
-  return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors[level] || "bg-gray-100 text-gray-700"}`}>
-      {level}
-    </span>
-  );
-}
 
 export default async function ClassResultsPage({
   params,

@@ -7,6 +7,48 @@
    (browser caches the file). */
 @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap");
 
+/* Reduced motion: respect the OS preference globally rather than relying on
+   per-component motion-reduce: variants. Animations are reduced to ~zero
+   (not zero so transitionEnd handlers still fire) and scale/transform
+   effects on hover/active are cancelled. */
+/* Keyboard-focus indicator. Many components use `focus:outline-none` to swap
+   the default outline for a border-color change — that's fine visually for
+   mouse users but invisible for keyboard navigation when the colour shift is
+   subtle. :focus-visible kicks in ONLY for keyboard / programmatic focus
+   (not mouse clicks), so we can give every interactive element a clear ring
+   without breaking the established hover/click visuals. */
+:focus-visible {
+  outline: 2px solid #4A90D9; /* meq-sky */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Inputs already get a border-color focus state; keep the outline tight to
+   avoid a doubled visual. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .active\:scale-\[0\.98\]:active,
+  .scale-105,
+  .scale-110,
+  .scale-125,
+  .group-hover\:scale-105 {
+    transform: none !important;
+  }
+}
+
 :root {
   --background: #F7F8FA;
   --foreground: #3D4F5F;

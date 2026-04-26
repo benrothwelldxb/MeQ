@@ -49,6 +49,62 @@ export async function createSurveyFromTemplate(templateKey: string) {
   return { success: true, surveyId: survey.id };
 }
 
+/**
+ * Clone an existing survey (questions, settings, targeting) into a new draft.
+ * Skips responses. Useful for re-running last term's wellbeing check without
+ * rebuilding from scratch.
+ */
+export async function duplicateSurvey(sourceSurveyId: string) {
+  const auth = await requireOwnedSurvey(sourceSurveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  const source = await prisma.survey.findUnique({
+    where: { id: sourceSurveyId },
+    include: { questions: { orderBy: { orderIndex: "asc" } } },
+  });
+  if (!source) return { error: "Survey not found." };
+
+  const copy = await prisma.survey.create({
+    data: {
+      schoolId: source.schoolId,
+      title: `${source.title} (copy)`,
+      description: source.description,
+      status: "draft",
+      // Don't carry forward open/close — admin will set new dates.
+      openAt: null,
+      closeAt: null,
+      targetType: source.targetType,
+      targetIds: source.targetIds,
+      anonymous: source.anonymous,
+      allowRetake: source.allowRetake,
+      questions: {
+        create: source.questions.map((q) => ({
+          orderIndex: q.orderIndex,
+          prompt: q.prompt,
+          questionType: q.questionType,
+          options: q.options,
+          required: q.required,
+        })),
+      },
+    },
+    select: { id: true },
+  });
+
+  await recordAudit({
+    schoolId: auth.session.schoolId,
+    actorType: "admin",
+    actorId: auth.session.adminId,
+    actorLabel: auth.session.email,
+    action: "survey.duplicate",
+    entityType: "survey",
+    entityId: copy.id,
+    meta: { sourceId: sourceSurveyId },
+  });
+
+  revalidatePath("/admin/surveys");
+  return { success: true, newSurveyId: copy.id };
+}
+
 export async function createBlankSurvey(title: string) {
   const session = await getAdminSession();
   if (!session.schoolId) return { error: "Not authenticated" };

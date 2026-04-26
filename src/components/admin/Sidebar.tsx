@@ -39,7 +39,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/calendar", label: "Calendar", icon: "calendar" },
       { href: "/admin/pulse", label: "Pulse", icon: "chart" },
-      { href: "/admin/surveys", label: "Surveys", icon: "book" },
+      { href: "/admin/surveys", label: "Custom surveys", icon: "book" },
       { href: "/admin/staff-wellbeing", label: "Staff Wellbeing", icon: "users" },
       { href: "/admin/safeguarding", label: "Safeguarding", icon: "shield", badge: "safeguarding" },
     ],

@@ -85,10 +85,24 @@ export async function loginStudent(
     },
   });
 
-  // Get the school's framework and check schedule
+  // Get the school's framework. The calendar's AssessmentWindow is now the
+  // primary source of truth for "is the full survey live right now"; we fall
+  // back to the framework's activeTerms list for schools that haven't set up
+  // a calendar yet.
   const { getSchoolFramework } = await import("@/lib/framework");
   const fw = await getSchoolFramework(student.schoolId);
-  const assessmentActive = fw.activeTerms.includes(currentTerm);
+  const today = new Date();
+  const calendarWindow = await prisma.assessmentWindow.findFirst({
+    where: {
+      schoolId: student.schoolId,
+      academicYear,
+      termKey: currentTerm,
+      openAt: { lte: today },
+      closeAt: { gte: today },
+    },
+    select: { id: true },
+  });
+  const assessmentActive = calendarWindow !== null || fw.activeTerms.includes(currentTerm);
 
   if (assessment) {
     if (assessment.status === "completed") {

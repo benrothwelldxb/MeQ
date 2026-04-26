@@ -44,6 +44,27 @@ export default async function SettingsPage() {
     <div className="max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
+      {/* Calendar pointer — term dates and pulse cadence are now driven by the
+          calendar so admins go there for any scheduling change rather than
+          editing scattered settings. */}
+      <div className="mb-6 bg-meq-sky-light/40 border border-meq-sky/30 rounded-xl p-4 flex items-start gap-3">
+        <svg className="w-5 h-5 text-meq-sky flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        </svg>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-meq-slate">Scheduling lives in the Calendar</p>
+          <p className="text-xs text-gray-600 mt-0.5">
+            Term dates, half-term breaks, full-survey windows, and pulse cadence are all managed there.
+          </p>
+        </div>
+        <Link
+          href="/admin/calendar"
+          className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-meq-sky hover:bg-meq-sky/90 whitespace-nowrap"
+        >
+          Open calendar →
+        </Link>
+      </div>
+
       {/* School Settings */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 className="font-bold text-gray-900 mb-4">School Settings</h2>
@@ -52,19 +73,20 @@ export default async function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">School Name</label>
             <input name="name" defaultValue={school.name} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Term</label>
-              <select name="currentTerm" defaultValue={school.currentTerm} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none">
-                {Object.entries(TERM_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-              <input name="academicYear" defaultValue={school.academicYear} className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-meq-sky focus:outline-none" />
-            </div>
+          {/* Current term + academic year are now derived from the calendar.
+              Hidden inputs preserve the values on form save so the existing
+              server action keeps working until the next migration cleans this up. */}
+          <input type="hidden" name="currentTerm" value={school.currentTerm} />
+          <input type="hidden" name="academicYear" value={school.academicYear} />
+          <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+            <p className="text-gray-600">
+              Current term: <span className="font-semibold text-gray-900">{TERM_LABELS[school.currentTerm] ?? school.currentTerm}</span>
+              {" · "}
+              Academic year: <span className="font-semibold text-gray-900">{school.academicYear}</span>
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              These update automatically based on the term dates in your <Link href="/admin/calendar" className="text-meq-sky hover:underline">calendar</Link>.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -113,8 +135,8 @@ export default async function SettingsPage() {
             <div className="flex items-center gap-3">
               <input type="checkbox" id="pulseEnabled" name="pulseEnabled" defaultChecked={school.pulseEnabled} className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
               <label htmlFor="pulseEnabled" className="text-sm text-gray-700">
-                <span className="font-medium">Weekly Pulse check-in</span>
-                <span className="text-gray-500 block text-xs">5-question weekly wellbeing check for students</span>
+                <span className="font-medium">Pulse check-in feature</span>
+                <span className="text-gray-500 block text-xs">Master switch for the pulse feature. Set the cadence (weekly / bi-weekly / monthly) and skip individual dates in the <Link href="/admin/calendar" className="text-meq-sky hover:underline">calendar</Link>.</span>
               </label>
             </div>
             <div className="flex items-center gap-3">
