@@ -4,6 +4,7 @@ import { getSchoolSettings } from "@/lib/school";
 import { getSchoolFramework } from "@/lib/framework";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import StudentTagPills from "@/components/StudentTagPills";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -58,7 +59,7 @@ export default async function TeacherPulsePage({
       teachers: { where: { id: session.teacherId } },
       students: {
         orderBy: { lastName: "asc" },
-        select: { id: true, firstName: true, lastName: true, sen: true },
+        select: { id: true, firstName: true, lastName: true, sen: true, magt: true, eal: true },
       },
     },
   });
@@ -129,7 +130,7 @@ export default async function TeacherPulsePage({
                     <td className="px-4 py-3 text-sm">
                       <span className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{student.firstName} {student.lastName}</span>
-                        {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
+                        <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
                       </span>
                     </td>
                     {answers ? domains.map((d) => (
@@ -172,7 +173,7 @@ export default async function TeacherPulsePage({
                     <td className="px-4 py-3 text-sm">
                       <span className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{student.firstName} {student.lastName}</span>
-                        {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
+                        <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
                       </span>
                     </td>
                     {weeks.map((w) => {

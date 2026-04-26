@@ -1,12 +1,24 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { getSuperAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+
+// Every action in this file mutates platform-wide framework state — a single
+// missing guard would let an anonymous internet user wipe domains, questions,
+// or pulse content for every school. Throw fast and consistently.
+async function requireSuper(): Promise<void> {
+  const session = await getSuperAdminSession();
+  if (!session.superAdminId) {
+    throw new Error("Unauthorized: super admin only");
+  }
+}
 
 export async function createFramework(
   _prevState: { error?: string; success?: boolean } | null,
   formData: FormData
 ) {
+  await requireSuper();
   const name = (formData.get("name") as string)?.trim();
   const description = (formData.get("description") as string)?.trim() || null;
   const domainCount = parseInt(formData.get("domainCount") as string) || 0;
@@ -87,6 +99,7 @@ export async function createFramework(
 }
 
 export async function updateFrameworkConfig(frameworkId: string, config: string) {
+  await requireSuper();
   await prisma.framework.update({
     where: { id: frameworkId },
     data: { config },
@@ -99,6 +112,7 @@ export async function updateFrameworkSchedule(
   assessmentFrequency: string,
   activeTerms: string[]
 ) {
+  await requireSuper();
   await prisma.framework.update({
     where: { id: frameworkId },
     data: {
@@ -122,6 +136,7 @@ export async function addFrameworkQuestion(
     type: string;
   }
 ) {
+  await requireSuper();
   // Get next orderIndex for this framework+tier
   const lastQ = await prisma.frameworkQuestion.findFirst({
     where: { frameworkId, tier: data.tier },
@@ -141,6 +156,7 @@ export async function addFrameworkQuestion(
 }
 
 export async function deleteFrameworkQuestion(questionId: string, frameworkId: string) {
+  await requireSuper();
   await prisma.frameworkQuestion.delete({ where: { id: questionId } });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
@@ -150,6 +166,7 @@ export async function updateQuestionMedia(
   frameworkId: string,
   data: { audioUrl?: string | null; symbolImageUrl?: string | null }
 ) {
+  await requireSuper();
   await prisma.frameworkQuestion.update({
     where: { id: questionId },
     data,
@@ -162,6 +179,7 @@ export async function updateFrameworkDomain(
   frameworkId: string,
   data: { label?: string; description?: string; color?: string }
 ) {
+  await requireSuper();
   await prisma.frameworkDomain.update({
     where: { id: domainId },
     data,
@@ -173,6 +191,7 @@ export async function addFrameworkDomain(
   frameworkId: string,
   data: { key: string; label: string; color: string; description?: string }
 ) {
+  await requireSuper();
   const lastDomain = await prisma.frameworkDomain.findFirst({
     where: { frameworkId },
     orderBy: { sortOrder: "desc" },
@@ -189,6 +208,7 @@ export async function addFrameworkDomain(
 }
 
 export async function deleteFrameworkDomain(domainId: string, frameworkId: string) {
+  await requireSuper();
   await prisma.frameworkDomain.delete({ where: { id: domainId } });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
@@ -197,6 +217,7 @@ export async function addFrameworkIntervention(
   frameworkId: string,
   data: { domain: string; level: string; audience: string; title: string; description: string }
 ) {
+  await requireSuper();
   const lastIv = await prisma.intervention.findFirst({
     where: { frameworkId, domain: data.domain, level: data.level, audience: data.audience },
     orderBy: { sortOrder: "desc" },
@@ -216,6 +237,7 @@ export async function addFrameworkIntervention(
 }
 
 export async function deleteFrameworkIntervention(interventionId: string, frameworkId: string) {
+  await requireSuper();
   await prisma.intervention.delete({ where: { id: interventionId } });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }
@@ -224,6 +246,7 @@ export async function upsertPulseQuestion(
   frameworkId: string,
   data: { tier: string; domain: string; prompt: string; emoji?: string; orderIndex: number }
 ) {
+  await requireSuper();
   await prisma.pulseQuestion.upsert({
     where: {
       frameworkId_tier_domain: {
@@ -239,6 +262,20 @@ export async function upsertPulseQuestion(
 }
 
 export async function deletePulseQuestion(pulseQuestionId: string, frameworkId: string) {
+  await requireSuper();
   await prisma.pulseQuestion.delete({ where: { id: pulseQuestionId } });
+  revalidatePath(`/super/frameworks/${frameworkId}`);
+}
+
+export async function updatePulseQuestionAudio(
+  pulseQuestionId: string,
+  frameworkId: string,
+  audioUrl: string | null
+) {
+  await requireSuper();
+  await prisma.pulseQuestion.update({
+    where: { id: pulseQuestionId },
+    data: { audioUrl },
+  });
   revalidatePath(`/super/frameworks/${frameworkId}`);
 }

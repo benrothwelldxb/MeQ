@@ -74,6 +74,8 @@ export async function exportStudentData(studentId: string) {
       className: student.classGroupRef?.name ?? student.className,
       tier: student.tier,
       sen: student.sen,
+      magt: student.magt,
+      eal: student.eal,
       loginCode: student.loginCode,
       schoolUuid: student.schoolUuid,
       createdAt: student.createdAt,

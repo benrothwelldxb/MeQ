@@ -17,6 +17,7 @@ import {
 import { uploadFrameworkQuestions } from "@/app/actions/framework-questions-upload";
 import { uploadFrameworkInterventions, uploadFrameworkPulseQuestions } from "@/app/actions/framework-bulk-upload";
 import QuestionMediaButton from "@/components/QuestionMediaButton";
+import PulseAudioButton from "@/components/PulseAudioButton";
 
 interface Domain {
   id: string;
@@ -55,6 +56,7 @@ interface PulseQuestionData {
   domain: string;
   prompt: string;
   emoji: string | null;
+  audioUrl: string | null;
   orderIndex: number;
 }
 
@@ -1062,6 +1064,15 @@ function PulsePanel({
                   }}
                   className="w-16 px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white text-sm text-center focus:border-meq-sky focus:outline-none"
                 />
+                {existing && (
+                  <div className="flex items-center self-center px-1" title="Audio (read-aloud)">
+                    <PulseAudioButton
+                      pulseQuestionId={existing.id}
+                      frameworkId={frameworkId}
+                      currentUrl={existing.audioUrl}
+                    />
+                  </div>
+                )}
                 {existing && (
                   <button
                     onClick={async () => {

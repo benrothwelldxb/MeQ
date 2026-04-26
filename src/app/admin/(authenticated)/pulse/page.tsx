@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { getSchoolSettings } from "@/lib/school";
 import { getSchoolFramework } from "@/lib/framework";
+import StudentTagPills from "@/components/StudentTagPills";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -56,7 +57,7 @@ export default async function AdminPulsePage() {
   // Get all students for this school
   const students = await prisma.student.findMany({
     where: { schoolId: session.schoolId },
-    select: { id: true, firstName: true, lastName: true, yearGroup: true, className: true, sen: true },
+    select: { id: true, firstName: true, lastName: true, yearGroup: true, className: true, sen: true, magt: true, eal: true },
     orderBy: [{ yearGroup: "asc" }, { lastName: "asc" }],
   });
 
@@ -302,7 +303,7 @@ export default async function AdminPulsePage() {
                     <td className="px-4 py-3 text-sm">
                       <span className="flex items-center gap-2">
                         <span className="font-medium text-gray-900">{student.firstName} {student.lastName}</span>
-                        {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
+                        <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-gray-500">

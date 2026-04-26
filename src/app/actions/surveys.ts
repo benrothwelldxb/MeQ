@@ -74,6 +74,8 @@ export async function updateSurvey(
     allowRetake?: boolean;
     targetType?: string;
     targetIds?: string[];
+    openAt?: Date | null;
+    closeAt?: Date | null;
   }
 ) {
   const auth = await requireOwnedSurvey(surveyId);
@@ -88,6 +90,8 @@ export async function updateSurvey(
       ...(data.allowRetake !== undefined && { allowRetake: data.allowRetake }),
       ...(data.targetType !== undefined && { targetType: data.targetType }),
       ...(data.targetIds !== undefined && { targetIds: JSON.stringify(data.targetIds) }),
+      ...(data.openAt !== undefined && { openAt: data.openAt }),
+      ...(data.closeAt !== undefined && { closeAt: data.closeAt }),
     },
   });
 
@@ -120,6 +124,90 @@ export async function addSurveyQuestion(
   });
 
   revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
+}
+
+export async function addBankQuestionToSurvey(surveyId: string, bankQuestionId: string) {
+  const auth = await requireOwnedSurvey(surveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  const bank = await prisma.surveyBankQuestion.findUnique({ where: { id: bankQuestionId } });
+  if (!bank) return { error: "Bank question not found." };
+  // School-custom rows must belong to this school; platform defaults are open.
+  if (bank.schoolId && bank.schoolId !== auth.session.schoolId) {
+    return { error: "Bank question not available." };
+  }
+
+  const lastQ = await prisma.surveyQuestion.findFirst({
+    where: { surveyId },
+    orderBy: { orderIndex: "desc" },
+  });
+  const orderIndex = (lastQ?.orderIndex ?? 0) + 1;
+
+  await prisma.surveyQuestion.create({
+    data: {
+      surveyId,
+      orderIndex,
+      prompt: bank.prompt,
+      questionType: bank.questionType,
+      options: bank.defaultOptions,
+      required: true,
+    },
+  });
+
+  revalidatePath(`/admin/surveys/${surveyId}`);
+  return { success: true };
+}
+
+export async function updateSurveyQuestion(
+  questionId: string,
+  data: { prompt?: string; questionType?: string; options?: string[] | null; required?: boolean }
+) {
+  const question = await prisma.surveyQuestion.findUnique({
+    where: { id: questionId },
+    select: { surveyId: true },
+  });
+  if (!question) return { error: "Question not found." };
+  const auth = await requireOwnedSurvey(question.surveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  const updates: Record<string, unknown> = {};
+  if (data.prompt !== undefined) updates.prompt = data.prompt;
+  if (data.questionType !== undefined) updates.questionType = data.questionType;
+  if (data.options !== undefined) updates.options = data.options === null ? null : JSON.stringify(data.options);
+  if (data.required !== undefined) updates.required = data.required;
+
+  await prisma.surveyQuestion.update({ where: { id: questionId }, data: updates });
+  revalidatePath(`/admin/surveys/${question.surveyId}`);
+  return { success: true };
+}
+
+export async function reorderSurveyQuestion(questionId: string, direction: "up" | "down") {
+  const question = await prisma.surveyQuestion.findUnique({
+    where: { id: questionId },
+    select: { id: true, surveyId: true, orderIndex: true },
+  });
+  if (!question) return { error: "Question not found." };
+  const auth = await requireOwnedSurvey(question.surveyId);
+  if ("error" in auth) return { error: auth.error };
+
+  const swapWith = await prisma.surveyQuestion.findFirst({
+    where: {
+      surveyId: question.surveyId,
+      orderIndex: direction === "up" ? { lt: question.orderIndex } : { gt: question.orderIndex },
+    },
+    orderBy: { orderIndex: direction === "up" ? "desc" : "asc" },
+  });
+  if (!swapWith) return { error: "Already at the edge." };
+
+  // Two-step swap because (surveyId, orderIndex) is unique.
+  await prisma.$transaction([
+    prisma.surveyQuestion.update({ where: { id: question.id }, data: { orderIndex: -1 } }),
+    prisma.surveyQuestion.update({ where: { id: swapWith.id }, data: { orderIndex: question.orderIndex } }),
+    prisma.surveyQuestion.update({ where: { id: question.id }, data: { orderIndex: swapWith.orderIndex } }),
+  ]);
+
+  revalidatePath(`/admin/surveys/${question.surveyId}`);
   return { success: true };
 }
 

@@ -115,10 +115,21 @@ export default function AddStudentPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          <input type="checkbox" id="sen" name="sen" className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
-          <label htmlFor="sen" className="text-sm font-medium text-gray-700">SEN (Special Educational Needs)</label>
-        </div>
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium text-gray-700 mb-1">Tags</legend>
+          <label className="flex items-center gap-3">
+            <input type="checkbox" id="sen" name="sen" className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+            <span className="text-sm text-gray-700">SEND <span className="text-gray-400">— Special Educational Needs &amp; Disabilities</span></span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input type="checkbox" id="magt" name="magt" className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+            <span className="text-sm text-gray-700">MAGT <span className="text-gray-400">— More Able, Gifted &amp; Talented</span></span>
+          </label>
+          <label className="flex items-center gap-3">
+            <input type="checkbox" id="eal" name="eal" className="w-4 h-4 rounded border-gray-300 text-meq-sky focus:ring-meq-sky" />
+            <span className="text-sm text-gray-700">EAL <span className="text-gray-400">— English as an Additional Language</span></span>
+          </label>
+        </fieldset>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">School ID (optional)</label>

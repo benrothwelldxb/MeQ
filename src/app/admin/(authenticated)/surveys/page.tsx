@@ -24,12 +24,20 @@ export default async function SurveysPage() {
           <h1 className="text-2xl font-bold text-gray-900">Surveys</h1>
           <p className="text-gray-500 mt-1">One-off surveys for your school — wellbeing, transitions, climate, and more.</p>
         </div>
-        <Link
-          href="/admin/surveys/new"
-          className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
-        >
-          Create Survey
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/admin/surveys/calendar"
+            className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+          >
+            Calendar view
+          </Link>
+          <Link
+            href="/admin/surveys/new"
+            className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all"
+          >
+            Create Survey
+          </Link>
+        </div>
       </div>
 
       {active.length > 0 && (

@@ -7,6 +7,25 @@ const resend = process.env.RESEND_API_KEY
 const FROM_EMAIL = process.env.FROM_EMAIL || "MeQ <noreply@wasil.org>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+// HTML-escape values that are interpolated into email templates. Required for
+// any value that originated from user input — student free-text, school name,
+// teacher/student names, etc. — to prevent HTML injection in the rendered
+// email (some webmail clients still execute markup; even those that don't can
+// be tricked into showing convincing phishing content).
+function esc(value: string | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  return String(value).replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case "&": return "&amp;";
+      case "<": return "&lt;";
+      case ">": return "&gt;";
+      case '"': return "&quot;";
+      case "'": return "&#39;";
+      default: return c;
+    }
+  });
+}
+
 // Branded email shell — MeQ logo header, Wasil footer.
 // Logos are served from /public so they're publicly reachable for email clients.
 function wrapEmail(body: string): string {
@@ -157,28 +176,28 @@ export async function sendTeacherWelcomeEmail({
         <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
           <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
           <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Use your school Google account:</p>
-          <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+          <p style="margin: 0; color: #1e293b; font-weight: 600;">${esc(email)}</p>
         </div>`
     : `
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;">
           <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Email</p>
-          <p style="margin: 0 0 16px; color: #1e293b; font-weight: 600;">${email}</p>
+          <p style="margin: 0 0 16px; color: #1e293b; font-weight: 600;">${esc(email)}</p>
           <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Password</p>
-          <p style="margin: 0; color: #1e293b; font-weight: 600;">${password}</p>
+          <p style="margin: 0; color: #1e293b; font-weight: 600;">${esc(password)}</p>
         </div>`;
 
   const footer = ssoMode
-    ? `<p style="color: #94a3b8; font-size: 14px;">Click "Sign in with Google" on the login page and choose your ${email} account.</p>`
+    ? `<p style="color: #94a3b8; font-size: 14px;">Click "Sign in with Google" on the login page and choose your ${esc(email)} account.</p>`
     : `<p style="color: #94a3b8; font-size: 14px;">We recommend changing your password after your first login.</p>`;
 
   await sendEmail({
     to: email,
-    subject: `Welcome to MeQ — ${schoolName}`,
+    subject: `Welcome to MeQ — ${schoolName.replace(/[<>\r\n]/g, "")}`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
-        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${firstName}!</h2>
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${esc(firstName)}!</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          You've been added as a teacher at <strong>${schoolName}</strong>.
+          You've been added as a teacher at <strong>${esc(schoolName)}</strong>.
         </p>
         ${credentialsBlock}
         <div style="margin: 32px 0;">
@@ -215,7 +234,7 @@ export async function sendPulseSafeguardingAlert({
 
   await sendEmail({
     to: dslEmail,
-    subject: `\u26A0\uFE0F Safeguarding alert \u2014 ${studentName} (${schoolName})`,
+    subject: `\u26A0\uFE0F Safeguarding alert \u2014 ${studentName.replace(/[<>\r\n]/g, "")} (${schoolName.replace(/[<>\r\n]/g, "")})`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
@@ -227,19 +246,19 @@ export async function sendPulseSafeguardingAlert({
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student</p>
-          <p style="margin: 0 0 12px; color: #1e293b; font-weight: 600; font-size: 16px;">${studentName}</p>
+          <p style="margin: 0 0 12px; color: #1e293b; font-weight: 600; font-size: 16px;">${esc(studentName)}</p>
 
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Year / Class</p>
-          <p style="margin: 0 0 12px; color: #1e293b;">${yearGroup}${className ? ` / ${className}` : ""}</p>
+          <p style="margin: 0 0 12px; color: #1e293b;">${esc(yearGroup)}${className ? ` / ${esc(className)}` : ""}</p>
 
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Low scoring domains</p>
           <ul style="margin: 0 0 12px; padding-left: 20px;">
-            ${flaggedDomains.map((f) => `<li style="color: #991b1b;">${f.domain} \u2014 scored ${f.score}/5</li>`).join("")}
+            ${flaggedDomains.map((f) => `<li style="color: #991b1b;">${esc(f.domain)} \u2014 scored ${f.score}/5</li>`).join("")}
           </ul>
 
           ${freeText ? `
             <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student comment</p>
-            <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${freeText}"</p>
+            <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${esc(freeText)}"</p>
           ` : ""}
         </div>
 
@@ -251,7 +270,7 @@ export async function sendPulseSafeguardingAlert({
 
         <p style="color: #94a3b8; font-size: 12px;">
           This alert was sent automatically by MeQ. Follow your school's safeguarding procedures.
-          You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
+          You are receiving this because you are listed as the Designated Safeguarding Lead for ${esc(schoolName)}.
         </p>
       </div>
     `),
@@ -285,28 +304,28 @@ export async function sendSurveySafeguardingAlert({
 
   await sendEmail({
     to: dslEmail,
-    subject: `\u26A0\uFE0F Safeguarding alert \u2014 "${surveyTitle}" response flagged (${schoolName})`,
+    subject: `\u26A0\uFE0F Safeguarding alert \u2014 "${surveyTitle.replace(/[<>"\r\n]/g, "")}" response flagged (${schoolName.replace(/[<>\r\n]/g, "")})`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
         <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
           <h2 style="color: #991b1b; margin: 0 0 8px; font-size: 18px;">\u26A0\uFE0F Survey Response Flagged</h2>
           <p style="color: #7f1d1d; margin: 0; font-size: 14px;">
-            A response to "${surveyTitle}" contains content that may indicate a concern.
+            A response to "${esc(surveyTitle)}" contains content that may indicate a concern.
           </p>
         </div>
 
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Student</p>
           <p style="margin: 0 0 12px; color: #1e293b; font-weight: 600;">
-            ${anonymous ? "Anonymous (cannot identify)" : studentName || "Unknown"}
-            ${!anonymous && yearGroup ? ` \u00B7 ${yearGroup}${className ? ` / ${className}` : ""}` : ""}
+            ${anonymous ? "Anonymous (cannot identify)" : esc(studentName) || "Unknown"}
+            ${!anonymous && yearGroup ? ` \u00B7 ${esc(yearGroup)}${className ? ` / ${esc(className)}` : ""}` : ""}
           </p>
 
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Flag reason</p>
-          <p style="margin: 0 0 12px; color: #991b1b;">Keyword match: ${flagReason}</p>
+          <p style="margin: 0 0 12px; color: #991b1b;">Keyword match: ${esc(flagReason)}</p>
 
           <p style="margin: 0 0 4px; color: #64748b; font-size: 12px;">Flagged text</p>
-          <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${flaggedText}"</p>
+          <p style="margin: 0; padding: 12px; background: #fff; border-left: 3px solid #dc2626; color: #1e293b; font-style: italic;">"${esc(flaggedText)}"</p>
         </div>
 
         <div style="margin: 32px 0;">
@@ -324,7 +343,70 @@ export async function sendSurveySafeguardingAlert({
 
         <p style="color: #94a3b8; font-size: 12px; margin-top: 16px;">
           This alert was sent automatically by MeQ. Follow your school's safeguarding procedures.
-          You are receiving this because you are listed as the Designated Safeguarding Lead for ${schoolName}.
+          You are receiving this because you are listed as the Designated Safeguarding Lead for ${esc(schoolName)}.
+        </p>
+      </div>
+    `),
+  });
+}
+
+export async function sendCheckInRequestEmail({
+  to,
+  teacherFirstName,
+  schoolName,
+  studentName,
+  yearGroup,
+  className,
+  freeText,
+}: {
+  to: string;
+  teacherFirstName: string;
+  schoolName: string;
+  studentName: string;
+  yearGroup: string;
+  className: string | null;
+  freeText: string | null;
+}) {
+  const dashboardUrl = `${APP_URL}/teacher`;
+
+  await sendEmail({
+    to,
+    subject: `\u{1F4AC} ${studentName.replace(/[<>\r\n]/g, "")} has asked to check in with you (${schoolName.replace(/[<>\r\n]/g, "")})`,
+    html: wrapEmail(`
+      <div style="padding: 24px 32px 8px;">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <h2 style="color: #1e40af; margin: 0 0 8px; font-size: 18px;">\u{1F4AC} Check-in requested</h2>
+          <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
+            A student has asked to talk with you.
+          </p>
+        </div>
+
+        <p style="color: #1e293b; line-height: 1.6;">Hi ${esc(teacherFirstName)},</p>
+        <p style="color: #64748b; line-height: 1.6;">
+          <strong>${esc(studentName)}</strong> (${esc(yearGroup)}${className ? ` / ${esc(className)}` : ""})
+          has used MeQ to request a check-in with you.
+        </p>
+
+        ${freeText ? `
+          <div style="background: #f8fafc; border-left: 3px solid #93b5cf; border-radius: 4px; padding: 14px 18px; margin: 16px 0; color: #1e293b; font-style: italic;">
+            &ldquo;${esc(freeText)}&rdquo;
+          </div>
+        ` : `
+          <p style="color: #94a3b8; font-size: 14px; font-style: italic;">No additional note from the student.</p>
+        `}
+
+        <p style="color: #64748b; line-height: 1.6;">
+          Please find a moment to speak with ${esc(studentName)}. When you've done so, mark the request resolved in MeQ so it comes off the active list.
+        </p>
+
+        <div style="margin: 32px 0;">
+          <a href="${dashboardUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
+            Open MeQ
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 12px;">
+          If you are unable to meet with this student, please forward to a colleague or contact your Designated Safeguarding Lead. Check-ins remain on the Safeguarding dashboard until actioned.
         </p>
       </div>
     `),
@@ -344,22 +426,22 @@ export async function sendAdminWelcomeEmail({
 
   const instructions = hasPassword
     ? `<p style="color: #64748b; line-height: 1.6;">
-        Sign in with your email address (<strong>${email}</strong>) and the password provided by your platform administrator.
+        Sign in with your email address (<strong>${esc(email)}</strong>) and the password provided by your platform administrator.
       </p>`
     : `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
         <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
         <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Click "Sign in with Google" on the login page and choose your account:</p>
-        <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+        <p style="margin: 0; color: #1e293b; font-weight: 600;">${esc(email)}</p>
       </div>`;
 
   await sendEmail({
     to: email,
-    subject: `MeQ Admin — ${schoolName}`,
+    subject: `MeQ Admin — ${schoolName.replace(/[<>\r\n]/g, "")}`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
         <h2 style="color: #1e293b; margin: 0 0 16px;">Your MeQ admin account is ready</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          A MeQ admin account has been created for <strong>${schoolName}</strong>.
+          A MeQ admin account has been created for <strong>${esc(schoolName)}</strong>.
         </p>
         ${instructions}
         <div style="margin: 32px 0;">
@@ -389,12 +471,12 @@ export async function sendTeacherResendEmail({
   const ssoBlock = `
     <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
       <p style="margin: 0 0 4px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
-      <p style="margin: 0; color: #64748b; font-size: 14px;">Use your ${email} account.</p>
+      <p style="margin: 0; color: #64748b; font-size: 14px;">Use your ${esc(email)} account.</p>
     </div>`;
   const passwordBlock = `
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
       <p style="margin: 0 0 4px; color: #1e293b; font-weight: 600;">Sign in with a password</p>
-      <p style="margin: 0; color: #64748b; font-size: 14px;">Use <strong>${email}</strong> and your password. If you don't have one yet, <a href="${forgotUrl}" style="color: #3b82f6;">set a password here</a>.</p>
+      <p style="margin: 0; color: #64748b; font-size: 14px;">Use <strong>${esc(email)}</strong> and your password. If you don't have one yet, <a href="${forgotUrl}" style="color: #3b82f6;">set a password here</a>.</p>
     </div>`;
 
   const options =
@@ -406,12 +488,12 @@ export async function sendTeacherResendEmail({
 
   await sendEmail({
     to: email,
-    subject: `Your MeQ access — ${schoolName}`,
+    subject: `Your MeQ access — ${schoolName.replace(/[<>\r\n]/g, "")}`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
-        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${firstName}</h2>
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Welcome to MeQ, ${esc(firstName)}</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          Here's how to sign in to your <strong>${schoolName}</strong> account.
+          Here's how to sign in to your <strong>${esc(schoolName)}</strong> account.
         </p>
         ${options}
         <div style="margin: 32px 0;">
@@ -440,16 +522,16 @@ function renderStaffWellbeingDeployEmail({
   const wellbeingUrl = `${APP_URL}/teacher/wellbeing`;
   return {
     to: email,
-    subject: `Your ${termLabel} wellbeing check-in is ready`,
+    subject: `Your ${termLabel.replace(/[<>\r\n]/g, "")} wellbeing check-in is ready`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
-        <h2 style="color: #1e293b; margin: 0 0 16px;">Hi ${firstName},</h2>
+        <h2 style="color: #1e293b; margin: 0 0 16px;">Hi ${esc(firstName)},</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          Your <strong>${termLabel}</strong> staff wellbeing check-in is now available at <strong>${schoolName}</strong>.
+          Your <strong>${esc(termLabel)}</strong> staff wellbeing check-in is now available at <strong>${esc(schoolName)}</strong>.
           It takes about 5 minutes and your individual responses are kept private.
         </p>
         ${customMessage
-          ? `<div style="background: #f8fafc; border-left: 3px solid #93b5cf; padding: 12px 16px; margin: 20px 0; color: #1e293b; font-style: italic;">${customMessage}</div>`
+          ? `<div style="background: #f8fafc; border-left: 3px solid #93b5cf; padding: 12px 16px; margin: 20px 0; color: #1e293b; font-style: italic;">${esc(customMessage)}</div>`
           : ""}
         <div style="margin: 32px 0;">
           <a href="${wellbeingUrl}" style="display: inline-block; background: #93b5cf; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600;">
@@ -478,12 +560,12 @@ function renderStaffWellbeingNudgeEmail({
   const wellbeingUrl = `${APP_URL}/teacher/wellbeing`;
   return {
     to: email,
-    subject: `A gentle reminder — your ${termLabel} wellbeing check-in`,
+    subject: `A gentle reminder — your ${termLabel.replace(/[<>\r\n]/g, "")} wellbeing check-in`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
         <h2 style="color: #1e293b; margin: 0 0 16px;">Hi ${firstName},</h2>
         <p style="color: #64748b; line-height: 1.6;">
-          Just a gentle reminder that your <strong>${termLabel}</strong> wellbeing check-in at <strong>${schoolName}</strong> is still open.
+          Just a gentle reminder that your <strong>${esc(termLabel)}</strong> wellbeing check-in at <strong>${esc(schoolName)}</strong> is still open.
           It takes about 5 minutes — every voice matters, and your responses stay private.
         </p>
         <div style="margin: 32px 0;">
@@ -546,11 +628,11 @@ export async function sendSLTDigest({
 
   await sendEmail({
     to,
-    subject: `MeQ weekly digest — ${schoolName}`,
+    subject: `MeQ weekly digest — ${schoolName.replace(/[<>\r\n]/g, "")}`,
     html: wrapEmail(`
       <div style="padding: 24px 32px 8px;">
         <h2 style="color: #1e293b; margin: 0 0 4px;">Weekly digest</h2>
-        <p style="color: #64748b; margin: 0 0 20px; font-size: 14px;">${schoolName} · ${termLabel}</p>
+        <p style="color: #64748b; margin: 0 0 20px; font-size: 14px;">${esc(schoolName)} · ${esc(termLabel)}</p>
 
         <table style="width: 100%; border-collapse: collapse; margin: 8px 0;">
           ${statRow("Total students", String(stats.totalStudents))}
@@ -601,12 +683,12 @@ export async function sendSuperAdminWelcomeEmail({
 
   const instructions = hasPassword
     ? `<p style="color: #64748b; line-height: 1.6;">
-        Sign in with your email (<strong>${email}</strong>) and the password provided to you.
+        Sign in with your email (<strong>${esc(email)}</strong>) and the password provided to you.
       </p>`
     : `<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 24px 0;">
         <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600;">Sign in with Google</p>
         <p style="margin: 0 0 8px; color: #64748b; font-size: 14px;">Click "Sign in with Google" on the login page and choose your account:</p>
-        <p style="margin: 0; color: #1e293b; font-weight: 600;">${email}</p>
+        <p style="margin: 0; color: #1e293b; font-weight: 600;">${esc(email)}</p>
       </div>`;
 
   await sendEmail({

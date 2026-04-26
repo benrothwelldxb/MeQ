@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getStudentSession } from "@/lib/session";
 import { getSchoolFramework } from "@/lib/framework";
+import { getSchoolSettings } from "@/lib/school";
+import { getCheckInTargets } from "@/app/actions/check-in";
 import { type Tier } from "@/lib/constants";
 import PulseClient from "./PulseClient";
 
@@ -16,7 +18,11 @@ export default async function PulsePage() {
   if (!student) redirect("/");
 
   const tier = (session.tier || "standard") as Tier;
-  const framework = await getSchoolFramework(student.schoolId);
+  const [framework, school, targets] = await Promise.all([
+    getSchoolFramework(student.schoolId),
+    getSchoolSettings(student.schoolId),
+    getCheckInTargets(),
+  ]);
 
   // Load framework-specific pulse questions
   let questions = await prisma.pulseQuestion.findMany({
@@ -42,15 +48,22 @@ export default async function PulsePage() {
 
   if (questions.length === 0) redirect("/quiz");
 
+  const teachers = "error" in targets ? [] : targets.teachers;
+  const defaultTeacherId = "error" in targets ? null : targets.defaultTeacherId;
+
   return (
     <PulseClient
       questions={questions.map((q) => ({
         domain: q.domain,
         prompt: q.prompt,
         emoji: q.emoji || undefined,
+        audioUrl: q.audioUrl || undefined,
       }))}
       studentName={session.firstName}
       isJunior={tier === "junior"}
+      readAloudEnabled={school.readAloudEnabled && tier === "junior"}
+      teachers={teachers}
+      defaultTeacherId={defaultTeacherId}
     />
   );
 }

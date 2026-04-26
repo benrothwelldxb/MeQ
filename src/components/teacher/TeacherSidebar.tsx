@@ -16,6 +16,7 @@ export default function TeacherSidebar({
 
   const navItems = [
     { href: "/teacher", label: "My Classes" },
+    { href: "/teacher/groups", label: "My Groups" },
     ...(staffWellbeingEnabled ? [{ href: "/teacher/wellbeing", label: "My Wellbeing" }] : []),
     { href: "/teacher/settings", label: "Settings" },
   ];

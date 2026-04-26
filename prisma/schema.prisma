@@ -163,6 +163,9 @@ model Teacher {
   teacherAssessments TeacherAssessment[]
   staffAssessments   StaffAssessment[]
   staffPulseChecks   StaffPulseCheck[]
+  checkInRequests    CheckInRequest[]
+  smartGroupsCreated SmartGroup[]        @relation("SmartGroupCreator")
+  smartGroupAccess   SmartGroupTeacher[]
   createdAt          DateTime            @default(now())
   lastLoginAt        DateTime?
   tags               String              @default("[]") // JSON array of role tags
@@ -214,6 +217,8 @@ model Student {
   classGroupRef      ClassGroup?         @relation(fields: [classGroupId], references: [id])
   tier               String              @default("standard")
   sen                Boolean             @default(false)
+  magt               Boolean             @default(false)
+  eal                Boolean             @default(false)
   schoolUuid         String?
   schoolId           String
   school             School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -222,6 +227,8 @@ model Student {
   teacherAssessments TeacherAssessment[]
   pulseChecks        PulseCheck[]
   surveyResponses    SurveyResponse[]
+  checkInRequests    CheckInRequest[]
+  smartGroupMemberships SmartGroupStudent[]
 }
 
 // ============ STUDENT QUESTIONS & ASSESSMENTS ============
@@ -269,6 +276,8 @@ model Assessment {
   domainScoreRecords    AssessmentDomainScore[]
 
   @@unique([studentId, term, academicYear])
+  @@index([studentId, status])
+  @@index([status, academicYear])
 }
 
 model AssessmentDomainScore {
@@ -312,6 +321,8 @@ model TeacherAssessment {
   domainScoreRecords           TeacherAssessmentDomainScore[]
 
   @@unique([teacherId, studentId, term, academicYear])
+  @@index([teacherId, term, academicYear])
+  @@index([studentId, status])
 }
 
 model TeacherAssessmentDomainScore {
@@ -333,6 +344,7 @@ model PulseQuestion {
   prompt      String
   tier        String     @default("standard")
   emoji       String?
+  audioUrl    String?
   orderIndex  Int
   frameworkId String?
   framework   Framework? @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
@@ -351,6 +363,8 @@ model PulseCheck {
   createdAt   DateTime  @default(now())
 
   @@unique([studentId, weekOf])
+  @@index([weekOf, completedAt])
+  @@index([studentId, completedAt])
 }
 
 // ============ BESPOKE SURVEYS ============
@@ -372,6 +386,9 @@ model Survey {
   updatedAt    DateTime         @updatedAt
   questions    SurveyQuestion[]
   responses    SurveyResponse[]
+
+  @@index([schoolId, status])
+  @@index([schoolId, openAt, closeAt])
 }
 
 model SurveyQuestion {
@@ -385,6 +402,30 @@ model SurveyQuestion {
   required     Boolean          @default(true)
 
   @@unique([surveyId, orderIndex])
+}
+
+// Curated bank of pre-written questions admins pick from when building a
+// survey, instead of writing each from scratch. Platform-seeded entries have
+// schoolId=null and isDefault=true; schools can add their own with schoolId
+// set so an inclusion lead can build up a reusable set.
+model SurveyBankQuestion {
+  id             String   @id @default(cuid())
+  prompt         String
+  description    String?
+  questionType   String   // matches SurveyQuestion.questionType
+  defaultOptions String?  // JSON for multiple_choice defaults
+  category       String   // e.g. "Emotional Wellbeing"
+  subcategory    String?  // optional finer-grained label
+  domainKey      String?  // optional framework-domain hint (e.g. "ManageMe")
+  ageTags        String   @default("[\"junior\",\"standard\"]") // JSON array
+  source         String?  // attribution: "PERMA", "EPOCH", "MeQ", etc.
+  isDefault      Boolean  @default(true)
+  schoolId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([schoolId, isDefault])
 }
 
 model SurveyResponse {
@@ -555,6 +596,68 @@ model StaffWellbeingInsight {
 
   @@unique([schoolId, term, academicYear])
   @@index([schoolId])
+}
+
+// Cross-class cohorts — e.g. inclusion teacher's nurture group, social skills group,
+// MAGT cohort monitoring. Can contain students from any class/year. Visible to the
+// creator (teacher or admin) + any teachers explicitly shared with + all school admins.
+model SmartGroup {
+  id              String              @id @default(cuid())
+  schoolId        String
+  name            String
+  description     String?
+  purpose         String?             // free-form tag, e.g. "Nurture", "Social skills", "MAGT"
+  createdByType   String              // "admin" | "teacher"
+  createdByTeacher Teacher?           @relation("SmartGroupCreator", fields: [createdByTeacherId], references: [id], onDelete: SetNull)
+  createdByTeacherId String?
+  createdByAdminId String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  members         SmartGroupStudent[]
+  teacherAccess   SmartGroupTeacher[]
+
+  @@index([schoolId])
+}
+
+model SmartGroupStudent {
+  smartGroupId String
+  smartGroup   SmartGroup @relation(fields: [smartGroupId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  addedAt      DateTime   @default(now())
+
+  @@id([smartGroupId, studentId])
+  @@index([studentId])
+}
+
+model SmartGroupTeacher {
+  smartGroupId String
+  smartGroup   SmartGroup @relation(fields: [smartGroupId], references: [id], onDelete: Cascade)
+  teacherId    String
+  teacher      Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  addedAt      DateTime   @default(now())
+
+  @@id([smartGroupId, teacherId])
+  @@index([teacherId])
+}
+
+model CheckInRequest {
+  id              String    @id @default(cuid())
+  schoolId        String
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  targetTeacherId String?
+  targetTeacher   Teacher?  @relation(fields: [targetTeacherId], references: [id], onDelete: SetNull)
+  freeText        String?
+  status          String    @default("open") // "open" | "resolved"
+  notes           String?
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  resolvedByType  String?   // "admin" | "teacher"
+  resolvedById    String?
+
+  @@index([schoolId, status, createdAt])
+  @@index([targetTeacherId, status])
 }
 
 model SafeguardingAlert {

@@ -104,6 +104,7 @@ export default async function EditFrameworkPage({
           domain: pq.domain,
           prompt: pq.prompt,
           emoji: pq.emoji,
+          audioUrl: pq.audioUrl,
           orderIndex: pq.orderIndex,
         }))}
       />

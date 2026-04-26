@@ -1,8 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { getSuperAdminSession } from "@/lib/session";
 import { parse } from "csv-parse/sync";
 import { revalidatePath } from "next/cache";
+
+async function requireSuper(): Promise<void> {
+  const session = await getSuperAdminSession();
+  if (!session.superAdminId) throw new Error("Unauthorized: super admin only");
+}
 
 // === INTERVENTIONS BULK UPLOAD ===
 
@@ -10,6 +16,7 @@ export async function uploadFrameworkInterventions(
   frameworkId: string,
   csvText: string
 ) {
+  await requireSuper();
   let records: Array<Record<string, string>>;
   try {
     records = parse(csvText, {
@@ -136,6 +143,7 @@ export async function uploadFrameworkPulseQuestions(
   frameworkId: string,
   csvText: string
 ) {
+  await requireSuper();
   let records: Array<Record<string, string>>;
   try {
     records = parse(csvText, {

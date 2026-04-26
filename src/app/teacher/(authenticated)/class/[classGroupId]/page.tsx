@@ -5,6 +5,8 @@ import { getSchoolFramework, getLevelFromThresholds } from "@/lib/framework";
 import { getInterventionsForDomains } from "@/lib/interventions";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import StudentTagPills from "@/components/StudentTagPills";
+import StudentAvatarRing from "@/components/StudentAvatarRing";
 
 const COLOR_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   blue: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -136,15 +138,27 @@ export default async function ClassResultsPage({
             {TERM_LABELS[school.currentTerm]} — {completedStudents.length} of {classGroup.students.length} assessments completed
           </p>
         </div>
-        <Link
-          href={`/teacher/class/${params.classGroupId}/report`}
-          className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          Download Report
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <a
+            href={`/api/admin/students/codes/pdf?classGroupId=${params.classGroupId}&view=both`}
+            className="px-4 py-2.5 rounded-lg text-sm font-medium text-meq-sky border border-meq-sky bg-white hover:bg-meq-sky hover:text-white transition-all flex items-center gap-2"
+            title="Download a printable PDF of QR codes and login codes for this class"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h4v4H4V4zm12 0h4v4h-4V4zM4 16h4v4H4v-4zm12 0h2v2h-2v-2zm-6-6h2v2h-2v-2zm6 0h4v2h-4v-2zm-6 6h4v4h-4v-4z" />
+            </svg>
+            QR sheet
+          </a>
+          <Link
+            href={`/teacher/class/${params.classGroupId}/report`}
+            className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-meq-sky hover:bg-meq-sky/90 transition-all flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Download Report
+          </Link>
+        </div>
       </div>
 
       {completedStudents.length === 0 ? (
@@ -221,8 +235,9 @@ export default async function ClassResultsPage({
                         <tr key={student.id} className="text-gray-400">
                           <td className="px-4 py-3 text-sm">
                             <span className="flex items-center gap-2">
+                              <StudentAvatarRing firstName={student.firstName} lastName={student.lastName} level={null} />
                               {student.firstName} {student.lastName}
-                              {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
+                              <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
                             </span>
                           </td>
                           <td colSpan={domains.length + 1} className="text-center text-xs">Not completed</td>
@@ -238,8 +253,9 @@ export default async function ClassResultsPage({
                       <tr key={student.id}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
                           <span className="flex items-center gap-2">
+                            <StudentAvatarRing firstName={student.firstName} lastName={student.lastName} level={(a.overallLevel as string) ?? null} />
                             {student.firstName} {student.lastName}
-                            {student.sen && <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>}
+                            <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
                           </span>
                         </td>
                         {domains.map((d) => (

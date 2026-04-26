@@ -11,6 +11,11 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "MeQ - Emotional Skills Assessment",
   description: "A child-friendly emotional skills assessment for ages 8-11",
+  // Strip Referer header on outbound navigations. Belt-and-braces alongside
+  // history.replaceState on the login page: prevents a student's login code
+  // (when present in the URL via QR scan) from leaking to third-party hosts
+  // they navigate to from inside the app.
+  referrer: "no-referrer",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

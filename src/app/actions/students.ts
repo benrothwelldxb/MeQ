@@ -17,6 +17,8 @@ const FIELD_MATCHERS: Record<string, string[]> = {
   class_name: ["class", "form", "division", "class name", "classname"],
   login_code: ["code", "login", "logincode", "login code"],
   sen: ["sen", "send", "special", "additional"],
+  magt: ["magt", "gifted", "talented", "more able", "able"],
+  eal: ["eal", "esl", "english additional", "english as"],
   school_uuid: ["school_id", "school_uuid", "uuid"],
 };
 
@@ -83,7 +85,7 @@ export async function previewCSV(formData: FormData) {
   };
 }
 
-function parseSenValue(val: string | undefined): boolean {
+function parseBooleanFlag(val: string | undefined): boolean {
   if (!val) return false;
   const norm = val.trim().toLowerCase();
   return ["yes", "true", "1", "y"].includes(norm);
@@ -116,6 +118,8 @@ export async function uploadStudentsCSV(
   const classNameCol = columnMapping.class_name;
   const loginCodeCol = columnMapping.login_code;
   const senCol = columnMapping.sen;
+  const magtCol = columnMapping.magt;
+  const ealCol = columnMapping.eal;
 
   if (!firstNameCol || !lastNameCol || !yearGroupCol) {
     return { error: "Please map first name, last name, and year group columns." };
@@ -135,6 +139,8 @@ export async function uploadStudentsCSV(
     loginCode: string;
     tier: string;
     sen: boolean;
+    magt: boolean;
+    eal: boolean;
     schoolId: string;
   }> = [];
 
@@ -147,7 +153,9 @@ export async function uploadStudentsCSV(
     const yearGroup = row[yearGroupCol]?.trim();
     const className = classNameCol ? row[classNameCol]?.trim() || null : null;
     let loginCode = loginCodeCol ? row[loginCodeCol]?.trim().toUpperCase() || "" : "";
-    const sen = parseSenValue(senCol ? row[senCol] : undefined);
+    const sen = parseBooleanFlag(senCol ? row[senCol] : undefined);
+    const magt = parseBooleanFlag(magtCol ? row[magtCol] : undefined);
+    const eal = parseBooleanFlag(ealCol ? row[ealCol] : undefined);
 
     if (!firstName || !lastName || !yearGroup) {
       errors.push(`Row ${i + 2}: Missing required fields`);
@@ -167,7 +175,7 @@ export async function uploadStudentsCSV(
 
     existingCodes.add(loginCode);
     const tier = getTierFromYearGroup(yearGroup);
-    students.push({ firstName, lastName, yearGroup, className, loginCode, tier, sen, schoolId: session.schoolId });
+    students.push({ firstName, lastName, yearGroup, className, loginCode, tier, sen, magt, eal, schoolId: session.schoolId });
   }
 
   if (students.length === 0) {
@@ -230,6 +238,8 @@ export async function addStudent(formData: FormData) {
   const classGroupId = (formData.get("classGroupId") as string) || null;
   const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
   const sen = formData.get("sen") === "on";
+  const magt = formData.get("magt") === "on";
+  const eal = formData.get("eal") === "on";
   let loginCode = (formData.get("loginCode") as string)?.trim().toUpperCase() || "";
 
   if (!firstName || !lastName || !yearGroupId) {
@@ -274,6 +284,8 @@ export async function addStudent(formData: FormData) {
       classGroupId,
       tier: yearGroup.tier,
       sen,
+      magt,
+      eal,
       schoolUuid,
       loginCode,
       schoolId: session.schoolId,
@@ -305,6 +317,8 @@ export async function updateStudent(studentId: string, formData: FormData) {
   const schoolUuid = (formData.get("schoolUuid") as string)?.trim() || null;
   const displayName = (formData.get("displayName") as string)?.trim() || null;
   const sen = formData.get("sen") === "on";
+  const magt = formData.get("magt") === "on";
+  const eal = formData.get("eal") === "on";
 
   if (!firstName || !lastName || !yearGroupId) {
     return { error: "First name, last name, and year group are required." };
@@ -336,6 +350,8 @@ export async function updateStudent(studentId: string, formData: FormData) {
       classGroupId,
       tier: yearGroup.tier,
       sen,
+      magt,
+      eal,
       schoolUuid,
     },
   });

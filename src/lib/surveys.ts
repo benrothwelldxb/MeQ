@@ -8,11 +8,21 @@ export interface SurveyTemplate {
   anonymous: boolean;
   questions: Array<{
     prompt: string;
-    questionType: "likert_5" | "multiple_choice" | "yes_no" | "rating_10" | "free_text";
+    questionType: SurveyQuestionType;
     options?: string[];
     required?: boolean;
   }>;
 }
+
+export type SurveyQuestionType =
+  | "likert_5"
+  | "multiple_choice"
+  | "yes_no"
+  | "rating_10"
+  | "free_text"
+  | "emoji_5"
+  | "emoji_3"
+  | "slider_10";
 
 export const SURVEY_TEMPLATES: SurveyTemplate[] = [
   {
@@ -136,6 +146,24 @@ export const SURVEY_TEMPLATES: SurveyTemplate[] = [
     ],
   },
   {
+    key: "psychological-safety",
+    title: "Psychological Safety in Class",
+    description: "How safe students feel to speak up, ask questions, and make mistakes in class.",
+    category: "Climate",
+    anonymous: true,
+    questions: [
+      { prompt: "I feel comfortable asking questions in class, even if I might be wrong", questionType: "likert_5" },
+      { prompt: "When I make a mistake in class, it is not held against me", questionType: "likert_5" },
+      { prompt: "I can share a different opinion to my classmates without worrying", questionType: "likert_5" },
+      { prompt: "My teacher wants to hear what I think", questionType: "likert_5" },
+      { prompt: "It is safe to try something new or take a risk in my learning", questionType: "likert_5" },
+      { prompt: "I can ask for help when I don't understand something", questionType: "likert_5" },
+      { prompt: "Other students in my class listen when I speak", questionType: "likert_5" },
+      { prompt: "When I get something wrong, it helps me learn rather than making me feel bad", questionType: "likert_5" },
+      { prompt: "Is there anything that would help you feel more comfortable speaking up in class?", questionType: "free_text", required: false },
+    ],
+  },
+  {
     key: "post-holiday",
     title: "Back to School — Post-Holiday Check-In",
     description: "How students are settling back in after a break.",
@@ -192,4 +220,20 @@ export const QUESTION_TYPE_LABELS: Record<string, string> = {
   yes_no: "Yes / No",
   rating_10: "Rating (1-10)",
   free_text: "Free text",
+  emoji_5: "Emojis (5)",
+  emoji_3: "Emojis (3)",
+  slider_10: "Slider (1-10)",
 };
+
+// Used in admin builder to populate the renderer dropdown alongside each
+// question. Order chosen so the most common types are at the top.
+export const QUESTION_TYPE_OPTIONS: Array<{ key: SurveyQuestionType; label: string }> = [
+  { key: "likert_5", label: "Agreement (5-point)" },
+  { key: "emoji_5", label: "Emojis (5)" },
+  { key: "emoji_3", label: "Emojis (3)" },
+  { key: "yes_no", label: "Yes / No" },
+  { key: "rating_10", label: "Rating (1-10)" },
+  { key: "slider_10", label: "Slider (1-10)" },
+  { key: "multiple_choice", label: "Multiple choice" },
+  { key: "free_text", label: "Free text" },
+];

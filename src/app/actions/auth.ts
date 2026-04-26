@@ -116,15 +116,10 @@ export async function loginStudent(
         frameworkId: fw.id,
       },
     });
-  } else {
-    // Framework's schedule says no assessment this term.
-    // Still allow login for pulse, but no assessment to complete.
-    if (!school.pulseEnabled) {
-      return {
-        error: "No assessment is scheduled for this term. Check back next term!",
-      };
-    }
   }
+  // If no assessment and the framework's schedule says none is due this term,
+  // the student should still be able to land on the app — either for pulse (if
+  // enabled) or the always-available check-in fallback. No early-return here.
 
   const session = await getStudentSession();
   session.studentId = student.id;
@@ -144,9 +139,10 @@ export async function loginStudent(
     }
   }
 
-  // If no assessment was created (term inactive), redirect home with message
+  // If no assessment is active (term inactive or pulse already done this week),
+  // still give the student a place to land — the always-available check-in page.
   if (!assessment) {
-    return { error: "Your check-in is complete! See you next week." };
+    redirect("/check-in");
   }
 
   redirect("/quiz");

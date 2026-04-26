@@ -5,6 +5,8 @@ import Link from "next/link";
 import BulkActions from "./BulkActions";
 import DeleteStudentButton from "./DeleteStudentButton";
 import ResetAssessmentButton from "./ResetAssessmentButton";
+import StudentTagPills from "@/components/StudentTagPills";
+import StudentAvatarRing from "@/components/StudentAvatarRing";
 
 interface StudentData {
   id: string;
@@ -15,6 +17,9 @@ interface StudentData {
   tier: string;
   loginCode: string;
   sen: boolean;
+  magt: boolean;
+  eal: boolean;
+  overallLevel: string | null;
   assessments: Array<{ id: string; status: string; term: string }>;
 }
 
@@ -53,9 +58,9 @@ export default function StudentTable({
   const handleExport = useCallback(() => {
     const selectedStudents = students.filter((s) => selected.has(s.id));
     const csv = [
-      "first_name,last_name,year_group,class_name,login_code,sen",
+      "first_name,last_name,year_group,class_name,login_code,sen,magt,eal",
       ...selectedStudents.map(
-        (s) => `${s.firstName},${s.lastName},${s.yearGroup},${s.className || ""},${s.loginCode},${s.sen ? "Yes" : "No"}`
+        (s) => `${s.firstName},${s.lastName},${s.yearGroup},${s.className || ""},${s.loginCode},${s.sen ? "Yes" : "No"},${s.magt ? "Yes" : "No"},${s.eal ? "Yes" : "No"}`
       ),
     ].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -118,12 +123,12 @@ export default function StudentTable({
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
+                        <StudentAvatarRing firstName={student.firstName} lastName={student.lastName} level={student.overallLevel} />
                         <span className="font-medium text-gray-900">
                           {student.firstName} {student.lastName}
                         </span>
-                        {student.sen && (
-                          <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SEN</span>
-                        )}
+                        <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} />
+
                       </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">

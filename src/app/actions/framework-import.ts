@@ -1,8 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { getSuperAdminSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { validateFrameworkJson, type FrameworkImportJson } from "@/lib/framework-import";
+
+async function requireSuper(): Promise<void> {
+  const session = await getSuperAdminSession();
+  if (!session.superAdminId) throw new Error("Unauthorized: super admin only");
+}
 
 const DEFAULT_ANSWER_OPTIONS = JSON.stringify([
   { label: "Not like me at all", value: 1 },
@@ -14,6 +20,7 @@ const DEFAULT_SCORE_MAP = JSON.stringify({ "1": 0, "2": 1, "3": 2, "4": 3 });
 const REVERSE_SCORE_MAP = JSON.stringify({ "1": 3, "2": 2, "3": 1, "4": 0 });
 
 export async function validateFrameworkImport(jsonText: string) {
+  await requireSuper();
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
@@ -28,6 +35,7 @@ export async function validateFrameworkImport(jsonText: string) {
 }
 
 export async function importFramework(jsonText: string, schoolIdsToAssign: string[] = []) {
+  await requireSuper();
   let parsed: FrameworkImportJson;
   try {
     parsed = JSON.parse(jsonText) as FrameworkImportJson;
@@ -246,6 +254,7 @@ export async function importFramework(jsonText: string, schoolIdsToAssign: strin
 }
 
 export async function exportFrameworkJson(frameworkId: string) {
+  await requireSuper();
   const framework = await prisma.framework.findUnique({
     where: { id: frameworkId },
     include: {
@@ -332,6 +341,7 @@ export async function exportFrameworkJson(frameworkId: string) {
 // === Assignment management ===
 
 export async function assignFrameworkToSchool(frameworkId: string, schoolId: string) {
+  await requireSuper();
   await prisma.frameworkAssignment.upsert({
     where: { frameworkId_schoolId: { frameworkId, schoolId } },
     update: {},
@@ -341,6 +351,7 @@ export async function assignFrameworkToSchool(frameworkId: string, schoolId: str
 }
 
 export async function unassignFrameworkFromSchool(frameworkId: string, schoolId: string) {
+  await requireSuper();
   await prisma.frameworkAssignment.deleteMany({
     where: { frameworkId, schoolId },
   });

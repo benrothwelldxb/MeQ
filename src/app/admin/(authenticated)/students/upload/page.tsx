@@ -10,7 +10,9 @@ const FIELDS = [
   { key: "year_group", label: "Year Group", required: true },
   { key: "class_name", label: "Class", required: false },
   { key: "login_code", label: "Login Code", required: false },
-  { key: "sen", label: "SEN", required: false },
+  { key: "sen", label: "SEND", required: false },
+  { key: "magt", label: "MAGT", required: false },
+  { key: "eal", label: "EAL", required: false },
   { key: "school_uuid", label: "School ID", required: false },
 ];
 

@@ -10,6 +10,7 @@ import SurveyResponseCard from "./SurveyResponseCard";
 import PrintButton from "./PrintButton";
 import InterventionLogPanel from "./InterventionLogPanel";
 import ExportDataButton from "./ExportDataButton";
+import StudentTagPills from "@/components/StudentTagPills";
 
 const TERM_LABELS: Record<string, string> = {
   term1: "Term 1",
@@ -22,16 +23,20 @@ export default async function StudentOverviewPage({
   backHref,
   backLabel,
   isAdmin = false,
+  prevHref,
+  nextHref,
 }: {
   studentId: string;
   backHref: string;
   backLabel: string;
   isAdmin?: boolean;
+  prevHref?: string | null;
+  nextHref?: string | null;
 }) {
   const data = await getStudentOverview(studentId);
   if (!data) notFound();
 
-  const { student, school, framework, assessments, teacherAssessments, pulseChecks, surveyResponses, interventionLogs } = data;
+  const { student, school, framework, assessments, teacherAssessments, pulseChecks, surveyResponses, interventionLogs, questionInsights } = data;
 
   const latestAssessment = assessments[assessments.length - 1];
   const latestTeacherAssessment = teacherAssessments[teacherAssessments.length - 1];
@@ -60,9 +65,29 @@ export default async function StudentOverviewPage({
 
   return (
     <div className="student-360">
-      <Link href={backHref} className="text-sm text-meq-sky hover:underline print:hidden">
-        &larr; {backLabel}
-      </Link>
+      <div className="flex items-center justify-between gap-3 print:hidden">
+        <Link href={backHref} className="text-sm text-meq-sky hover:underline">
+          &larr; {backLabel}
+        </Link>
+        {(prevHref || nextHref) && (
+          <div className="flex items-center gap-1 text-sm">
+            {prevHref ? (
+              <Link href={prevHref} className="px-3 py-1.5 rounded-lg text-meq-sky hover:bg-meq-sky-light font-medium">
+                ← Previous
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg text-gray-300">← Previous</span>
+            )}
+            {nextHref ? (
+              <Link href={nextHref} className="px-3 py-1.5 rounded-lg text-meq-sky hover:bg-meq-sky-light font-medium">
+                Next →
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg text-gray-300">Next →</span>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Header */}
       <div className="mt-4 mb-6">
@@ -77,11 +102,7 @@ export default async function StudentOverviewPage({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {student.sen && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                SEN
-              </span>
-            )}
+            <StudentTagPills sen={student.sen} magt={student.magt} eal={student.eal} size="sm" />
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 capitalize">
               {student.tier} tier
             </span>
@@ -118,6 +139,52 @@ export default async function StudentOverviewPage({
           sublabel={surveyResponses.length === 1 ? "1 response" : `${surveyResponses.length} responses`}
         />
       </div>
+
+      {/* Question-level insights — surfaces the specific questions the student
+          answered most positively and most negatively, mapped back to their
+          actual answer label. */}
+      {(questionInsights.highest.length > 0 || questionInsights.lowest.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-emerald-200 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
+              <h3 className="font-bold text-gray-900">{student.firstName}&rsquo;s strongest answers</h3>
+            </div>
+            {questionInsights.highest.length === 0 ? (
+              <p className="text-sm text-gray-400">No data yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {questionInsights.highest.map((q, i) => (
+                  <li key={i} className="text-sm">
+                    <p className="text-xs font-medium text-emerald-700">{q.domainLabel}</p>
+                    <p className="text-gray-700 italic">&ldquo;{q.prompt}&rdquo;</p>
+                    <p className="text-emerald-600 text-xs font-semibold mt-0.5">→ {q.answerLabel}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="bg-white rounded-xl border border-amber-200 p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
+              <h3 className="font-bold text-gray-900">Where {student.firstName} could use support</h3>
+            </div>
+            {questionInsights.lowest.length === 0 ? (
+              <p className="text-sm text-gray-400">No data yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {questionInsights.lowest.map((q, i) => (
+                  <li key={i} className="text-sm">
+                    <p className="text-xs font-medium text-amber-700">{q.domainLabel}</p>
+                    <p className="text-gray-700 italic">&ldquo;{q.prompt}&rdquo;</p>
+                    <p className="text-amber-600 text-xs font-semibold mt-0.5">→ {q.answerLabel}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Radar + Trend */}
       {latestAssessment && (

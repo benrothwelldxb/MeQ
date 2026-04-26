@@ -11,7 +11,7 @@ export default async function StudentsPage() {
     orderBy: [{ yearGroup: "asc" }, { lastName: "asc" }],
     include: {
       assessments: {
-        select: { id: true, status: true, term: true },
+        select: { id: true, status: true, term: true, overallLevel: true, completedAt: true },
         orderBy: { startedAt: "desc" },
       },
     },
@@ -29,17 +29,23 @@ export default async function StudentsPage() {
     yearGroupName: c.yearGroup.name,
   }));
 
-  const studentData = students.map((s) => ({
-    id: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    yearGroup: s.yearGroup,
-    className: s.className,
-    tier: s.tier,
-    loginCode: s.loginCode,
-    sen: s.sen,
-    assessments: s.assessments.map((a) => ({ id: a.id, status: a.status, term: a.term })),
-  }));
+  const studentData = students.map((s) => {
+    const latestCompleted = s.assessments.find((a) => a.status === "completed" && a.overallLevel);
+    return {
+      id: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      yearGroup: s.yearGroup,
+      className: s.className,
+      tier: s.tier,
+      loginCode: s.loginCode,
+      sen: s.sen,
+      magt: s.magt,
+      eal: s.eal,
+      overallLevel: latestCompleted?.overallLevel ?? null,
+      assessments: s.assessments.map((a) => ({ id: a.id, status: a.status, term: a.term })),
+    };
+  });
 
   return (
     <div>

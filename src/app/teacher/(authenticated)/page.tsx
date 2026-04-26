@@ -2,6 +2,9 @@ import { prisma } from "@/lib/db";
 import { getTeacherSession } from "@/lib/session";
 import { getSchoolSettings, TERM_LABELS } from "@/lib/school";
 import Link from "next/link";
+import CheckInPanel from "./CheckInPanel";
+import RecommendedCheckInPanel from "./RecommendedCheckInPanel";
+import { getRecommendedCheckIns } from "@/lib/recommended-check-ins";
 
 export default async function TeacherDashboard() {
   const session = await getTeacherSession();
@@ -27,6 +30,17 @@ export default async function TeacherDashboard() {
   });
 
   if (!teacher) return null;
+
+  const openCheckIns = await prisma.checkInRequest.findMany({
+    where: { targetTeacherId: teacher.id, status: "open" },
+    orderBy: { createdAt: "desc" },
+    include: {
+      student: { select: { firstName: true, lastName: true, yearGroup: true, className: true } },
+    },
+  });
+
+  const myStudentIds = teacher.classes.flatMap((c) => c.students.map((s) => s.id));
+  const recommendedCheckIns = await getRecommendedCheckIns(session.schoolId, myStudentIds);
 
   const teacherAssessmentCounts = await prisma.teacherAssessment.groupBy({
     by: ["studentId"],
@@ -60,6 +74,19 @@ export default async function TeacherDashboard() {
           {TERM_LABELS[school.currentTerm]} — {school.academicYear}
         </p>
       </div>
+
+      <RecommendedCheckInPanel items={recommendedCheckIns} />
+
+      <CheckInPanel
+        items={openCheckIns.map((c) => ({
+          id: c.id,
+          createdAt: c.createdAt,
+          freeText: c.freeText,
+          studentName: `${c.student.firstName} ${c.student.lastName}`,
+          yearGroup: c.student.yearGroup,
+          className: c.student.className,
+        }))}
+      />
 
       {/* Quick Stats */}
       {teacher.classes.length > 0 && (

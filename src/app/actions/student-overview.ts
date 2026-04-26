@@ -169,6 +169,55 @@ export async function getStudentOverview(studentId: string) {
       : "Unknown",
   }));
 
+  // Question-level insights from the latest self-report assessment.
+  // Maps each answered question to its prompt + raw label + normalized score
+  // (via scoreMap) so we can surface "what they feel strongest/weakest about".
+  let questionInsights: {
+    highest: Array<{ prompt: string; domainLabel: string; answerLabel: string }>;
+    lowest: Array<{ prompt: string; domainLabel: string; answerLabel: string }>;
+  } = { highest: [], lowest: [] };
+
+  if (latest && latest.answers && latest.frameworkId) {
+    try {
+      const rawAnswers = JSON.parse(latest.answers) as Record<string, number>;
+      const fwQuestions = await prisma.frameworkQuestion.findMany({
+        where: { frameworkId: latest.frameworkId, tier: student.tier },
+      });
+      const domainLabelByKey = new Map(domains.map((d) => [d.key, d.label]));
+
+      const items: Array<{ prompt: string; domainLabel: string; answerLabel: string; score: number }> = [];
+      for (const q of fwQuestions) {
+        const rawValue = rawAnswers[String(q.orderIndex)];
+        if (typeof rawValue !== "number") continue;
+        let answerLabel = String(rawValue);
+        let score = rawValue;
+        try {
+          const opts = JSON.parse(q.answerOptions) as Array<{ label: string; value: number }>;
+          const found = opts.find((o) => o.value === rawValue);
+          if (found) answerLabel = found.label;
+        } catch { /* ignore */ }
+        try {
+          const map = JSON.parse(q.scoreMap) as Record<string, number>;
+          if (map[String(rawValue)] !== undefined) score = map[String(rawValue)];
+        } catch { /* ignore */ }
+        items.push({
+          prompt: q.prompt,
+          domainLabel: domainLabelByKey.get(q.domainKey) ?? q.domainKey,
+          answerLabel,
+          score,
+        });
+      }
+      const byHighest = [...items].sort((a, b) => b.score - a.score).slice(0, 3);
+      const byLowest = [...items].sort((a, b) => a.score - b.score).slice(0, 3);
+      questionInsights = {
+        highest: byHighest.map(({ prompt, domainLabel, answerLabel }) => ({ prompt, domainLabel, answerLabel })),
+        lowest: byLowest.map(({ prompt, domainLabel, answerLabel }) => ({ prompt, domainLabel, answerLabel })),
+      };
+    } catch {
+      // Bad JSON in answers — leave insights empty rather than crashing the page.
+    }
+  }
+
   const surveyResponses = rawSurveyResponses.map((r) => ({
     id: r.id,
     surveyTitle: r.survey.title,
@@ -195,6 +244,8 @@ export async function getStudentOverview(studentId: string) {
       className: student.classGroupRef?.name ?? student.className,
       tier: student.tier,
       sen: student.sen,
+      magt: student.magt,
+      eal: student.eal,
       schoolId: student.schoolId,
     },
     school: student.school,
@@ -210,5 +261,6 @@ export async function getStudentOverview(studentId: string) {
     pulseChecks,
     surveyResponses,
     interventionLogs,
+    questionInsights,
   };
 }

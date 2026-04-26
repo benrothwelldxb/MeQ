@@ -1,7 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { hashSync } from "bcryptjs";
+import "dotenv/config";
+import { BANK_SEED_QUESTIONS } from "./seed-bank-questions";
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 // === STANDARD TIER ANSWER OPTIONS ===
 
@@ -903,6 +909,28 @@ async function main() {
 
     console.log(`Seeded ${ef.name} framework with ${ef.domains.length} domains`);
   }
+
+  // Survey question bank — wipe + reload platform defaults each run, leaving
+  // school-custom entries untouched.
+  await prisma.surveyBankQuestion.deleteMany({
+    where: { isDefault: true, schoolId: null },
+  });
+  await prisma.surveyBankQuestion.createMany({
+    data: BANK_SEED_QUESTIONS.map((q) => ({
+      prompt: q.prompt,
+      description: q.description ?? null,
+      questionType: q.questionType,
+      defaultOptions: q.defaultOptions ? JSON.stringify(q.defaultOptions) : null,
+      category: q.category,
+      subcategory: q.subcategory ?? null,
+      domainKey: q.domainKey ?? null,
+      ageTags: JSON.stringify(q.ageTags ?? ["junior", "standard"]),
+      source: q.source ?? null,
+      isDefault: true,
+      schoolId: null,
+    })),
+  });
+  console.log(`Seeded ${BANK_SEED_QUESTIONS.length} bank questions`);
 }
 
 main()

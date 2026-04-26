@@ -2,7 +2,8 @@ import { prisma } from "@/lib/db";
 import { getAdminSession } from "@/lib/session";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import SurveyEditor from "./SurveyEditor";
+import SurveyBuilder from "./SurveyBuilder";
+import { listBankQuestions } from "@/app/actions/survey-bank";
 
 export default async function SurveyEditPage({
   params,
@@ -21,6 +22,15 @@ export default async function SurveyEditPage({
 
   if (!survey) return notFound();
 
+  const [bankQuestions, yearGroups] = await Promise.all([
+    listBankQuestions(),
+    prisma.yearGroup.findMany({
+      where: { schoolId: session.schoolId },
+      include: { classes: { orderBy: { name: "asc" } } },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -38,7 +48,7 @@ export default async function SurveyEditPage({
         )}
       </div>
 
-      <SurveyEditor
+      <SurveyBuilder
         survey={{
           id: survey.id,
           title: survey.title,
@@ -46,14 +56,24 @@ export default async function SurveyEditPage({
           status: survey.status,
           anonymous: survey.anonymous,
           allowRetake: survey.allowRetake,
+          targetType: survey.targetType,
+          targetIds: JSON.parse(survey.targetIds || "[]") as string[],
+          openAt: survey.openAt,
+          closeAt: survey.closeAt,
         }}
         questions={survey.questions.map((q) => ({
           id: q.id,
           orderIndex: q.orderIndex,
           prompt: q.prompt,
           questionType: q.questionType,
-          options: q.options,
+          options: q.options ? (JSON.parse(q.options) as string[]) : null,
           required: q.required,
+        }))}
+        bankQuestions={bankQuestions}
+        yearGroups={yearGroups.map((yg) => ({
+          id: yg.id,
+          name: yg.name,
+          classes: yg.classes.map((c) => ({ id: c.id, name: c.name })),
         }))}
       />
     </div>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { savePulseAnswer, submitPulse } from "@/app/actions/pulse";
 import Image from "next/image";
+import PlayAudioButton from "@/components/PlayAudioButton";
+import CheckInForm from "@/app/check-in/CheckInForm";
 
 const EMOJI_SCALE = [
   { value: 1, emoji: "😟", label: "Not really" },
@@ -16,21 +18,35 @@ interface PulseQuestion {
   domain: string;
   prompt: string;
   emoji?: string;
+  audioUrl?: string;
+}
+
+interface TeacherOption {
+  id: string;
+  name: string;
+  isClassTeacher: boolean;
 }
 
 export default function PulseClient({
   questions,
   studentName,
   isJunior,
+  readAloudEnabled,
+  teachers,
+  defaultTeacherId,
 }: {
   questions: PulseQuestion[];
   studentName: string;
   isJunior: boolean;
+  readAloudEnabled: boolean;
+  teachers: TeacherOption[];
+  defaultTeacherId: string | null;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [freeText, setFreeText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
 
   const question = questions[currentIndex];
   const currentAnswer = answers[question?.domain];
@@ -54,6 +70,7 @@ export default function PulseClient({
   };
 
   const isComplete = Object.keys(answers).length === questions.length;
+  const canCheckIn = teachers.length > 0;
 
   return (
     <main className="min-h-screen bg-meq-cloud flex flex-col items-center justify-center p-4">
@@ -94,11 +111,21 @@ export default function PulseClient({
               <span className={isJunior ? "text-6xl" : "text-5xl"}>{question.emoji}</span>
             </div>
           )}
-          <h2 className={`font-bold text-meq-slate text-center mb-6 ${
+          <h2 className={`font-bold text-meq-slate text-center mb-4 ${
             isJunior ? "text-2xl" : "text-xl"
           }`}>
             {question.prompt}
           </h2>
+
+          {question.audioUrl && (
+            <div className="flex justify-center mb-5">
+              <PlayAudioButton
+                key={question.domain}
+                src={question.audioUrl}
+                autoPlay={readAloudEnabled}
+              />
+            </div>
+          )}
 
           {/* Emoji scale */}
           <div className="flex justify-between gap-2">
@@ -138,6 +165,27 @@ export default function PulseClient({
               />
               <p className="text-xs text-gray-400 mt-1">{freeText.length}/500</p>
             </div>
+
+            {canCheckIn && !showCheckIn && (
+              <button
+                type="button"
+                onClick={() => setShowCheckIn(true)}
+                className="w-full py-3 mb-4 rounded-xl text-sm font-semibold text-meq-sky bg-white border border-meq-sky hover:bg-meq-sky-light transition-all"
+              >
+                {isJunior ? "💬 I want to talk to a grown-up" : "💬 Check in with someone"}
+              </button>
+            )}
+
+            {canCheckIn && showCheckIn && (
+              <CheckInForm
+                teachers={teachers}
+                defaultTeacherId={defaultTeacherId}
+                isJunior={isJunior}
+                studentName={studentName}
+                variant="embedded"
+              />
+            )}
+
             <button
               onClick={handleSubmit}
               disabled={submitting}
